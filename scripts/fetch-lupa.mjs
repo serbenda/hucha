@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import {
   parsearAtom, esContratoUtil, compactarContrato, urlConcesiones, parsearConcesiones, UMBRAL_SUBVENCIONES,
   urlCrs, urlCrsProyectos, lectorCsv, acumuladorCrs, acumuladorProyectos, UMBRAL_CONTRATOS, esMarcoPorTitulo,
@@ -218,11 +218,13 @@ const MESES_SUBVENCIONES = Number(process.env.LUPA_SUBV_MESES ?? 12);
 
 async function subvenciones() {
   const todas = new Map();
+  const porMesLeido = [];
   for (let m = 0; m < MESES_SUBVENCIONES; m++) {
     const fin = new Date(hoy.getFullYear(), hoy.getMonth() - m + 1, 0);
     const ini = new Date(hoy.getFullYear(), hoy.getMonth() - m, 1);
     const hasta = isoDia(m === 0 ? hoy : fin);
     const desde = isoDia(ini);
+    const antes = todas.size;
     for (let pagina = 0; pagina < 10; pagina++) {
       const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json' });
       const importes = (json?.content ?? []).map((c) => c.importe ?? 0);
@@ -232,37 +234,53 @@ async function subvenciones() {
       const ultimo = json?.content?.at(-1)?.importe ?? 0;
       if (json.last || ultimo < UMBRAL_SUBVENCIONES) break;
     }
+    porMesLeido.push(`${desde.slice(0, 7)}: ${todas.size - antes}`);
   }
   if (todas.size < 10) throw new Error(`solo ${todas.size} concesiones`);
   const lista = [...todas.values()].sort((a, b) => b.i - a.i);
   await guardar('subvenciones.json', { actualizado: new Date().toISOString(), umbral: UMBRAL_SUBVENCIONES, subvenciones: lista });
-  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses`;
+  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses (${porMesLeido.join(', ')})`;
 }
 
 // ---------------------------------------------------------------------------
 // Ayuda a otros países
 
 /** Lee un CSV grande de la red por trozos, sin guardarlo entero en memoria. */
-async function leerCsv(url, alFila, minutos = 15) {
-  let r;
+// Con curl, igual que en el sondeo que funcionó: con fetch, el servidor de la OCDE responde con error 500
+// (probablemente por la compresión que pide fetch por defecto).
+function curl(url, minutos) {
+  return spawn('curl', ['-sS', '-L', '--max-time', String(minutos * 60), '-A', cabeceras['User-Agent'], '-w', '\n%{http_code}', url]);
+}
+
+/** Lee un CSV de la OCDE con un acumulador nuevo en cada intento (crear()); devuelve el acumulador o null si no hay datos. */
+async function leerCsv(url, crear, minutos = 15) {
   for (let intento = 1; ; intento++) {
-    r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(minutos * 60000) });
-    if (r.ok || r.status === 404 || intento === 3) break;
+    const acumulador = crear();
+    const lector = lectorCsv(acumulador.fila);
+    const proceso = curl(url, minutos);
+    const dec = new TextDecoder();
+    // La última línea es el código HTTP (-w): se guarda la cola para separarla del CSV
+    let cola = '';
+    let inicio = '';
+    for await (const trozo of proceso.stdout) {
+      const texto = cola + dec.decode(trozo, { stream: true });
+      const corte = Math.max(0, texto.length - 8);
+      if (inicio.length < 200) inicio += texto.slice(0, 200);
+      lector.trozo(texto.slice(0, corte));
+      cola = texto.slice(corte);
+    }
+    cola += dec.decode();
+    const salto = cola.lastIndexOf('\n');
+    const codigo = Number(cola.slice(salto + 1));
+    lector.trozo(cola.slice(0, Math.max(0, salto)));
+    if (codigo === 200) {
+      lector.fin();
+      return acumulador;
+    }
+    if (codigo === 404 && /NoRecordsFound|NoResultsFound/i.test(inicio + cola)) return null;
+    if (intento === 3) throw new Error(`HTTP ${codigo || 'sin respuesta'}`);
     await new Promise((ok) => setTimeout(ok, 30000 * intento));
   }
-  if (r.status === 404) {
-    // La OCDE responde 404 con «NoRecordsFound» cuando no hay datos (un año aún sin publicar)
-    const texto = await r.text();
-    if (/NoRecordsFound|NoResultsFound/i.test(texto)) return false;
-    throw new Error(`HTTP 404 (${texto.slice(0, 60)})`);
-  }
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const lector = lectorCsv(alFila);
-  const dec = new TextDecoder();
-  for await (const trozo of r.body) lector.trozo(dec.decode(trozo, { stream: true }));
-  lector.trozo(dec.decode());
-  lector.fin();
-  return true;
 }
 
 // La OCDE permite unas 20 consultas por hora. Cada día se piden solo los dos últimos años (los que aún se
@@ -289,9 +307,10 @@ async function ayuda() {
   const faltan = años.slice(2).filter((a) => !tenemos.has(a)).slice(0, NUEVOS_POR_EJECUCION);
   const estados = [];
   for (const año of [...recientes, ...faltan]) {
-    const crs = acumuladorCrs();
+    let crs;
     try {
-      if (!(await leerCsv(urlCrs(año), crs.fila))) {
+      crs = await leerCsv(urlCrs(año), acumuladorCrs);
+      if (!crs) {
         estados.push(`${año} sin datos`);
         continue;
       }
@@ -324,8 +343,8 @@ async function ayuda() {
   let notaProyectos = '';
   if (PROYECTOS && (proyectosAño !== ultimo || hoy.getDay() === 1 || !Object.keys(proyectos).length)) {
     try {
-      const p = acumuladorProyectos();
-      if (await leerCsv(urlCrsProyectos(ultimo), p.fila, 25)) {
+      const p = await leerCsv(urlCrsProyectos(ultimo), () => acumuladorProyectos(), 25);
+      if (p) {
         proyectos = p.resultado();
         proyectosAño = ultimo;
         notaProyectos = `; proyectos de ${Object.keys(proyectos).length} países`;
