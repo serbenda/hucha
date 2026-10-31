@@ -2,9 +2,10 @@
 // No son datos oficiales: la web lo avisa con una banda en todas las páginas.
 // La Action nunca usa este script.
 
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { prepararDatos } from '../assets/js/cofog.js';
 import { respuestasEjemplo } from '../tests/ayuda.js';
+import { portadaDe } from '../assets/js/lupa-datos.js';
 
 const { gasto, poblacion, tipos } = respuestasEjemplo();
 const datos = { ...prepararDatos(gasto, poblacion, tipos), ejemplo: true, actualizado: new Date().toISOString() };
@@ -25,4 +26,8 @@ await writeFile(new URL('subvenciones.json', lupa), JSON.stringify({ ejemplo: tr
   { id: 'S1', f: '2026-10-13', i: 28e6, b: 'AYUNTAMIENTO DE EJEMPLO', nif: 'P0000000A', c: 'EJEMPLO: plan de obras municipales', o: 'Dirección General de Ejemplo', n: 'Estado', l: null, u: null, te: [] },
 ] }));
 await writeFile(new URL('ayuda.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), unidad: 'millones de dólares', años: ['2023', '2024'], paises: { MAR: { 2023: 100, 2024: 120 }, UKR: { 2023: 80, 2024: 60 } } }));
+for (const [nombre, clave, importe] of [['contratos', 'contratos', 'a'], ['subvenciones', 'subvenciones', 'i']]) {
+  const d = JSON.parse(await readFile(new URL(`${nombre}.json`, lupa), 'utf8'));
+  await writeFile(new URL(`${nombre}-portada.json`, lupa), JSON.stringify(portadaDe(d, clave, importe)));
+}
 console.log('data/lupa/ de EJEMPLO creado');

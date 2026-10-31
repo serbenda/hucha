@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parsearAtom, esContratoUtil, compactarContrato, parsearConcesiones, parsearAyuda, buscar, suma, esPersona,
-  normalizar, temas, finalidad, urlConcesiones,
+  normalizar, temas, finalidad, urlConcesiones, TEMAS, portadaDe,
 } from '../assets/js/lupa-datos.js';
 import { nombrePais, esPais } from '../assets/js/paises.js';
 
@@ -131,4 +131,21 @@ test('buscar: todas las palabras, sin tildes, ordenado por importe y por tema', 
   assert.deepEqual(buscar(lista, 'acciona', opciones).map((x) => x.a), [5]);
   assert.deepEqual(buscar(lista, '', { ...opciones, tema: 'sanidad' }).map((x) => x.a), [9]);
   assert.equal(suma(lista, 'a'), 15);
+});
+
+test('los botones de temas del HTML coinciden con los temas', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const html = await readFile(new URL('../lupa/index.html', import.meta.url), 'utf8');
+  const botones = [...html.matchAll(/data-tema="([^"]*)">([^<]+)</g)].map((m) => [m[1], m[2]]);
+  assert.deepEqual(botones, [['', 'Todo'], ...TEMAS.map((t) => [t.id, t.nombre])]);
+});
+
+test('portada: los mayores y el total, sin los cursores internos', () => {
+  const contratos = Array.from({ length: 50 }, (_, k) => ({ id: String(k), a: k + 1 }));
+  const p = portadaDe({ actualizado: 'x', desde: 'y', cursores: { perfiles: {} }, contratos }, 'contratos', 'a');
+  assert.equal(p.cursores, undefined);
+  assert.equal(p.desde, 'y');
+  assert.deepEqual(p.total, { n: 50, suma: 1275 });
+  assert.equal(p.contratos.length, 40);
+  assert.equal(p.contratos[0].a, 50);
 });

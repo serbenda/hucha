@@ -5,12 +5,13 @@
 //   así que el histórico crece solo. El punto por el que va se guarda en el propio fichero.
 // - subvenciones.json: concesiones desde 1 millón de € a empresas y entidades, últimos 12 meses (BDNS).
 // - ayuda.json: ayuda oficial al desarrollo de España por país, últimos años (OCDE).
+// - contratos-portada.json y subvenciones-portada.json: los mayores y el total, para abrir la Lupa rápido.
 // Cada parte es independiente: si una fuente falla, se queda la versión anterior de esa parte.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import {
   parsearAtom, esContratoUtil, compactarContrato, urlConcesiones, parsearConcesiones, UMBRAL_SUBVENCIONES,
-  urlAyuda, parsearAyuda, UMBRAL_CONTRATOS,
+  urlAyuda, parsearAyuda, UMBRAL_CONTRATOS, portadaDe,
 } from '../assets/js/lupa-datos.js';
 import { esPais } from '../assets/js/paises.js';
 import { anotar } from './estado.mjs';
@@ -184,4 +185,10 @@ for (const [nombre, parte] of [['contratos', contratos], ['subvenciones', subven
     console.warn(`Lupa ${nombre}: ${e.message}. Se mantiene la versión anterior`);
     await anotar(`lupa-${nombre}`, false, e.message);
   }
+}
+
+// Ficheros de portada, con lo que haya (lo nuevo o la versión anterior)
+for (const [nombre, clave, importe] of [['contratos', 'contratos', 'a'], ['subvenciones', 'subvenciones', 'i']]) {
+  const d = await leer(`${nombre}.json`);
+  if (d) await guardar(`${nombre}-portada.json`, portadaDe(d, clave, importe));
 }

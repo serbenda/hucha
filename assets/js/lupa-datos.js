@@ -182,7 +182,7 @@ export const esContratoUtil = (c) => ['ADJ', 'RES'].includes(c?.estado) && c.adj
 /** Forma compacta para la web (claves cortas para que pese menos). */
 export const compactarContrato = (c) => ({
   id: c.id, t: c.titulo, o: c.organo, n: c.nivel, l: c.lugar, ti: c.tipo, fi: c.finalidad, te: c.temas,
-  li: c.licitado, a: c.adjudicado, f: c.fecha, g: c.ganadores, u: c.enlace, up: c.actualizado,
+  li: c.licitado, a: c.adjudicado, f: c.fecha, g: [...new Set(c.ganadores)], u: c.enlace, up: c.actualizado,
 });
 
 // ---------------------------------------------------------------------------
@@ -259,3 +259,17 @@ export function buscar(lista, consulta, { campos, importe, tema } = {}) {
 }
 
 export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0), 0);
+
+// ---------------------------------------------------------------------------
+// Portada: lo que la Lupa enseña nada más abrirse, en un fichero pequeño.
+// El fichero completo crece con el histórico; solo se pide al buscar, filtrar o ver más.
+
+export const EN_PORTADA = 40;
+
+/** Del fichero completo de contratos o subvenciones, el de portada: los mayores y el total. */
+export function portadaDe(datos, clave, importe) {
+  const { cursores, [clave]: lista = [], ...resto } = datos;
+  const orden = [...lista].sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+  return { ...resto, total: { n: lista.length, suma: suma(lista, importe) }, [clave]: orden.slice(0, EN_PORTADA) };
+}
+
