@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parsearAtom, esContratoUtil, compactarContrato, parsearConcesiones, parsearAyuda, buscar, suma, esPersona,
-  normalizar, temas, finalidad, urlConcesiones, TEMAS, portadaDe,
+  normalizar, temas, finalidad, urlConcesiones, TEMAS, portadaDe, totales, esMarcoPorTitulo,
 } from '../assets/js/lupa-datos.js';
 import { nombrePais, esPais } from '../assets/js/paises.js';
 
 // Entrada con la misma forma que el feed real de la Plataforma de Contratación
-const entrada = ({ id = '1', estado = 'RES', titulo = 'Mantenimiento de la catenaria', nif = 'A12345678', ganador = 'OBRAS SA', importe = 2500000, lote2 = null, cpv = '50220000', jerarquia = ['ADIF', 'Ministerio de Transportes', 'Sector Público Estatal', 'Sector Público'] } = {}) => `<entry>
+const entrada = ({ id = '1', estado = 'RES', titulo = 'Mantenimiento de la catenaria', nif = 'A12345678', ganador = 'OBRAS SA', importe = 2500000, lote2 = null, cpv = '50220000', jerarquia = ['ADIF', 'Ministerio de Transportes', 'Sector Público Estatal', 'Sector Público'], sistema = null } = {}) => `<entry>
   <id>https://contrataciondelestado.es/sindicacion/licitacionesPerfilContratante/${id}</id>
   <link href="https://contrataciondelestado.es/wps/poc?uri=deeplink:detalle_licitacion&amp;idEvl=${id}"/>
   <summary type="text">Id licitación: x; Estado: ${estado}</summary>
@@ -27,6 +27,7 @@ const entrada = ({ id = '1', estado = 'RES', titulo = 'Mantenimiento de la caten
       <cac:BudgetAmount><cbc:EstimatedOverallContractAmount currencyID="EUR">9</cbc:EstimatedOverallContractAmount><cbc:TotalAmount currencyID="EUR">3630000</cbc:TotalAmount><cbc:TaxExclusiveAmount currencyID="EUR">3000000</cbc:TaxExclusiveAmount></cac:BudgetAmount>
       <cac:RequiredCommodityClassification><cbc:ItemClassificationCode listURI="x">${cpv}</cbc:ItemClassificationCode></cac:RequiredCommodityClassification>
     </cac:ProcurementProject>
+    ${sistema !== null ? `<cac:TenderingProcess><cbc:ProcedureCode>1</cbc:ProcedureCode><cbc:ContractingSystemCode listURI="x">${sistema}</cbc:ContractingSystemCode></cac:TenderingProcess>` : ''}
     <cac:TenderResult>
       <cbc:ResultCode listURI="x">9</cbc:ResultCode><cbc:AwardDate>2026-10-01</cbc:AwardDate>
       <cac:WinningParty><cac:PartyIdentification><cbc:ID schemeName="NIF">${nif}</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name>${ganador}</cbc:Name></cac:PartyName></cac:WinningParty>
@@ -145,7 +146,22 @@ test('portada: los mayores y el total, sin los cursores internos', () => {
   const p = portadaDe({ actualizado: 'x', desde: 'y', cursores: { perfiles: {} }, contratos }, 'contratos', 'a');
   assert.equal(p.cursores, undefined);
   assert.equal(p.desde, 'y');
-  assert.deepEqual(p.total, { n: 50, suma: 1275 });
+  assert.deepEqual(p.total, { n: 50, suma: 1275, marcos: { n: 0, suma: 0 } });
   assert.equal(p.contratos.length, 40);
   assert.equal(p.contratos[0].a, 50);
+});
+
+test('acuerdos marco: por su código o por el título, y fuera de los totales', () => {
+  const [codigo, titulo, basado, normal] = parsearAtom(feed([
+    entrada({ id: '10', sistema: 1 }),
+    entrada({ id: '11', titulo: 'Acuerdo Marco de obras de mejora en centros educativos' }),
+    entrada({ id: '12', titulo: 'Contrato basado en el acuerdo marco de limpieza', sistema: 3 }),
+    entrada({ id: '13' }),
+  ])).entradas;
+  assert.ok(codigo.marco && titulo.marco);
+  assert.ok(!basado.marco && !normal.marco);
+  assert.equal(compactarContrato(codigo).m, 1);
+  assert.ok(!esMarcoPorTitulo('Servicio basado en el acuerdo marco 12/2024') && esMarcoPorTitulo('Sistema dinámico de adquisición de suministros'));
+  const t = totales([{ a: 10, m: 1 }, { a: 5, m: 0 }, { a: 3 }], 'a');
+  assert.deepEqual(t, { n: 3, suma: 8, marcos: { n: 1, suma: 10 } });
 });

@@ -53,7 +53,7 @@
     <section aria-labelledby="t-gasto">
       <h2 id="t-gasto">El gasto público</h2>
       <p>Viene de <a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table">Eurostat, tabla <code>gov_10a_exp</code></a>: el gasto de las Administraciones Públicas por funciones según la clasificación COFOG de Naciones Unidas. Para España lo elabora la <a href="https://www.hacienda.gob.es/es-ES/CDI/Paginas/ContabilidadNacional/COFOG/Clasificacion-funcional-del-gasto-de-las-Administraciones-Publicas.aspx">Intervención General de la Administración del Estado (IGAE)</a> y lo envía a Eurostat, que lo publica con el mismo criterio para todos los países de la Unión.</p>
-      <p>Es gasto <strong>realmente hecho</strong> (contabilidad nacional), no lo presupuestado. Llega con retraso: los datos de un año se publican a principios del año siguiente al siguiente, y el último año sale como provisional. La web se actualiza sola cada semana.</p>
+      <p>Es gasto <strong>realmente hecho</strong> (contabilidad nacional), no lo presupuestado. Llega con retraso: los datos de un año se publican a principios del año siguiente al siguiente, y el último año sale como provisional. La web se revisa sola cada día y recoge los datos nuevos en cuanto salen.</p>
       <p>Dentro de cada partida, «En qué se va» usa el segundo nivel de la misma clasificación (hospitales, medicamentos, universidad, ayuda al desarrollo…), y «Cómo se gasta» las operaciones de contabilidad nacional de la misma tabla: sueldos (D1), compras (P2), pagos a personas (D62), servicios pagados a empresas para los ciudadanos (D632), inversión (P5), subvenciones (D3), intereses (D4), transferencias (D7) y ayudas para inversiones (D9). Lo que no encaja en ninguna va a «Otros».</p>
       <p>La población es la media anual de España, de la tabla <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table"><code>demo_gind</code></a> de Eurostat.</p>
     </section>
@@ -107,18 +107,24 @@
     <section aria-labelledby="t-privacidad">
       <h2 id="t-privacidad">Privacidad</h2>
       <p>Sin cookies, sin anuncios y sin cuentas. Tu sueldo no sale de tu navegador: el cálculo se hace en tu dispositivo. Las visitas se cuentan con <a href="https://www.goatcounter.com/">GoatCounter</a>, que no guarda datos personales.</p>
+      <p>En la Lupa, cuando quien gana un contrato o recibe una subvención es una persona física (un autónomo, un particular), no aparece su nombre: sale como «Persona física» o no se incluye.</p>
+    </section>
+
+    <section aria-labelledby="t-error">
+      <h2 id="t-error">¿Ves un error?</h2>
+      <p>Si una cifra no cuadra, un contrato está mal clasificado o falta algo, <a href="https://github.com/serbenda/hucha/issues/new">avísalo en GitHub</a>, mejor con el enlace a la fuente oficial. Se revisa y, si hay que corregirlo, se corrige para todos. Los avisos son públicos: no pongas datos personales.</p>
     </section>
 
     <section aria-labelledby="t-condiciones">
       <h2 id="t-condiciones">Condiciones</h2>
-      <p>Los datos son de Eurostat y se reutilizan según su <a href="https://ec.europa.eu/eurostat/about-us/policies/copyright">política de reutilización</a>. hucha no está vinculada a Eurostat, a la IGAE ni a ningún organismo público, partido o empresa. Las cifras son informativas: para decisiones, consulta las fuentes oficiales.</p>
+      <p>Los datos son de Eurostat, la Plataforma de Contratación del Sector Público, la Base de Datos Nacional de Subvenciones y la OCDE, y se reutilizan según sus condiciones: la <a href="https://ec.europa.eu/eurostat/about-us/policies/copyright">política de reutilización de Eurostat</a>, la <a href="https://www.boe.es/buscar/act.php?id=BOE-A-2007-20555">ley de reutilización de la información del sector público</a> para las fuentes españolas y los <a href="https://www.oecd.org/en/about/terms-conditions.html">términos de la OCDE</a>. hucha no está vinculada a ninguno de ellos ni a ningún organismo público, partido o empresa. Las cifras son informativas: para decisiones, consulta las fuentes oficiales.</p>
       <p id="actualizado"></p>
     </section>
   </main>
 
   <footer class="envoltorio pie">
     <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
-    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. <a href="../fuentes/#t-error">¿Ves un error?</a> Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
   </footer>
 
   <script type="module" src="../assets/js/fuentes.js"></script>

@@ -2,7 +2,7 @@
 // Los datos se cargan al abrir cada pestaña; la búsqueda se hace en el navegador.
 // El estado (pestaña, búsqueda, tema, nivel) va en la URL para poder compartir una búsqueda.
 
-import { TEMAS, buscar, suma, normalizar } from './lupa-datos.js';
+import { TEMAS, buscar, totales, normalizar } from './lupa-datos.js';
 import { nombrePais } from './paises.js';
 import { euros, fecha } from './formato.js';
 
@@ -72,7 +72,7 @@ function fichaContrato(c) {
   return `<li class="resultado">
     <div class="resultado-cabeza">
       <h3>${esc(c.t)}</h3>
-      <p class="resultado-importe">${millones(c.a)}<small>adjudicado, sin IVA</small></p>
+      <p class="resultado-importe">${millones(c.a)}<small>${c.m ? 'como máximo, sin IVA' : 'adjudicado, sin IVA'}</small></p>
     </div>
     <dl class="resultado-datos">
       <div><dt>Paga</dt><dd>${esc(c.o)}${c.l ? ` <span class="tenue">(${esc(c.l)})</span>` : ''}</dd></div>
@@ -80,7 +80,8 @@ function fichaContrato(c) {
       <div><dt>Fecha</dt><dd>${fechaCorta(c.f)}</dd></div>
       ${c.li && Math.abs(c.li - c.a) / c.li > 0.005 ? `<div><dt>Licitado por</dt><dd>${millones(c.li)} <span class="tenue">(${c.a < c.li ? 'baja' : 'sube'} un ${Math.abs(Math.round((1 - c.a / c.li) * 100))} %)</span></dd></div>` : ''}
     </dl>
-    <p class="etiquetas">${[c.n, c.fi, c.ti].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
+    ${c.m ? '<p class="nota-marco"><strong>Acuerdo marco:</strong> es un techo de lo que se podrá gastar con contratos posteriores, no dinero ya comprometido. No suma en los totales.</p>' : ''}
+    <p class="etiquetas">${[c.m && 'Acuerdo marco', c.n, c.fi, c.ti].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
       ${c.u ? `<a href="${esc(c.u)}" rel="noopener">Ver el expediente</a>` : ''}</p>
   </li>`;
 }
@@ -136,16 +137,23 @@ async function pintar() {
   if (estado.nivel) r = r.filter((x) => x.n === estado.nivel);
 
   // En la portada el total viene ya hecho; con el fichero completo se cuenta lo filtrado
-  const n = d.total && enPortada() ? d.total.n : r.length;
-  const que = contratos ? (n === 1 ? 'contrato' : 'contratos') : n === 1 ? 'subvención' : 'subvenciones';
-  const total = d.total && enPortada() ? d.total.suma : suma(r, importe);
-  
-  const filtro = [estado.q && `«${estado.q}»`, estado.tema && TEMAS.find((t) => t.id === estado.tema)?.nombre.toLowerCase(), estado.nivel && estado.nivel.toLowerCase()]
+  const t = d.total?.marcos && enPortada() ? d.total : totales(r, importe);
+  const { n } = t;
+  const nm = t.marcos?.n ?? 0;
+  const fmt = (x) => new Intl.NumberFormat('es-ES').format(x);
+  const cuantos = (x) => (contratos ? `${fmt(x)} ${x === 1 ? 'contrato' : 'contratos'}` : `${fmt(x)} ${x === 1 ? 'subvención' : 'subvenciones'}`);
+  const filtro = [estado.q && `«${estado.q}»`, estado.tema && TEMAS.find((x) => x.id === estado.tema)?.nombre.toLowerCase(), estado.nivel && estado.nivel.toLowerCase()]
     .filter(Boolean)
     .join(', ');
-  resumen.innerHTML = n
-    ? `<strong>${new Intl.NumberFormat('es-ES').format(n)} ${que}</strong> por <strong>${millones(total)}</strong>${filtro ? ` con ${esc(filtro)}` : ''}.`
-    : `No hay ${contratos ? 'contratos' : 'subvenciones'}${filtro ? ` con ${esc(filtro)}` : ''} en lo que cubre la Lupa.`;
+  const con = filtro ? ` con ${esc(filtro)}` : '';
+  // Los acuerdos marco van aparte: su importe es un techo para contratos posteriores, no gasto
+  const quien = nm === 1 ? 'un acuerdo marco' : `${fmt(nm)} acuerdos marco`;
+  const techo = nm ? `con un techo de ${millones(t.marcos.suma)} para contratos posteriores, que no suma porque aún no es gasto` : '';
+  resumen.innerHTML = !n
+    ? `No hay ${contratos ? 'contratos' : 'subvenciones'}${con} en lo que cubre la Lupa.`
+    : n > nm
+      ? `<strong>${cuantos(n - nm)}</strong> por <strong>${millones(t.suma)}</strong>${con}.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`
+      : `Solo hay ${quien}${con}, ${techo}.`;
   lista.innerHTML = r.slice(0, estado.mostrados).map(contratos ? fichaContrato : fichaSubvencion).join('');
   mas.hidden = n <= estado.mostrados;
   mas.textContent = `Ver más (quedan ${new Intl.NumberFormat('es-ES').format(n - estado.mostrados)})`;
@@ -188,6 +196,7 @@ async function pintarCobertura() {
     contratos: async () => {
       const d = await datos('contratos');
       return `<p><strong>Contratos adjudicados desde ${millones(d.umbral)} (sin IVA)</strong> publicados en la <a href="https://contrataciondelestado.es/">Plataforma de Contratación del Sector Público</a>, incluidos los de las plataformas propias de comunidades y ayuntamientos que se agregan a ella. Recoge los movimientos desde el ${fecha(d.desde)} y los va reuniendo cada día, así que el histórico crece solo.</p>
+        <p><strong>Los acuerdos marco</strong> aparecen con su importe máximo y no suman en los totales: fijan un techo para contratos posteriores, no un gasto. Esos contratos posteriores, si pasan del millón, aparecen por su cuenta.</p>
         <p><strong>Lo que no aparece:</strong> los contratos menores y los de menos de un millón; lo que una plataforma propia no haya enviado a la estatal; y lo que se paga al final, que puede cambiar por modificados o revisiones de precio. Los adjudicatarios que son personas físicas aparecen sin nombre.</p>`;
     },
     subvenciones: async () => {
