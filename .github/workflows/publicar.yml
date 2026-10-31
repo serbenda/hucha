@@ -63,10 +63,15 @@ jobs:
         # Cada fuente es independiente; si una falla, se queda su versión anterior
         timeout-minutes: 30
         env:
-          # En las PR basta con unas pocas páginas de contratos para comprobar que todo funciona
+          # En las PR basta con un poco de cada fuente para comprobar que todo funciona (unos minutos);
+          # la publicación diaria hace lo completo: 40 páginas del feed, un mes del histórico por feed,
+          # 12 meses de subvenciones y la ayuda de los últimos años con sus proyectos
           LUPA_PAGINAS: ${{ github.event_name == 'pull_request' && '3' || '40' }}
-          # Un fichero mensual del histórico por feed y ejecución, también en las PR para probarlo
-          LUPA_MESES: '1'
+          LUPA_MESES: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          LUPA_SUBV_MESES: ${{ github.event_name == 'pull_request' && '2' || '12' }}
+          LUPA_AYUDA_RECIENTES: ${{ github.event_name == 'pull_request' && '1' || '2' }}
+          LUPA_AYUDA_NUEVOS: ${{ github.event_name == 'pull_request' && '0' || '3' }}
+          LUPA_PROYECTOS: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           NODE_OPTIONS: --max-old-space-size=6144
         # Cada parte en su propio proceso: si una se queda sin memoria o falla, las demás siguen
         run: |

@@ -214,9 +214,11 @@ async function contratos() {
 // ---------------------------------------------------------------------------
 // Subvenciones
 
+const MESES_SUBVENCIONES = Number(process.env.LUPA_SUBV_MESES ?? 12);
+
 async function subvenciones() {
   const todas = new Map();
-  for (let m = 0; m < 12; m++) {
+  for (let m = 0; m < MESES_SUBVENCIONES; m++) {
     const fin = new Date(hoy.getFullYear(), hoy.getMonth() - m + 1, 0);
     const ini = new Date(hoy.getFullYear(), hoy.getMonth() - m, 1);
     const hasta = isoDia(m === 0 ? hoy : fin);
@@ -234,7 +236,7 @@ async function subvenciones() {
   if (todas.size < 10) throw new Error(`solo ${todas.size} concesiones`);
   const lista = [...todas.values()].sort((a, b) => b.i - a.i);
   await guardar('subvenciones.json', { actualizado: new Date().toISOString(), umbral: UMBRAL_SUBVENCIONES, subvenciones: lista });
-  return `${lista.length} concesiones de 12 meses`;
+  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses`;
 }
 
 // ---------------------------------------------------------------------------
@@ -267,7 +269,9 @@ async function leerCsv(url, alFila, minutos = 15) {
 // revisan) y, del histórico, los años que falten, unos pocos por ejecución. Los proyectos, cuando hay un año
 // nuevo o una vez a la semana.
 const AÑOS_AYUDA = 7;
-const NUEVOS_POR_EJECUCION = 3;
+const NUEVOS_POR_EJECUCION = Number(process.env.LUPA_AYUDA_NUEVOS ?? 3);
+const RECIENTES = Number(process.env.LUPA_AYUDA_RECIENTES ?? 2);
+const PROYECTOS = process.env.LUPA_PROYECTOS !== '0';
 
 async function ayuda() {
   const previo = await leer('ayuda.json');
@@ -281,7 +285,7 @@ async function ayuda() {
   const tenemos = new Set(Object.keys(r.sectores));
   const ultimoPosible = hoy.getFullYear() - 1;
   const años = Array.from({ length: AÑOS_AYUDA }, (_, i) => String(ultimoPosible - i));
-  const recientes = años.slice(0, 2);
+  const recientes = años.slice(0, RECIENTES);
   const faltan = años.slice(2).filter((a) => !tenemos.has(a)).slice(0, NUEVOS_POR_EJECUCION);
   const estados = [];
   for (const año of [...recientes, ...faltan]) {
@@ -318,7 +322,7 @@ async function ayuda() {
   let proyectos = conSectores?.proyectos ?? {};
   let proyectosAño = conSectores?.proyectosAño ?? null;
   let notaProyectos = '';
-  if (proyectosAño !== ultimo || hoy.getDay() === 1 || !Object.keys(proyectos).length) {
+  if (PROYECTOS && (proyectosAño !== ultimo || hoy.getDay() === 1 || !Object.keys(proyectos).length)) {
     try {
       const p = acumuladorProyectos();
       if (await leerCsv(urlCrsProyectos(ultimo), p.fila, 25)) {
@@ -351,13 +355,14 @@ async function ayuda() {
 const pedidas = process.argv.slice(2);
 for (const [nombre, parte] of [['contratos', contratos], ['subvenciones', subvenciones], ['ayuda', ayuda]]) {
   if (pedidas.length && !pedidas.includes(nombre)) continue;
+  const inicio = Date.now();
   try {
-    const resumen = await parte();
+    const resumen = `${await parte()} (${Math.round((Date.now() - inicio) / 1000)} s)`;
     console.log(`Lupa ${nombre}: ${resumen}`);
     await anotar(`lupa-${nombre}`, true, resumen);
   } catch (e) {
     console.warn(`Lupa ${nombre}: ${e.message}. Se mantiene la versión anterior`);
-    await anotar(`lupa-${nombre}`, false, e.message);
+    await anotar(`lupa-${nombre}`, false, `${e.message} (${Math.round((Date.now() - inicio) / 1000)} s)`);
   }
 }
 
