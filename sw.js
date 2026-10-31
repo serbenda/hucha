@@ -3,7 +3,7 @@
 //   si no hay conexión, lo último guardado.
 // - Fuente e imágenes, que casi nunca cambian: lo guardado, y se actualiza en segundo plano.
 
-const VERSION = 'hucha-v1';
+const VERSION = 'hucha-v2';
 const BASICOS = [
   './',
   'a-donde-va/',
@@ -23,6 +23,7 @@ const BASICOS = [
   'assets/img/favicon.svg',
   'data/cofog.json',
   'manifest.webmanifest',
+  '404.html',
 ];
 
 self.addEventListener('install', (e) => {
