@@ -32,3 +32,28 @@ jobs:
           f=$(unzip -Z1 m.zip | head -1); unzip -p m.zip "$f" | head -c 3000 | tr '\n' ' ' | cut -c1-1500 | sed 's/^/::notice::/'
           echo "::notice::entradas en el primero: $(unzip -p m.zip "$f" | grep -c '<entry>')"
           echo "::notice::total entradas: $(unzip -p m.zip | grep -c '<entry>')"
+  crs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: OCDE CRS (ayuda por país y sector)
+        run: |
+          curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/dataflow/OECD.DCD.FSD" -o flujos.xml
+          echo "::notice::flujos: $(grep -o 'id="DSD_[A-Z0-9_]*@DF_[A-Z0-9_]*"' flujos.xml | sort -u | tr '\n' ' ' | cut -c1-900)"
+          curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/dataflow/OECD.DCD.FSD/DSD_CRS@DF_CRS/latest?references=datastructure" -o crs.xml
+          node -e "
+            const x=require('fs').readFileSync('crs.xml','utf8');
+            const v=x.match(/<structure:Dataflow[^>]*version=\"([^\"]+)\"/);
+            const dims=[...x.matchAll(/<structure:Dimension [^>]*id=\"([^\"]+)\"[^>]*position=\"(\d+)\"/g)].map(m=>m[2]+':'+m[1]);
+            console.log('::notice::CRS version '+(v&&v[1])+' dims '+dims.join(' '));
+            require('fs').writeFileSync('dims.txt', dims.sort((a,b)=>+a.split(':')[0]-+b.split(':')[0]).map(d=>d.split(':')[1]).join(','));
+          "
+          dims=$(cat dims.txt); echo "::notice::orden $dims"
+          key=$(node -e "const d='$dims'.split(',');console.log(d.map(x=>x==='DONOR'?'ESP':'').join('.'))")
+          echo "::notice::clave $key"
+          curl -s --max-time 300 "https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,/$key?startPeriod=2023&endPeriod=2023&dimensionAtObservation=AllDimensions" -H 'Accept: application/vnd.sdmx.data+csv; charset=utf-8' -o d.csv -w "::notice::csv http %{http_code} bytes %{size_download}\n"
+          head -c 1500 d.csv | tr '\n' '|' | sed 's/^/::notice::/'; echo
+          echo "::notice::filas $(wc -l < d.csv)"
+          node -e "
+            const t=require('fs').readFileSync('d.csv','utf8').split('\n'); const h=t[0].split(',');
+            for (const c of h) { const i=h.indexOf(c); const vals=new Set(t.slice(1).map(l=>l.split(',')[i])); if (vals.size<40) console.log('::notice::'+c+' ('+vals.size+'): '+[...vals].slice(0,40).join(' ')); else console.log('::notice::'+c+' ('+vals.size+' valores)'); }
+          " || true
