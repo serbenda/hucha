@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { aplanar } from '../assets/js/jsonstat.js';
 import {
   prepararDatos, problema, partidas, ultimoAño, esProvisional, gastoPorPersona, reparto,
-  gastoPorAdministracion, seriePartida, urlGasto, urlPoblacion, valor, PARTIDAS,
+  gastoPorAdministracion, seriePartida, urlGasto, urlPoblacion, urlTipos, valor, PARTIDAS, GRUPOS, TIPOS,
+  detallePartida, tiposDeGasto, ultimoAñoTipos, gruposDePartida,
 } from '../assets/js/cofog.js';
 import { crearJsonStat, respuestasEjemplo } from './ayuda.js';
 
@@ -41,8 +42,8 @@ test('URLs de Eurostat piden lo necesario', () => {
   assert.equal(new URL(urlPoblacion()).searchParams.get('indic_de'), 'AVG');
 });
 
-const { gasto, poblacion } = respuestasEjemplo();
-const datos = prepararDatos(gasto, poblacion);
+const { gasto, poblacion, tipos } = respuestasEjemplo();
+const datos = prepararDatos(gasto, poblacion, tipos);
 
 test('prepara los datos: años, provisionales, población y fuentes', () => {
   assert.equal(datos.años[0], '2014');
@@ -122,4 +123,48 @@ test('quién gasta: cuotas por función y sin transferencias generales', () => {
   assert.equal(admin.length, 4);
   const estado = admin.find((a) => a.id === 'S1311').valor;
   assert.ok(estado < valor(datos, 'TOTAL', '2024', { sector: 'S1311' }));
+});
+
+test('todos los grupos COFOG de segundo nivel tienen nombre', () => {
+  const divisiones = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
+  for (const d of divisiones) assert.ok(Object.keys(GRUPOS).some((c) => c.startsWith(`GF${d}`)), `GF${d}`);
+  assert.equal(Object.keys(GRUPOS).length, 69);
+});
+
+test('en qué se va: los grupos de una partida suman la partida', () => {
+  const sanidad = detallePartida(datos, 'sanidad', '2024');
+  assert.equal(sanidad[0].nombre, 'Hospitales');
+  assert.ok(Math.abs(sanidad.reduce((t, g) => t + g.cuota, 0) - 1) < 1e-9);
+  // Partidas con resta: «otras sociales» no incluye jubilación, viudedad ni paro
+  const otras = gruposDePartida(datos, PARTIDAS.find((p) => p.id === 'otras-sociales'), '2024');
+  assert.ok(!otras.includes('GF1002') && !otras.includes('GF1003') && !otras.includes('GF1005'));
+  assert.ok(otras.includes('GF1001') && otras.includes('GF1004'));
+  // La ayuda al desarrollo sale dentro de «Funcionamiento de las administraciones»
+  assert.ok(detallePartida(datos, 'administracion', '2024').some((g) => g.codigo === 'GF0102'));
+  // Pensiones: jubilación y viudedad por separado
+  assert.deepEqual(detallePartida(datos, 'pensiones', '2024').map((g) => g.codigo), ['GF1002', 'GF1003']);
+  // Una partida de un solo grupo (transporte) no tiene más detalle en esta fuente
+  assert.deepEqual(detallePartida(datos, 'transporte', '2024'), []);
+});
+
+test('en qué se va: si faltan grupos, la diferencia va a «Sin detalle»', () => {
+  const r = respuestasEjemplo({ quitar: ['GF0703'] });
+  const d = prepararDatos(r.gasto, r.poblacion, r.tipos);
+  const sanidad = detallePartida(d, 'sanidad', '2024');
+  assert.ok(sanidad.some((g) => g.codigo === 'resto' && g.nombre === 'Sin detalle'));
+  assert.ok(Math.abs(sanidad.reduce((t, g) => t + g.cuota, 0) - 1) < 1e-9);
+});
+
+test('cómo se gasta: tipos de gasto de una partida y del total', () => {
+  assert.equal(ultimoAñoTipos(datos), '2024');
+  const sanidad = tiposDeGasto(datos, 'sanidad', '2024');
+  assert.equal(sanidad[0].id, 'D1');
+  assert.ok(Math.abs(sanidad.reduce((t, x) => t + x.cuota, 0) - 1) < 1e-9);
+  const total = tiposDeGasto(datos, 'TOTAL', '2024');
+  assert.ok(total.some((x) => x.id === 'otros'), 'lo que no encaja va a «Otros»');
+  assert.ok(Math.abs(total.reduce((t, x) => t + x.cuota, 0) - 1) < 1e-9);
+  // Sin datos de tipos, la web sigue sin ese bloque
+  assert.deepEqual(tiposDeGasto(prepararDatos(gasto, poblacion), 'sanidad', '2024'), []);
+  const u = new URL(urlTipos());
+  assert.deepEqual(u.searchParams.getAll('na_item'), TIPOS.map((t) => t.id));
 });

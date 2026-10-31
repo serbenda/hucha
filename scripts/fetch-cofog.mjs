@@ -3,7 +3,7 @@
 // se mantienen los de la publicación anterior.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { urlGasto, urlPoblacion, prepararDatos, problema, ultimoAño, gastoPorPersona } from '../assets/js/cofog.js';
+import { urlGasto, urlPoblacion, urlTipos, prepararDatos, problema, ultimoAño, gastoPorPersona, ultimoAñoTipos } from '../assets/js/cofog.js';
 import { anotar } from './estado.mjs';
 
 const salida = new URL('../data/cofog.json', import.meta.url);
@@ -37,9 +37,17 @@ async function anteriores() {
 }
 
 let datos;
+let fallaTipos = null;
 try {
   const [gasto, poblacion] = await Promise.all([descargar(urlGasto()), descargar(urlPoblacion())]);
-  datos = prepararDatos(gasto, poblacion);
+  // El desglose por tipo de gasto es un extra: si falla, la web sigue sin él (o con el de la última vez)
+  let tipos = null;
+  try {
+    tipos = await descargar(urlTipos());
+  } catch (e) {
+    fallaTipos = e.message;
+  }
+  datos = prepararDatos(gasto, poblacion, tipos);
 } catch (e) {
   await anotar('eurostat', false, `No se ha podido descargar: ${e.message}`);
   console.warn('Eurostat: se mantienen los datos anteriores');
@@ -58,6 +66,16 @@ const previo = await anteriores();
 if (previo?.años?.length && ultimoAño(previo) > ultimoAño(datos)) {
   await anotar('eurostat', false, `Eurostat llega a ${ultimoAño(datos)} pero lo publicado llega a ${ultimoAño(previo)}`);
   process.exit(0);
+}
+
+if (!Object.keys(datos.tipos).length) {
+  if (previo?.tipos && Object.keys(previo.tipos).length) {
+    datos.tipos = previo.tipos;
+    datos.fuente.tipos = previo.fuente?.tipos ?? null;
+  }
+  await anotar('eurostat-tipos', false, `Sin desglose por tipo de gasto${fallaTipos ? `: ${fallaTipos}` : ''}; se usa el anterior si lo hay`);
+} else {
+  await anotar('eurostat-tipos', true, `Tipos de gasto hasta ${ultimoAñoTipos(datos)}`);
 }
 
 datos.actualizado = new Date().toISOString();
