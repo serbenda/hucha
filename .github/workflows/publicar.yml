@@ -90,6 +90,7 @@ jobs:
           find _site -name '*.html' -exec sed -i -E "s#(href=\"[^\"]+\.css)\"#\1?v=$v\"#g; s#(src=\"[^\"]+\.js)\"#\1?v=$v\"#g" {} +
           sed -i -E "s#(from '\./[a-z0-9-]+\.js)'#\1?v=$v'#g" _site/assets/js/*.js
           grep -q "?v=$v" _site/assets/js/portada.js || { echo "::error::No se han versionado los imports"; exit 1; }
+          test -f _site/vendor/fuentes/archivo-latin-wdth-normal.woff2 || echo "::warning::La fuente precargada ya no se llama archivo-latin-wdth-normal.woff2: actualiza el preload de las páginas"
 
       - name: Tests de navegador y accesibilidad (móvil y escritorio, claro y oscuro)
         run: |
