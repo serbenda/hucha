@@ -69,7 +69,9 @@ const VARIANTES = [
   ['escritorio oscuro', { ...ESCRITORIO, colorScheme: 'dark' }],
 ];
 
-for (const [ruta, nombre] of [['', 'portada'], ['a-donde-va/', 'a dónde va'], ['quien-gasta/', 'quién gasta'], ['presupuesto/', 'presupuesto'], ['lupa/', 'lupa'], ['fuentes/', 'fuentes']]) {
+const PAGINAS_ES = [['', 'portada'], ['a-donde-va/', 'a dónde va'], ['quien-gasta/', 'quién gasta'], ['presupuesto/', 'presupuesto'], ['lupa/', 'lupa'], ['fuentes/', 'fuentes']];
+// La versión en inglés (en/) pasa por lo mismo: sin errores, accesible y sin desbordar
+for (const [ruta, nombre] of [...PAGINAS_ES, ...PAGINAS_ES.map(([r, n]) => [`en/${r}`, `${n} (inglés)`])]) {
   test(`${nombre}: sin errores, accesible y sin desbordar en móvil y escritorio, claro y oscuro`, async () => {
     for (const [variante, opciones] of VARIANTES) {
       const { pagina, errores, contexto } = await abrir(ruta, opciones);
@@ -205,6 +207,37 @@ test('fuentes: la tabla de partidas sale del código', async () => {
   await contexto.close();
 });
 
+test('inglés: en inglés, con los datos de la Lupa tal cual y el enlace al castellano', async () => {
+  for (const [ruta] of PAGINAS_ES) {
+    const { pagina, contexto } = await abrir(`en/${ruta}`, { ...ESCRITORIO, locale: 'en-GB' });
+    assert.equal(await pagina.getAttribute('html', 'lang'), 'en', `en/${ruta}: lang`);
+    assert.match(await pagina.textContent('nav'), /Where it goes/, `en/${ruta}: menú en inglés`);
+    // El enlace de idioma lleva a la misma página en castellano
+    const es = await pagina.getAttribute('a.idioma', 'href');
+    assert.equal(new URL(es, pagina.url()).href, base + ruta, `en/${ruta}: enlace al castellano`);
+    // Lo que escriben los scripts, también en inglés
+    const texto = await pagina.textContent('main');
+    assert.doesNotMatch(texto, /millones de €|Prueba en un rato|sin dato\b/, `en/${ruta}: textos en castellano`);
+    await contexto.close();
+  }
+  // El ticket lee el sueldo con coma de miles: 30,000 → IRPF 4,926 €, como en castellano
+  const ticket = await abrir('en/', { ...ESCRITORIO, locale: 'en-GB' });
+  assert.equal(await ticket.pagina.inputValue('#bruto'), '30,000');
+  assert.match(await ticket.pagina.textContent('#aporte'), /€4,926/);
+  await ticket.contexto.close();
+  const { pagina, contexto } = await abrir('en/lupa/', { ...ESCRITORIO, locale: 'en-GB' });
+  await pagina.waitForSelector('#resultados .resultado');
+  assert.match(await pagina.textContent('#resumen-lupa'), /contracts? worth/);
+  assert.match(await pagina.textContent('#resultados'), /Paid by/);
+  // Los títulos de los contratos son los publicados: los mismos que en castellano
+  const titulo = await pagina.textContent('#resultados .resultado h3');
+  const original = await abrir('lupa/', ESCRITORIO);
+  await original.pagina.waitForSelector('#resultados .resultado');
+  assert.equal(await original.pagina.textContent('#resultados .resultado h3'), titulo);
+  await original.contexto.close();
+  await contexto.close();
+});
+
 test('404: página propia con su código', async () => {
   const { pagina, respuesta, contexto } = await abrir('no-existe/', ESCRITORIO);
   assert.equal(respuesta.status(), 404);
@@ -214,7 +247,7 @@ test('404: página propia con su código', async () => {
 });
 
 test('SEO y compartir: cada página tiene título, descripción, canónica e imagen', async () => {
-  for (const ruta of ['', 'a-donde-va/', 'quien-gasta/', 'presupuesto/', 'lupa/', 'fuentes/']) {
+  for (const ruta of PAGINAS_ES.flatMap(([r]) => [r, `en/${r}`])) {
     const { pagina, contexto } = await abrir(ruta, ESCRITORIO);
     const meta = await pagina.evaluate(() => ({
       titulo: document.title,

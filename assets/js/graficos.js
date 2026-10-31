@@ -3,6 +3,8 @@
 // del color para leerse. Cada marca lleva su texto completo en title (al pasar el ratón) y en el texto
 // accesible. Si se les da una acción, cada barra o bloque es un botón que lleva al detalle.
 
+import { t } from './idioma.js';
+
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 /**
@@ -157,9 +159,10 @@ export function lineasDelAño(series, { titulo = '', referencia = true } = {}) {
   const x = (mes) => ((mes - 0.5) / 12) * 100;
   const y = (v) => 100 - v * 100;
   const camino = (puntos) => puntos.filter((p) => p.valor !== null).map((p, i) => `${i ? 'L' : 'M'}${x(p.mes).toFixed(2)},${y(p.valor).toFixed(2)}`).join(' ');
-  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const meses = t(['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']);
+  const pc = t(' %', '%');
   const principal = series[0]?.puntos.filter((p) => p.valor !== null).at(-1);
-  const texto = series.map((s) => `${s.nombre}: ${s.puntos.filter((p) => p.valor !== null).map((p) => `${meses[p.mes - 1]} ${Math.round(p.valor * 100)} %`).join(', ')}`).join('. ');
+  const texto = series.map((s) => `${s.nombre}: ${s.puntos.filter((p) => p.valor !== null).map((p) => `${meses[p.mes - 1]} ${Math.round(p.valor * 100)}${pc}`).join(', ')}`).join('. ');
   return `<figure class="g-lineas">
     <div class="g-lineas-lienzo" role="img" aria-label="${esc(`${titulo}. ${texto}`)}">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -167,11 +170,11 @@ export function lineasDelAño(series, { titulo = '', referencia = true } = {}) {
         ${referencia ? `<line class="g-referencia" x1="0" y1="100" x2="100" y2="0"/>` : ''}
         ${series.map((s) => `<path class="g-serie ${s.clase ?? ''}" d="${camino(s.puntos)}"/>`).join('')}
       </svg>
-      ${[0.25, 0.5, 0.75, 1].map((v) => `<span class="g-eje-y" style="top: ${y(v)}%">${v * 100} %</span>`).join('')}
-      ${principal ? `<span class="g-rotulo" style="left: ${x(principal.mes)}%; top: ${y(principal.valor)}%">${Math.round(principal.valor * 100)} %</span>` : ''}
+      ${[0.25, 0.5, 0.75, 1].map((v) => `<span class="g-eje-y" style="top: ${y(v)}%">${v * 100}${pc}</span>`).join('')}
+      ${principal ? `<span class="g-rotulo" style="left: ${x(principal.mes)}%; top: ${y(principal.valor)}%">${Math.round(principal.valor * 100)}${pc}</span>` : ''}
     </div>
     <div class="g-eje g-eje-meses" aria-hidden="true">${meses.map((m, i) => `<span style="left: ${x(i + 1)}%">${i % 2 === 0 ? m : ''}</span>`).join('')}</div>
-    <figcaption class="leyenda">${series.map((s) => `<span><i class="g-muestra ${s.clase ?? ''}"></i>${esc(s.nombre)}</span>`).join('')}${referencia ? '<span><i class="g-muestra g-referencia"></i>Al mismo ritmo todo el año</span>' : ''}</figcaption>
+    <figcaption class="leyenda">${series.map((s) => `<span><i class="g-muestra ${s.clase ?? ''}"></i>${esc(s.nombre)}</span>`).join('')}${referencia ? `<span><i class="g-muestra g-referencia"></i>${t('Al mismo ritmo todo el año', 'Same pace all year')}</span>` : ''}</figcaption>
   </figure>`;
 }
 

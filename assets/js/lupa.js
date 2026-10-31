@@ -7,14 +7,23 @@ import { nombrePais } from './paises.js';
 import { euros, fecha } from './formato.js';
 import { barras, columnas } from './graficos.js';
 import { icono, ICONO_TEMA } from './iconos.js';
+import { t, LOCALE, EN } from './idioma.js';
+import { en, TEMAS as TEMAS_EN, NIVELES as NIVELES_EN, TIPOS_CONTRATO, FINALIDADES, SECTORES_AYUDA as SECTORES_EN, CANALES } from './en.js';
+
+// Las categorías propias de hucha (tema, administración, tipo de contrato, sector…) se traducen; los datos de las
+// fuentes (títulos, organismos, empresas, convocatorias, proyectos) salen tal cual se publican, en castellano.
+const nombreTema = (id) => en(TEMAS_EN, id, TEMAS.find((x) => x.id === id)?.nombre ?? id);
+const nombreNivel = (n) => en(NIVELES_EN, n, n);
+const num = (x, o) => new Intl.NumberFormat(LOCALE, o).format(x);
+const pc = t(' %', '%');
 
 const $ = (id) => document.getElementById(id);
 const POR_PAGINA = 40;
 const millones = (n) => {
-  const texto = new Intl.NumberFormat('es-ES', { maximumFractionDigits: n >= 100e6 ? 0 : 1 }).format(n / 1e6);
-  return `${texto} ${texto === '1' ? 'millón' : 'millones'} de €`;
+  const texto = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: n >= 100e6 ? 0 : 1 }).format(n / 1e6);
+  return EN ? `€${texto} million` : `${texto} ${texto === '1' ? 'millón' : 'millones'} de €`;
 };
-const fechaCorta = (iso) => (iso ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) : '');
+const fechaCorta = (iso) => (iso ? new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) : '');
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const params = new URLSearchParams(location.search);
@@ -83,32 +92,32 @@ function fichaContrato(c) {
   return `<li class="resultado">
     <div class="resultado-cabeza">
       <h3>${esc(c.t)}</h3>
-      <p class="resultado-importe">${millones(c.a)}<small>${c.m ? 'como máximo, sin IVA' : 'adjudicado, sin IVA'}</small></p>
+      <p class="resultado-importe">${millones(c.a)}<small>${c.m ? t('como máximo, sin IVA', 'maximum, excl. VAT') : t('adjudicado, sin IVA', 'awarded, excl. VAT')}</small></p>
     </div>
     <dl class="resultado-datos">
-      <div><dt>Paga</dt><dd>${esc(c.o)}${c.l ? ` <span class="tenue">(${esc(c.l)})</span>` : ''}</dd></div>
-      <div><dt>Gana</dt><dd>${esc(c.g?.join(', ') || 'Sin dato')}</dd></div>
-      <div><dt>Fecha</dt><dd>${fechaCorta(c.f)}</dd></div>
-      ${c.li && Math.abs(c.li - c.a) / c.li > 0.005 ? `<div><dt>Licitado por</dt><dd>${millones(c.li)} <span class="tenue">(${c.a < c.li ? 'baja' : 'sube'} un ${Math.abs(Math.round((1 - c.a / c.li) * 100))} %)</span></dd></div>` : ''}
+      <div><dt>${t('Paga', 'Paid by')}</dt><dd>${esc(c.o)}${c.l ? ` <span class="tenue">(${esc(c.l)})</span>` : ''}</dd></div>
+      <div><dt>${t('Gana', 'Won by')}</dt><dd>${esc(c.g?.join(', ') || t('Sin dato', 'No data'))}</dd></div>
+      <div><dt>${t('Fecha', 'Date')}</dt><dd>${fechaCorta(c.f)}</dd></div>
+      ${c.li && Math.abs(c.li - c.a) / c.li > 0.005 ? `<div><dt>${t('Licitado por', 'Tendered for')}</dt><dd>${millones(c.li)} <span class="tenue">(${EN ? `${Math.abs(Math.round((1 - c.a / c.li) * 100))}% ${c.a < c.li ? 'lower' : 'higher'}` : `${c.a < c.li ? 'baja' : 'sube'} un ${Math.abs(Math.round((1 - c.a / c.li) * 100))} %`})</span></dd></div>` : ''}
     </dl>
-    ${c.m ? '<p class="nota-marco"><strong>Acuerdo marco:</strong> es un techo de lo que se podrá gastar con contratos posteriores, no dinero ya comprometido. No suma en los totales.</p>' : ''}
-    <p class="etiquetas">${[c.m && 'Acuerdo marco', c.n, c.fi, c.ti].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
-      ${c.u ? `<a href="${esc(c.u)}" rel="noopener">Ver el expediente</a>` : ''}</p>
+    ${c.m ? `<p class="nota-marco">${t('<strong>Acuerdo marco:</strong> es un techo de lo que se podrá gastar con contratos posteriores, no dinero ya comprometido. No suma en los totales.', '<strong>Framework agreement:</strong> a ceiling on what may be spent through later contracts, not money already committed. It is not added to the totals.')}</p>` : ''}
+    <p class="etiquetas">${[c.m && t('Acuerdo marco', 'Framework agreement'), c.n && nombreNivel(c.n), c.fi && en(FINALIDADES, c.fi, c.fi), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti)].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
+      ${c.u ? `<a href="${esc(c.u)}" rel="noopener" hreflang="es">${t('Ver el expediente', 'See the file (in Spanish)')}</a>` : ''}</p>
   </li>`;
 }
 
 function fichaSubvencion(s) {
   return `<li class="resultado">
     <div class="resultado-cabeza">
-      <h3>${esc(s.c || 'Subvención')}</h3>
-      <p class="resultado-importe">${millones(s.i)}<small>concedido</small></p>
+      <h3>${esc(s.c || t('Subvención', 'Grant'))}</h3>
+      <p class="resultado-importe">${millones(s.i)}<small>${t('concedido', 'granted')}</small></p>
     </div>
     <dl class="resultado-datos">
-      <div><dt>Paga</dt><dd>${esc(s.o)}${s.l ? ` <span class="tenue">(${esc(s.l)})</span>` : ''}</dd></div>
-      <div><dt>Recibe</dt><dd>${esc(s.b)}</dd></div>
-      <div><dt>Fecha</dt><dd>${fechaCorta(s.f)}</dd></div>
+      <div><dt>${t('Paga', 'Paid by')}</dt><dd>${esc(s.o)}${s.l ? ` <span class="tenue">(${esc(s.l)})</span>` : ''}</dd></div>
+      <div><dt>${t('Recibe', 'Received by')}</dt><dd>${esc(s.b)}</dd></div>
+      <div><dt>${t('Fecha', 'Date')}</dt><dd>${fechaCorta(s.f)}</dd></div>
     </dl>
-    <p class="etiquetas"><span>${esc(s.n)}</span>${s.u ? `<a href="${esc(s.u)}" rel="noopener">Ver la convocatoria</a>` : ''}</p>
+    <p class="etiquetas"><span>${esc(nombreNivel(s.n))}</span>${s.u ? `<a href="${esc(s.u)}" rel="noopener" hreflang="es">${t('Ver la convocatoria', 'See the call (in Spanish)')}</a>` : ''}</p>
   </li>`;
 }
 
@@ -129,7 +138,7 @@ async function pintar() {
     if (mio !== turno) return; // ya hay otra búsqueda más nueva
   } catch {
     if (mio !== turno) return;
-    resumen.textContent = 'Estos datos no están disponibles ahora mismo. Prueba en un rato.';
+    resumen.textContent = t('Estos datos no están disponibles ahora mismo. Prueba en un rato.', 'This data is not available right now. Try again in a while.');
     lista.replaceChildren();
     mas.hidden = true;
     return;
@@ -155,8 +164,8 @@ async function pintar() {
   // Sin buscar ni filtrar, o con un índice antiguo sin meses: todo sale del índice
   if (enPortada() || !meses.length) {
     const r = filtrar(d[clave]);
-    const t = enPortada() && d.total ? d.total : totales(r, importe);
-    pintarResultados(t, r, { contratos, disponibles: Math.max(t.n, r.length) });
+    const tot = enPortada() && d.total ? d.total : totales(r, importe);
+    pintarResultados(tot, r, { contratos, disponibles: Math.max(tot.n, r.length) });
     return;
   }
 
@@ -176,12 +185,14 @@ async function pintar() {
       const completo = hechos === meses.length;
       pintarResultados(completo || !rapido ? totales(r, importe) : rapido, r, {
         contratos,
-        progreso: completo ? (fallos ? `No se han podido cargar ${fallos} de ${meses.length} meses.` : '') : `Buscando en ${hechos} de ${meses.length} meses…`,
+        progreso: completo
+          ? fallos ? t(`No se han podido cargar ${fallos} de ${meses.length} meses.`, `${fallos} of ${meses.length} months could not be loaded.`) : ''
+          : t(`Buscando en ${hechos} de ${meses.length} meses…`, `Searching ${hechos} of ${meses.length} months…`),
       });
     });
   };
-  if (rapido) pintarResultados(rapido, [], { contratos, progreso: 'Cargando la lista…' });
-  else resumen.textContent = 'Buscando…';
+  if (rapido) pintarResultados(rapido, [], { contratos, progreso: t('Cargando la lista…', 'Loading the list…') });
+  else resumen.textContent = t('Buscando…', 'Searching…');
   await Promise.all(
     meses.map(({ mes }) =>
       pedir(`${estado.tab}/${mes}`)
@@ -199,27 +210,30 @@ async function pintar() {
 
 // Panorama: de un vistazo, en qué temas, quién paga y mes a mes. Pulsar una barra filtra la lista.
 const NIVELES = ['Estado', 'Comunidades', 'Ayuntamientos', 'Universidades', 'Otros'];
-const meCorto = (n) => `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: n >= 10e6 ? 0 : 1 }).format(n / 1e6)} M€`;
-const mesCorto = (mes) => new Intl.DateTimeFormat('es-ES', { month: 'short', year: '2-digit' }).format(new Date(`${mes}-15`));
-const mesLargo = (mes) => new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(`${mes}-15`));
+const meCorto = (n) => (EN ? `€${num(n / 1e6, { maximumFractionDigits: n >= 10e6 ? 0 : 1 })}m` : `${num(n / 1e6, { maximumFractionDigits: n >= 10e6 ? 0 : 1 })} M€`);
+const mesCorto = (mes) => new Intl.DateTimeFormat(LOCALE, { month: 'short', year: '2-digit' }).format(new Date(`${mes}-15`));
+const mesLargo = (mes) => new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' }).format(new Date(`${mes}-15`));
 function pintarPanorama(d, contratos) {
   const caja = $('panorama-rejilla');
   if (!d.porTema && !d.porNivel) {
     caja.replaceChildren();
     return;
   }
-  const que = contratos ? 'contratos' : 'subvenciones';
-  const fila = (t) => `${new Intl.NumberFormat('es-ES').format(t.n - (t.marcos?.n ?? 0))} ${que}`;
-  const temas = TEMAS.filter((t) => d.porTema?.[t.id]?.suma > 0)
-    .map((t) => ({ id: t.id, nombre: t.nombre, valor: d.porTema[t.id].suma, texto: meCorto(d.porTema[t.id].suma), nota: fila(d.porTema[t.id]), icono: icono(ICONO_TEMA[t.id]) }))
+  const fila = (x) => {
+    const n = x.n - (x.marcos?.n ?? 0);
+    const que = contratos ? (n === 1 ? t('contrato', 'contract') : t('contratos', 'contracts')) : n === 1 ? t('subvención', 'grant') : t('subvenciones', 'grants');
+    return `${num(n)} ${que}`;
+  };
+  const temas = TEMAS.filter((x) => d.porTema?.[x.id]?.suma > 0)
+    .map((x) => ({ id: x.id, nombre: nombreTema(x.id), valor: d.porTema[x.id].suma, texto: meCorto(d.porTema[x.id].suma), nota: fila(d.porTema[x.id]), icono: icono(ICONO_TEMA[x.id]) }))
     .sort((a, b) => b.valor - a.valor);
-  const niveles = NIVELES.filter((n) => d.porNivel?.[n]?.suma > 0).map((n) => ({ id: n, nombre: n, valor: d.porNivel[n].suma, texto: meCorto(d.porNivel[n].suma), nota: fila(d.porNivel[n]) }));
+  const niveles = NIVELES.filter((n) => d.porNivel?.[n]?.suma > 0).map((n) => ({ id: n, nombre: nombreNivel(n), valor: d.porNivel[n].suma, texto: meCorto(d.porNivel[n].suma), nota: fila(d.porNivel[n]) }));
   const meses = [...(d.meses ?? [])].filter((m) => m.mes !== 'sin-fecha').reverse();
   const bloque = (titulo, texto, contenido) => (contenido ? `<div class="panorama-bloque"><h3>${titulo}</h3><p class="tenue">${texto}</p>${contenido}</div>` : '');
   caja.innerHTML =
-    bloque('Por tema', `Importe ${contratos ? 'adjudicado' : 'concedido'}. Un ${contratos ? 'contrato' : 'pago'} puede estar en varios temas. Pulsa uno para ver la lista.`, barras(temas.slice(0, 8), { accion: 'p-tema', activo: estado.tema })) +
-    bloque('Quién paga', 'Pulsa una administración para ver lo suyo.', barras(niveles, { accion: 'p-nivel', activo: estado.nivel })) +
-    (meses.length > 1 ? bloque('Mes a mes', `Importe ${contratos ? 'adjudicado' : 'concedido'} cada mes, sin acuerdos marco.`, columnas(meses.map((m) => ({ etiqueta: mesLargo(m.mes), corta: mesCorto(m.mes), valor: m.suma ?? 0, texto: millones(m.suma ?? 0), rotulo: meCorto(m.suma ?? 0) })), { titulo: 'Importe por mes' })) : '');
+    bloque(t('Por tema', 'By topic'), EN ? `Amount ${contratos ? 'awarded' : 'granted'}. A ${contratos ? 'contract' : 'payment'} can be in several topics. Tap one to see the list.` : `Importe ${contratos ? 'adjudicado' : 'concedido'}. Un ${contratos ? 'contrato' : 'pago'} puede estar en varios temas. Pulsa uno para ver la lista.`, barras(temas.slice(0, 8), { accion: 'p-tema', activo: estado.tema })) +
+    bloque(t('Quién paga', 'Who pays'), t('Pulsa una administración para ver lo suyo.', 'Tap an administration to see its share.'), barras(niveles, { accion: 'p-nivel', activo: estado.nivel })) +
+    (meses.length > 1 ? bloque(t('Mes a mes', 'Month by month'), EN ? `Amount ${contratos ? 'awarded' : 'granted'} each month, excluding framework agreements.` : `Importe ${contratos ? 'adjudicado' : 'concedido'} cada mes, sin acuerdos marco.`, columnas(meses.map((m) => ({ etiqueta: mesLargo(m.mes), corta: mesCorto(m.mes), valor: m.suma ?? 0, texto: millones(m.suma ?? 0), rotulo: meCorto(m.suma ?? 0) })), { titulo: t('Importe por mes', 'Amount per month') })) : '');
 }
 // Ayuda: pulsar un país o un sector (en el panorama, en la lista o en el resumen)
 document.addEventListener('click', (e) => {
@@ -241,37 +255,50 @@ $('panorama-rejilla').addEventListener('click', (e) => {
   pintar().then(() => $('resumen-lupa').scrollIntoView({ block: 'start', behavior: 'smooth' }));
 });
 
-function pintarResultados(t, r, { contratos, progreso = '', disponibles = r.length }) {
+function pintarResultados(tot, r, { contratos, progreso = '', disponibles = r.length }) {
   const resumen = $('resumen-lupa');
   const lista = $('resultados');
   const mas = $('mas');
-  const { n } = t;
-  const nm = t.marcos?.n ?? 0;
-  const fmt = (x) => new Intl.NumberFormat('es-ES').format(x);
-  const cuantos = (x) => (contratos ? `${fmt(x)} ${x === 1 ? 'contrato' : 'contratos'}` : `${fmt(x)} ${x === 1 ? 'subvención' : 'subvenciones'}`);
-  const filtro = [estado.q && `«${estado.q}»`, estado.tema && TEMAS.find((x) => x.id === estado.tema)?.nombre.toLowerCase(), estado.nivel && estado.nivel.toLowerCase()]
+  const { n } = tot;
+  const nm = tot.marcos?.n ?? 0;
+  const fmt = (x) => num(x);
+  const cuantos = (x) =>
+    contratos
+      ? `${fmt(x)} ${x === 1 ? t('contrato', 'contract') : t('contratos', 'contracts')}`
+      : `${fmt(x)} ${x === 1 ? t('subvención', 'grant') : t('subvenciones', 'grants')}`;
+  const filtro = [estado.q && t(`«${estado.q}»`, `“${estado.q}”`), estado.tema && nombreTema(estado.tema).toLowerCase(), estado.nivel && nombreNivel(estado.nivel).toLowerCase()]
     .filter(Boolean)
     .join(', ');
-  const con = filtro ? ` con ${esc(filtro)}` : '';
+  const con = filtro ? ` ${t('con', 'matching')} ${esc(filtro)}` : '';
   // Los acuerdos marco van aparte: su importe es un techo para contratos posteriores, no gasto
-  const quien = nm === 1 ? 'un acuerdo marco' : `${fmt(nm)} acuerdos marco`;
-  const techo = nm ? `con un techo de ${millones(t.marcos.suma)} para contratos posteriores, que no suma porque aún no es gasto` : '';
+  const quien = nm === 1 ? t('un acuerdo marco', 'one framework agreement') : t(`${fmt(nm)} acuerdos marco`, `${fmt(nm)} framework agreements`);
+  const techo = nm
+    ? t(
+        `con un techo de ${millones(tot.marcos.suma)} para contratos posteriores, que no suma porque aún no es gasto`,
+        `with a ceiling of ${millones(tot.marcos.suma)} for later contracts, not added because it is not spending yet`,
+      )
+    : '';
   const nota = progreso ? ` <span class="tenue">${esc(progreso)}</span>` : '';
   resumen.innerHTML =
     (!n
-      ? progreso ? '' : `No hay ${contratos ? 'contratos' : 'subvenciones'}${con} en lo que cubre la Lupa.`
+      ? progreso
+        ? ''
+        : t(`No hay ${contratos ? 'contratos' : 'subvenciones'}${con} en lo que cubre la Lupa.`, `No ${contratos ? 'contracts' : 'grants'}${con} in what the Lens covers.`)
       : n > nm
-        ? `<strong>${cuantos(n - nm)}</strong> por <strong>${millones(t.suma)}</strong>${con}.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`
-        : `Solo hay ${quien}${con}, ${techo}.`) + nota;
+        ? t(
+            `<strong>${cuantos(n - nm)}</strong> por <strong>${millones(tot.suma)}</strong>${con}.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`,
+            `<strong>${cuantos(n - nm)}</strong> worth <strong>${millones(tot.suma)}</strong>${con}.${nm ? ` There ${nm === 1 ? 'is' : 'are'} also ${quien}, ${techo}.` : ''}`,
+          )
+        : t(`Solo hay ${quien}${con}, ${techo}.`, `There ${nm === 1 ? 'is' : 'are'} only ${quien}${con}, ${techo}.`)) + nota;
   lista.innerHTML = r.slice(0, estado.mostrados).map(contratos ? fichaContrato : fichaSubvencion).join('');
   mas.hidden = progreso !== '' || disponibles <= estado.mostrados;
-  mas.textContent = `Ver más (quedan ${fmt(disponibles - estado.mostrados)})`;
+  mas.textContent = t(`Ver más (quedan ${fmt(disponibles - estado.mostrados)})`, `See more (${fmt(disponibles - estado.mostrados)} left)`);
 }
 
 // Ayuda a otros países: en qué se da, a qué países y año a año; y, al pulsar un país, su detalle con los proyectos
-const md = (n) => `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: n >= 100 ? 0 : 1 }).format(n)} millones de $`;
-const mdCorto = (n) => `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: n >= 10 ? 0 : 1 }).format(n)} M$`;
-const nombreSector = (g) => SECTORES_AYUDA[g] ?? 'Otros';
+const md = (n) => (EN ? `$${num(n, { maximumFractionDigits: n >= 100 ? 0 : 1 })} million` : `${num(n, { maximumFractionDigits: n >= 100 ? 0 : 1 })} millones de $`);
+const mdCorto = (n) => (EN ? `$${num(n, { maximumFractionDigits: n >= 10 ? 0 : 1 })}m` : `${num(n, { maximumFractionDigits: n >= 10 ? 0 : 1 })} M$`);
+const nombreSector = (g) => en(SECTORES_EN, g, SECTORES_AYUDA[g] ?? t('Otros', 'Other'));
 const ICONO_SECTOR = { 110: 'educacion', 120: 'sanidad', 130: 'sanidad', 140: 'agua', 150: 'seguridad', 160: 'social', 210: 'transporte', 220: 'tecnologia', 230: 'energia', 240: 'intereses', 250: 'empleo', 310: 'campo', 320: 'empleo', 330: 'empleo', 410: 'medio-ambiente', 430: 'vivienda', 510: 'administracion', 520: 'campo', 600: 'intereses', 720: 'error', 730: 'vivienda', 740: 'defensa', 910: 'administracion', 930: 'vivienda' };
 const iconoSector = (g) => icono(ICONO_SECTOR[g] ?? 'todo');
 
@@ -279,7 +306,7 @@ const iconoSector = (g) => icono(ICONO_SECTOR[g] ?? 'todo');
 const barrasSectores = (sectores, total, { accion = '', activo = '', cuantos = 10 } = {}) => {
   const lista = Object.entries(sectores ?? {})
     .filter(([, v]) => v > 0)
-    .map(([g, v]) => ({ id: g, nombre: nombreSector(g), valor: v, texto: mdCorto(v), nota: total ? `${Math.round((v / total) * 100)} % del total` : '', icono: iconoSector(g) }))
+    .map(([g, v]) => ({ id: g, nombre: nombreSector(g), valor: v, texto: mdCorto(v), nota: total ? t(`${Math.round((v / total) * 100)} % del total`, `${Math.round((v / total) * 100)}% of the total`) : '', icono: iconoSector(g) }))
     .sort((a, b) => b.valor - a.valor);
   return barras(lista.slice(0, cuantos), { accion, activo });
 };
@@ -292,37 +319,41 @@ function pintarAyuda(d) {
   const sector = d.sectoresPais ? estado.sector : '';
   const valorDe = (iso) => (sector ? d.sectoresPais[iso]?.[sector] ?? 0 : d.paises[iso][ultimo] ?? 0);
   const filas = Object.entries(d.paises)
-    .map(([iso, v]) => ({ iso, nombre: nombrePais(iso) ?? iso, ultimo: valorDe(iso), anterior: v[anterior] ?? null, suma: años.reduce((t, a) => t + (v[a] ?? 0), 0) }))
+    .map(([iso, v]) => ({ iso, nombre: nombrePais(iso) ?? iso, ultimo: valorDe(iso), anterior: v[anterior] ?? null, suma: años.reduce((n, a) => n + (v[a] ?? 0), 0) }))
     .filter((p) => (sector ? p.ultimo > 0 : p.ultimo > 0 || p.suma > 0))
     .filter((p) => !q || normalizar(p.nombre).includes(q) || p.iso.toLowerCase() === q)
     .sort((a, b) => b.ultimo - a.ultimo || b.suma - a.suma);
-  const totalPaises = filas.reduce((t, p) => t + p.ultimo, 0);
+  const totalPaises = filas.reduce((n, p) => n + p.ultimo, 0);
 
   // Panorama: en qué, a quién y año a año
   const total = d.totales?.[ultimo];
   const bloque = (titulo, texto, contenido) => (contenido ? `<div class="panorama-bloque"><h3>${titulo}</h3><p class="tenue">${texto}</p>${contenido}</div>` : '');
   $('panorama-rejilla').innerHTML =
-    bloque(`En qué se da (${ultimo})`, 'Toda la ayuda de España, también la que no va a un país concreto. Pulsa un sector para ver a qué países va.', d.sectores?.[ultimo] ? barrasSectores(d.sectores[ultimo], total, { accion: 'a-sector', activo: estado.sector, cuantos: 8 }) : '') +
-    bloque(`A qué países${sector ? `: ${nombreSector(sector).toLowerCase()}` : ''}`, 'Los que más reciben. Pulsa uno para ver en qué y con qué proyectos.', barras(filas.slice(0, 8).map((p) => ({ id: p.iso, nombre: p.nombre, valor: p.ultimo, texto: mdCorto(p.ultimo) })), { accion: 'a-pais' })) +
-    (años.length > 1 && d.totales ? bloque('Año a año', 'Toda la ayuda oficial al desarrollo de España, en millones de dólares de cada año.', columnas(años.map((a) => ({ etiqueta: a, corta: a, valor: d.totales[a] ?? 0, texto: md(d.totales[a] ?? 0), rotulo: mdCorto(d.totales[a] ?? 0) })), { titulo: 'Ayuda por año' })) : '');
+    bloque(t(`En qué se da (${ultimo})`, `What it is given for (${ultimo})`), t('Toda la ayuda de España, también la que no va a un país concreto. Pulsa un sector para ver a qué países va.', 'All of Spain’s aid, including aid not tied to a specific country. Tap a sector to see which countries it goes to.'), d.sectores?.[ultimo] ? barrasSectores(d.sectores[ultimo], total, { accion: 'a-sector', activo: estado.sector, cuantos: 8 }) : '') +
+    bloque(`${t('A qué países', 'Which countries')}${sector ? `: ${nombreSector(sector).toLowerCase()}` : ''}`, t('Los que más reciben. Pulsa uno para ver en qué y con qué proyectos.', 'The largest recipients. Tap one to see what for and through which projects.'), barras(filas.slice(0, 8).map((p) => ({ id: p.iso, nombre: p.nombre, valor: p.ultimo, texto: mdCorto(p.ultimo) })), { accion: 'a-pais' })) +
+    (años.length > 1 && d.totales ? bloque(t('Año a año', 'Year by year'), t('Toda la ayuda oficial al desarrollo de España, en millones de dólares de cada año.', 'All of Spain’s official development assistance, in millions of current US dollars.'), columnas(años.map((a) => ({ etiqueta: a, corta: a, valor: d.totales[a] ?? 0, texto: md(d.totales[a] ?? 0), rotulo: mdCorto(d.totales[a] ?? 0) })), { titulo: t('Ayuda por año', 'Aid per year') })) : '');
 
+  const todos = sector ? ` <button type="button" class="enlace" data-a-sector="">${t('Ver todos los sectores', 'See all sectors')}</button>` : '';
+  const aQuien = filas.length === 1 ? esc(filas[0].nombre) : `<strong>${num(filas.length)} ${t('países', 'countries')}</strong>`;
   $('resumen-lupa').innerHTML = filas.length
-    ? `En ${ultimo}, España dio <strong>${md(totalPaises)}</strong>${sector ? ` para <strong>${esc(nombreSector(sector).toLowerCase())}</strong>` : ' de ayuda oficial al desarrollo'} a ${filas.length === 1 ? esc(filas[0].nombre) : `<strong>${filas.length} países</strong>`}${total && !sector ? `, de un total de ${md(total)}: el resto va a regiones, a organismos internacionales o sin un país concreto` : ''}.${sector ? ' <button type="button" class="enlace" data-a-sector="">Ver todos los sectores</button>' : ''}`
-    : `No hay ayuda de España a «${esc(estado.q)}» en ${años[0]}-${ultimo}.`;
+    ? EN
+      ? `In ${ultimo}, Spain gave <strong>${md(totalPaises)}</strong>${sector ? ` for <strong>${esc(nombreSector(sector).toLowerCase())}</strong>` : ' in official development assistance'} to ${aQuien}${total && !sector ? `, out of a total of ${md(total)}: the rest goes to regions, international organisations or no specific country` : ''}.${todos}`
+      : `En ${ultimo}, España dio <strong>${md(totalPaises)}</strong>${sector ? ` para <strong>${esc(nombreSector(sector).toLowerCase())}</strong>` : ' de ayuda oficial al desarrollo'} a ${aQuien}${total && !sector ? `, de un total de ${md(total)}: el resto va a regiones, a organismos internacionales o sin un país concreto` : ''}.${todos}`
+    : t(`No hay ayuda de España a «${esc(estado.q)}» en ${años[0]}-${ultimo}.`, `No Spanish aid to “${esc(estado.q)}” in ${años[0]}-${ultimo}.`);
   $('resultados').innerHTML = filas
     .slice(0, estado.mostrados)
     .map(
       (p) => `<li class="resultado resultado-pais">
         <div class="resultado-cabeza">
           <h3><button type="button" class="enlace" data-a-pais="${p.iso}">${esc(p.nombre)}</button></h3>
-          <p class="resultado-importe">${md(p.ultimo)}<small>en ${ultimo}${!sector && p.anterior !== null ? ` · ${md(p.anterior)} en ${anterior}` : ''}</small></p>
+          <p class="resultado-importe">${md(p.ultimo)}<small>${t('en', 'in')} ${ultimo}${!sector && p.anterior !== null ? ` · ${md(p.anterior)} ${t('en', 'in')} ${anterior}` : ''}</small></p>
         </div>
-        <p class="tenue">${años.map((a) => `${a}: ${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 }).format(d.paises[p.iso][a] ?? 0)}`).join(' · ')}</p>
+        <p class="tenue">${años.map((a) => `${a}: ${num(d.paises[p.iso][a] ?? 0, { maximumFractionDigits: 1 })}`).join(' · ')}</p>
       </li>`
     )
     .join('');
   $('mas').hidden = filas.length <= estado.mostrados;
-  $('mas').textContent = `Ver más (quedan ${filas.length - estado.mostrados})`;
+  $('mas').textContent = t(`Ver más (quedan ${filas.length - estado.mostrados})`, `See more (${filas.length - estado.mostrados} left)`);
 }
 
 async function pintarPais(d, iso, mio) {
@@ -340,49 +371,75 @@ async function pintarPais(d, iso, mio) {
   const sectores = p.sectores?.[ultimo] ?? {};
   const bloque = (titulo, texto, contenido) => (contenido ? `<div class="panorama-bloque"><h3>${titulo}</h3><p class="tenue">${texto}</p>${contenido}</div>` : '');
   $('panorama-rejilla').innerHTML =
-    bloque(`En qué se da en ${esc(nombre)} (${ultimo})`, 'Por sectores.', barrasSectores(sectores, total, { cuantos: 12 })) +
-    (años.length > 1 ? bloque('Año a año', `Ayuda de España a ${esc(nombre)}.`, columnas(años.map((a) => ({ etiqueta: a, corta: a, valor: p.total?.[a] ?? 0, texto: md(p.total?.[a] ?? 0), rotulo: mdCorto(p.total?.[a] ?? 0) })), { titulo: `Ayuda a ${nombre} por año` })) : '');
-  $('resumen-lupa').innerHTML = `<button type="button" class="enlace volver" data-a-pais="">← Todos los países</button><br>En ${ultimo}, España dio <strong>${md(total)}</strong> de ayuda oficial al desarrollo a <strong>${esc(nombre)}</strong>.${p.proyectos?.length ? ` Abajo, sus ${p.proyectos.length} mayores proyectos de ${p.proyectosAño}.` : ''}`;
+    bloque(t(`En qué se da en ${esc(nombre)} (${ultimo})`, `What it is given for in ${esc(nombre)} (${ultimo})`), t('Por sectores.', 'By sector.'), barrasSectores(sectores, total, { cuantos: 12 })) +
+    (años.length > 1 ? bloque(t('Año a año', 'Year by year'), t(`Ayuda de España a ${esc(nombre)}.`, `Spain’s aid to ${esc(nombre)}.`), columnas(años.map((a) => ({ etiqueta: a, corta: a, valor: p.total?.[a] ?? 0, texto: md(p.total?.[a] ?? 0), rotulo: mdCorto(p.total?.[a] ?? 0) })), { titulo: t(`Ayuda a ${nombre} por año`, `Aid to ${nombre} per year`) })) : '');
+  const volver = `<button type="button" class="enlace volver" data-a-pais="">${t('← Todos los países', '← All countries')}</button><br>`;
+  const n = p.proyectos?.length ?? 0;
+  $('resumen-lupa').innerHTML = EN
+    ? `${volver}In ${ultimo}, Spain gave <strong>${md(total)}</strong> in official development assistance to <strong>${esc(nombre)}</strong>.${n ? ` Below, its ${n} largest projects of ${p.proyectosAño}, as reported (in Spanish or English).` : ''}`
+    : `${volver}En ${ultimo}, España dio <strong>${md(total)}</strong> de ayuda oficial al desarrollo a <strong>${esc(nombre)}</strong>.${n ? ` Abajo, sus ${n} mayores proyectos de ${p.proyectosAño}.` : ''}`;
   $('resultados').innerHTML = (p.proyectos ?? [])
     .map(
       (x) => `<li class="resultado">
         <div class="resultado-cabeza">
-          <h3>${esc(x.t || 'Proyecto sin título')}</h3>
-          <p class="resultado-importe">${md(x.v)}<small>en ${p.proyectosAño}</small></p>
+          <h3>${esc(x.t || t('Proyecto sin título', 'Untitled project'))}</h3>
+          <p class="resultado-importe">${md(x.v)}<small>${t('en', 'in')} ${p.proyectosAño}</small></p>
         </div>
         ${x.d ? `<p class="tenue">${esc(x.d)}</p>` : ''}
-        <p class="etiquetas">${[x.s && nombreSector(x.s), x.a, x.c].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}</p>
+        <p class="etiquetas">${[x.s && nombreSector(x.s), x.a, x.c && en(CANALES, x.c, x.c)].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}</p>
       </li>`
     )
     .join('');
   $('mas').hidden = true;
 }
 
+const textosEs = {
+  contratos: async () => {
+    const d = await indice('contratos');
+    return `<p><strong>Contratos adjudicados desde ${millones(d.umbral)} (sin IVA)</strong> publicados en la <a href="https://contrataciondelestado.es/">Plataforma de Contratación del Sector Público</a>, incluidos los de las plataformas propias de comunidades y ayuntamientos que se agregan a ella. Recoge los movimientos desde el ${fecha(d.desde)} y los va reuniendo cada día, así que el histórico crece solo.</p>
+      <p><strong>Los acuerdos marco</strong> aparecen con su importe máximo y no suman en los totales: fijan un techo para contratos posteriores, no un gasto. Esos contratos posteriores, si pasan del millón, aparecen por su cuenta.</p>
+      <p><strong>Lo que no aparece:</strong> los contratos menores y los de menos de un millón; lo que una plataforma propia no haya enviado a la estatal; y lo que se paga al final, que puede cambiar por modificados o revisiones de precio. Los adjudicatarios que son personas físicas aparecen sin nombre.</p>`;
+  },
+  subvenciones: async () => {
+    const d = await indice('subvenciones');
+    return `<p><strong>Subvenciones y ayudas concedidas desde ${millones(d.umbral)}</strong> en los últimos 12 meses, de la <a href="https://www.infosubvenciones.es/">Base de Datos Nacional de Subvenciones</a>, que reúne las del Estado, comunidades y ayuntamientos.</p>
+      <p><strong>Lo que no aparece:</strong> las de menos de un millón; las concedidas a personas físicas (por privacidad); y las que una administración no haya registrado, aunque la ley obliga a hacerlo. Una subvención concedida no siempre se paga entera.</p>`;
+  },
+  ayuda: async () => {
+    const d = await indice('ayuda');
+    return `<p><strong>Ayuda oficial al desarrollo de España</strong> (desembolsos, en millones de dólares de cada año), del <a href="https://data-explorer.oecd.org/">sistema de notificación de la OCDE (CRS)</a>, donde la Cooperación Española declara cada proyecto: a qué país, para qué sector, quién lo da y por qué canal. Datos de ${d.años[0]} a ${d.años.at(-1)}.</p>
+      <p><strong>Lo que no aparece:</strong> el detalle de lo que va a regiones o a organismos internacionales sin un país concreto (sí está en el total y en los sectores); y, en cada país, solo salen sus mayores proyectos. Los datos de un año se publican a finales del año siguiente.</p>`;
+  },
+
+};
+const textosEn = {
+  contratos: async () => {
+    const d = await indice('contratos');
+    return `<p><strong>Contracts awarded from ${millones(d.umbral)} (excl. VAT)</strong> published on the <a href="https://contrataciondelestado.es/" hreflang="es">Public Sector Procurement Platform</a> (Plataforma de Contratación del Sector Público), including those from the regions’ and councils’ own platforms that feed into it. It collects updates since ${fecha(d.desde)} and gathers them every day, so the history grows by itself.</p>
+      <p><strong>Framework agreements</strong> are shown with their maximum amount and are not added to the totals: they set a ceiling for later contracts, not spending. Those later contracts, if over a million, appear on their own.</p>
+      <p><strong>What is not included:</strong> minor contracts and those under a million; anything a regional platform has not sent to the national one; and what is finally paid, which can change through amendments or price revisions. Winners who are private individuals appear without their name.</p>
+      <p>Contract titles, bodies and companies are shown as published, in Spanish.</p>`;
+  },
+  subvenciones: async () => {
+    const d = await indice('subvenciones');
+    return `<p><strong>Grants and aid awarded from ${millones(d.umbral)}</strong> in the last 12 months, from the <a href="https://www.infosubvenciones.es/" hreflang="es">National Grants Database</a> (Base de Datos Nacional de Subvenciones), which brings together those of central government, regions and councils.</p>
+      <p><strong>What is not included:</strong> grants under a million; those awarded to private individuals (for privacy); and those an administration has not registered, even though the law requires it. A grant awarded is not always paid in full.</p>
+      <p>Call titles, bodies and recipients are shown as published, in Spanish.</p>`;
+  },
+  ayuda: async () => {
+    const d = await indice('ayuda');
+    return `<p><strong>Spain’s official development assistance</strong> (disbursements, in millions of current US dollars), from the <a href="https://data-explorer.oecd.org/">OECD Creditor Reporting System (CRS)</a>, where Spanish Cooperation reports each project: to which country, for which sector, who gives it and through which channel. Data from ${d.años[0]} to ${d.años.at(-1)}.</p>
+      <p><strong>What is not included:</strong> the detail of aid going to regions or international organisations without a specific country (it is in the total and the sectors); and, for each country, only its largest projects. A year’s data is published at the end of the following year.</p>`;
+  },
+};
+
 async function pintarCobertura() {
   const caja = $('cobertura');
-  const textos = {
-    contratos: async () => {
-      const d = await indice('contratos');
-      return `<p><strong>Contratos adjudicados desde ${millones(d.umbral)} (sin IVA)</strong> publicados en la <a href="https://contrataciondelestado.es/">Plataforma de Contratación del Sector Público</a>, incluidos los de las plataformas propias de comunidades y ayuntamientos que se agregan a ella. Recoge los movimientos desde el ${fecha(d.desde)} y los va reuniendo cada día, así que el histórico crece solo.</p>
-        <p><strong>Los acuerdos marco</strong> aparecen con su importe máximo y no suman en los totales: fijan un techo para contratos posteriores, no un gasto. Esos contratos posteriores, si pasan del millón, aparecen por su cuenta.</p>
-        <p><strong>Lo que no aparece:</strong> los contratos menores y los de menos de un millón; lo que una plataforma propia no haya enviado a la estatal; y lo que se paga al final, que puede cambiar por modificados o revisiones de precio. Los adjudicatarios que son personas físicas aparecen sin nombre.</p>`;
-    },
-    subvenciones: async () => {
-      const d = await indice('subvenciones');
-      return `<p><strong>Subvenciones y ayudas concedidas desde ${millones(d.umbral)}</strong> en los últimos 12 meses, de la <a href="https://www.infosubvenciones.es/">Base de Datos Nacional de Subvenciones</a>, que reúne las del Estado, comunidades y ayuntamientos.</p>
-        <p><strong>Lo que no aparece:</strong> las de menos de un millón; las concedidas a personas físicas (por privacidad); y las que una administración no haya registrado, aunque la ley obliga a hacerlo. Una subvención concedida no siempre se paga entera.</p>`;
-    },
-    ayuda: async () => {
-      const d = await indice('ayuda');
-      return `<p><strong>Ayuda oficial al desarrollo de España</strong> (desembolsos, en millones de dólares de cada año), del <a href="https://data-explorer.oecd.org/">sistema de notificación de la OCDE (CRS)</a>, donde la Cooperación Española declara cada proyecto: a qué país, para qué sector, quién lo da y por qué canal. Datos de ${d.años[0]} a ${d.años.at(-1)}.</p>
-        <p><strong>Lo que no aparece:</strong> el detalle de lo que va a regiones o a organismos internacionales sin un país concreto (sí está en el total y en los sectores); y, en cada país, solo salen sus mayores proyectos. Los datos de un año se publican a finales del año siguiente.</p>`;
-    },
-
-  };
+  const textos = EN ? textosEn : textosEs;
   try {
     caja.innerHTML = await textos[estado.tab]();
   } catch {
-    caja.innerHTML = '<p>Sin datos de cobertura ahora mismo.</p>';
+    caja.innerHTML = `<p>${t('Sin datos de cobertura ahora mismo.', 'No coverage information right now.')}</p>`;
   }
 }
 
