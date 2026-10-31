@@ -217,29 +217,42 @@ async function contratos() {
 const MESES_SUBVENCIONES = Number(process.env.LUPA_SUBV_MESES ?? 12);
 
 async function subvenciones() {
-  const todas = new Map();
-  const porMesLeido = [];
+  // Se parte de lo guardado: un mes que hoy llegue vacío (la API a veces no devuelve los meses antiguos)
+  // conserva lo que ya había, en vez de borrarlo. Un mes con datos nuevos sustituye al anterior.
+  const previo = (await leer('subvenciones.json'))?.subvenciones ?? [];
+  const porMes = new Map();
+  for (const c of previo) {
+    const mes = (c.f ?? '').slice(0, 7);
+    if (!porMes.has(mes)) porMes.set(mes, []);
+    porMes.get(mes).push(c);
+  }
+  const leidos = [];
+  const meses = [];
   for (let m = 0; m < MESES_SUBVENCIONES; m++) {
     const fin = new Date(hoy.getFullYear(), hoy.getMonth() - m + 1, 0);
     const ini = new Date(hoy.getFullYear(), hoy.getMonth() - m, 1);
     const hasta = isoDia(m === 0 ? hoy : fin);
     const desde = isoDia(ini);
-    const antes = todas.size;
+    const mes = desde.slice(0, 7);
+    meses.push(mes);
+    const nuevas = new Map();
     for (let pagina = 0; pagina < 10; pagina++) {
       const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json' });
       const importes = (json?.content ?? []).map((c) => c.importe ?? 0);
       if (importes.some((v, k) => k > 0 && v > importes[k - 1] + 0.01)) throw new Error(`la API no devuelve las concesiones ordenadas por importe (${importes.slice(0, 5).join(', ')}…)`);
-      const lote = parsearConcesiones(json);
-      for (const c of lote) if (c.i >= UMBRAL_SUBVENCIONES) todas.set(c.id, c);
+      for (const c of parsearConcesiones(json)) if (c.i >= UMBRAL_SUBVENCIONES) nuevas.set(c.id, c);
       const ultimo = json?.content?.at(-1)?.importe ?? 0;
       if (json.last || ultimo < UMBRAL_SUBVENCIONES) break;
     }
-    porMesLeido.push(`${desde.slice(0, 7)}: ${todas.size - antes}`);
+    const antes = porMes.get(mes)?.length ?? 0;
+    if (nuevas.size) porMes.set(mes, [...nuevas.values()]);
+    leidos.push(`${mes}: ${nuevas.size}${!nuevas.size && antes ? ` (se quedan ${antes})` : ''}`);
   }
-  if (todas.size < 10) throw new Error(`solo ${todas.size} concesiones`);
-  const lista = [...todas.values()].sort((a, b) => b.i - a.i);
+  // Solo los meses de la ventana (los últimos 12)
+  const lista = meses.flatMap((mes) => porMes.get(mes) ?? []).sort((a, b) => b.i - a.i);
+  if (lista.length < 10) throw new Error(`solo ${lista.length} concesiones (${leidos.join(', ')})`);
   await guardar('subvenciones.json', { actualizado: new Date().toISOString(), umbral: UMBRAL_SUBVENCIONES, subvenciones: lista });
-  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses (${porMesLeido.join(', ')})`;
+  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses (${leidos.join(', ')})`;
 }
 
 // ---------------------------------------------------------------------------

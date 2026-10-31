@@ -1,7 +1,8 @@
 // Portada: el ticket de tus impuestos y las cifras de todos.
 
 import { cargarVista } from './datos.js';
-import { bloques } from './graficos.js';
+import { cien, activarCien } from './graficos.js';
+import { colorPartida, tieneColor } from './colores.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, millones, delPib, leerImporte } from './formato.js';
@@ -134,13 +135,19 @@ try {
   $('ticket-año').textContent = `Gasto público de España en ${año}`;
   pintarTicket();
   pintarCifras(vista);
-  $('mapa').innerHTML = bloques(
-    lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${Math.round(p.cuota * 100)} €`, href: `a-donde-va/#p-${p.id}` })),
-    {
-      titulo: 'De cada 100 € de gasto público, cuánto va a cada partida',
-      otros: { minimo: 0.035, nombre: (n) => `Otras ${n} partidas`, texto: (v) => `${Math.round(v * 100)} €`, href: 'a-donde-va/#t-partidas' },
-    }
+  // De cada 100 €: las partidas con color propio y, en gris, las demás juntas
+  const conColor = lista.filter((p) => tieneColor(p.id));
+  const otras = lista.filter((p) => !tieneColor(p.id));
+  const resto = otras.reduce((t, p) => t + p.cuota, 0);
+  const euros100 = (c) => `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: c < 0.1 ? 1 : 0 }).format(c * 100)} €`;
+  $('mapa').innerHTML = cien(
+    [
+      ...conColor.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, color: colorPartida(p.id), texto: euros100(p.cuota), href: `a-donde-va/#p-${p.id}` })),
+      ...(otras.length ? [{ id: 'otras', nombre: `Otras ${otras.length} partidas`, nota: otras.map((p) => p.nombre.toLowerCase()).join(', '), valor: resto, color: 'var(--serie-otros)', texto: euros100(resto), href: 'a-donde-va/#t-partidas' }] : []),
+    ],
+    { titulo: 'De cada 100 € de gasto público' }
   );
+  activarCien($('mapa'));
 } catch {
   $('reparto').replaceChildren(linea('Sin datos ahora mismo', ''));
 }

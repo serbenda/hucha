@@ -13,7 +13,7 @@ import { chromium } from 'playwright';
 import { arrancar } from '../tests/e2e/servidor.mjs';
 import { anotar } from './estado.mjs';
 
-const PAGINAS = { 'Tu ticket': '', 'A dónde va': 'a-donde-va/', 'Quién gasta': 'quien-gasta/', Lupa: 'lupa/', Fuentes: 'fuentes/' };
+const PAGINAS = { 'Tu ticket': '', 'A dónde va': 'a-donde-va/', 'Quién gasta': 'quien-gasta/', Presupuesto: 'presupuesto/', Lupa: 'lupa/', Fuentes: 'fuentes/' };
 const CATEGORIAS = {
   performance: { nombre: 'Rendimiento', minimo: 0.9, insignia: 'rendimiento' },
   accessibility: { nombre: 'Accesibilidad', minimo: 1, insignia: 'accesibilidad' },

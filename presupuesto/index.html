@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¿Se gasta lo presupuestado? · hucha</title>
+  <meta name="description" content="El presupuesto del Estado de este año y lo que lleva gastado, mes a mes, por tipo de gasto, políticas, ministerios y programas.">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://hucha.bendi.dev/presupuesto/">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+  <meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12161e" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="hucha">
+  <meta property="og:title" content="¿Se gasta lo que se presupuesta?">
+  <meta property="og:description" content="El presupuesto del Estado de este año y lo que lleva gastado, mes a mes, por tipo de gasto, políticas, ministerios y programas.">
+  <meta property="og:url" content="https://hucha.bendi.dev/presupuesto/">
+  <meta property="og:image" content="https://hucha.bendi.dev/assets/img/compartir.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="hucha: de cada 100 euros de gasto público, cuánto va a cada partida">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="../vendor/fuentes/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../vendor/fuentes/archivo.css">
+  <link rel="stylesheet" href="../assets/css/estilos.css">
+</head>
+<body>
+  <header class="envoltorio cabecera">
+    <a class="marca" href="../" aria-label="hucha, inicio">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="moneda" cx="30" cy="9" r="7"/>
+        <path class="cuerpo" d="M29 20c-12.7 0-23 7.4-23 17 0 4.6 2.4 8.8 6.3 11.8V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-4.6c2.5.7 5.1 1 7.7 1s5.2-.3 7.7-1V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.3c2-1.6 3.6-3.4 4.6-5.5H57a2 2 0 0 0 2-2v-7.4a2 2 0 0 0-2-2h-2.9c-1.1-2.2-2.7-4.2-4.7-5.9l1.8-6.3a1.4 1.4 0 0 0-1.8-1.7l-7.2 2.4C38.4 20.8 33.8 20 29 20Z"/>
+        <rect class="hueco" x="22" y="23.5" width="15" height="3.4" rx="1.7"/>
+        <circle class="hueco" cx="45.5" cy="31.5" r="2.1"/>
+      </svg>
+      <span>hucha</span>
+    </a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="../"><svg class="icono" data-icono="ticket" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z M9 8h6 M9 12h6 M9 16h3"/></svg><span>Tu ticket</span></a>
+      <a href="../a-donde-va/"><svg class="icono" data-icono="a-donde-va" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 9 9h-9Z M15 3.5A9 9 0 0 1 20.5 9H15Z"/></svg><span>A dónde va</span></a>
+      <a href="../quien-gasta/"><svg class="icono" data-icono="quien-gasta" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 21h18 M4 10h16 M12 3l8 4.5H4Z M6 10v8 M10 10v8 M14 10v8 M18 10v8"/></svg><span>Quién gasta</span></a>
+      <a href="../presupuesto/" aria-current="page"><svg class="icono" data-icono="presupuesto" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 17a8.5 8.5 0 1 1 17 0 M12 17l4.5-5.5 M3.5 17h17"/></svg><span>Presupuesto</span></a>
+      <a href="../lupa/"><svg class="icono" data-icono="lupa" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z M20.5 20.5l-5.4-5.4"/></svg><span>Lupa</span></a>
+      <a href="../fuentes/"><svg class="icono" data-icono="fuentes" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2Z M4 20a2 2 0 0 0 2 2h13v-4"/></svg><span>Fuentes</span></a>
+    </nav>
+  </header>
+
+  <main class="envoltorio">
+    <h1 class="titular">¿Se gasta lo que se presupuesta?</h1>
+    <p class="entradilla">El presupuesto del Estado de este año y lo que lleva gastado, mes a mes, con los datos que publica cada mes la Intervención General del Estado.</p>
+
+    <dl class="cifras cifras-intro" id="cifras">
+      <div class="cifra"><dt>Presupuesto de este año</dt><dd id="c-presupuesto">—<small>&nbsp;</small></dd></div>
+      <div class="cifra"><dt>Gastado hasta ahora</dt><dd id="c-gastado">—<small>&nbsp;</small></dd></div>
+      <div class="cifra"><dt>Un año antes, a estas alturas</dt><dd id="c-anterior">—<small>&nbsp;</small></dd></div>
+    </dl>
+
+    <section aria-labelledby="t-ritmo">
+      <div class="seccion-titulo">
+        <h2 id="t-ritmo">A qué ritmo se gasta</h2>
+        <p id="ritmo-texto">Parte del presupuesto ya gastada al final de cada mes, este año y el anterior.</p>
+      </div>
+      <div class="hueco-grafico" id="ritmo"></div>
+    </section>
+
+    <section aria-labelledby="t-capitulos">
+      <div class="seccion-titulo">
+        <h2 id="t-capitulos">En qué tipo de gasto</h2>
+        <p>Cuánto se lleva de cada tipo. La raya marca la parte del año que ha pasado: una barra por debajo va más lenta que el calendario.</p>
+      </div>
+      <div id="capitulos"></div>
+    </section>
+
+    <section aria-labelledby="t-politicas">
+      <div class="seccion-titulo">
+        <h2 id="t-politicas">Para qué</h2>
+        <p>Por políticas de gasto: sanidad, defensa, infraestructuras, investigación…</p>
+      </div>
+      <div id="politicas"></div>
+    </section>
+
+    <section aria-labelledby="t-ministerios">
+      <div class="seccion-titulo">
+        <h2 id="t-ministerios">Quién lo gasta</h2>
+        <p>Por ministerios y otros órganos. Pulsa uno para ver sus programas, o busca un programa.</p>
+      </div>
+      <form class="buscador-lupa" id="buscador" role="search" action="./" method="get">
+        <label class="oculto" for="q">Buscar un programa</label>
+        <input id="q" name="q" type="search" autocomplete="off" placeholder="Ferroviario, hospitales, becas, carreteras…">
+        <button class="boton" type="submit">Buscar</button>
+      </form>
+      <p class="resumen-lupa" id="resumen-programas" aria-live="polite"></p>
+      <div id="ministerios"></div>
+    </section>
+
+    <section aria-labelledby="t-leer">
+      <div class="seccion-titulo">
+        <h2 id="t-leer">Cómo leerlo</h2>
+      </div>
+      <div class="aviso" id="como-leer">
+        <p><strong>Presupuesto</strong> son los créditos definitivos: lo aprobado para el año más las modificaciones hechas desde enero. En 2026 sigue vigente el presupuesto de 2023, prorrogado.</p>
+        <p><strong>Gastado</strong> son las obligaciones reconocidas: lo que el Estado ya debe porque el trabajo está hecho o el derecho reconocido. Casi todo se paga en días.</p>
+        <p><strong>El ritmo no es igual todo el año.</strong> Sueldos y pensiones se pagan cada mes, pero las inversiones y muchas transferencias se concentran al final. Por eso la comparación justa es con el mismo mes del año anterior.</p>
+        <p><strong>Lo que no aparece:</strong> solo es el presupuesto del Estado. No están la Seguridad Social, las comunidades autónomas ni los ayuntamientos, que gastan la mayor parte de la sanidad, la educación y las pensiones. Las cifras principales son las operaciones no financieras: sin la compra de activos financieros ni la devolución de deuda, que mueven dinero pero no son gasto.</p>
+        <p id="fuente-igae"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="envoltorio pie">
+    <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. <a href="../fuentes/#t-error">¿Ves un error?</a> Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+  </footer>
+
+  <script type="module" src="../assets/js/presupuesto.js"></script>
+  <script type="module" src="../assets/js/comun.js"></script>
+</body>
+</html>

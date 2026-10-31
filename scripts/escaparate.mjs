@@ -1,11 +1,12 @@
 // Prepara el escaparate: lo que descarga la web, a partir del almacén.
 //
 //   almacen/                       Datos completos, acumulados (no se publican; la Action los guarda
-//     cofog.json                   en la release «almacen» del repositorio)
+//     cofog.json · ejecucion.json  en la release «almacen» del repositorio)
 //     contratos.json · subvenciones.json · ayuda.json
 //
 //   data/                          Lo que se publica con la web
 //     vistas/<página>.json         Lo que enseña cada página, ya calculado (pocos KB)
+//     vistas/presupuesto.json      Presupuesto del Estado frente a lo gastado (de almacen/ejecucion.json)
 //     lupa/contratos.json          Índice de la Lupa: los mayores, totales por tema y administración, meses
 //     lupa/contratos/AAAA-MM.json  Un fichero por mes, que solo se pide al buscar o filtrar
 //     lupa/subvenciones.json · lupa/subvenciones/AAAA-MM.json
@@ -14,7 +15,7 @@
 // Uso: node scripts/escaparate.mjs   (después de npm run datos / npm run lupa, o de npm run ejemplo)
 
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
-import { VISTAS, aJson } from '../assets/js/vistas.js';
+import { VISTAS, vistaPresupuesto, aJson } from '../assets/js/vistas.js';
 import { indiceDe, porMes } from '../assets/js/lupa-datos.js';
 
 const raiz = new URL('../', import.meta.url);
@@ -47,6 +48,11 @@ export async function escaparate() {
       resumen.push(`vistas/${pagina}: ${(bytes / 1024).toFixed(1)} KB`);
     }
   }
+
+  // Presupuesto frente a lo gastado (IGAE)
+  const ejecucion = await leer('ejecucion.json');
+  const presupuesto = ejecucion && vistaPresupuesto(ejecucion);
+  if (presupuesto) resumen.push(`vistas/presupuesto: ${((await escribir('vistas/presupuesto.json', presupuesto)) / 1024).toFixed(1)} KB, hasta ${presupuesto.mes}`);
 
   for (const [nombre, clave, importe] of [['contratos', 'contratos', 'a'], ['subvenciones', 'subvenciones', 'i']]) {
     const d = await leer(`${nombre}.json`);

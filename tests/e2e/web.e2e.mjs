@@ -69,7 +69,7 @@ const VARIANTES = [
   ['escritorio oscuro', { ...ESCRITORIO, colorScheme: 'dark' }],
 ];
 
-for (const [ruta, nombre] of [['', 'portada'], ['a-donde-va/', 'a dónde va'], ['quien-gasta/', 'quién gasta'], ['lupa/', 'lupa'], ['fuentes/', 'fuentes']]) {
+for (const [ruta, nombre] of [['', 'portada'], ['a-donde-va/', 'a dónde va'], ['quien-gasta/', 'quién gasta'], ['presupuesto/', 'presupuesto'], ['lupa/', 'lupa'], ['fuentes/', 'fuentes']]) {
   test(`${nombre}: sin errores, accesible y sin desbordar en móvil y escritorio, claro y oscuro`, async () => {
     for (const [variante, opciones] of VARIANTES) {
       const { pagina, errores, contexto } = await abrir(ruta, opciones);
@@ -172,6 +172,32 @@ test('quién gasta: las cuatro administraciones y las funciones', async () => {
   await contexto.close();
 });
 
+test('presupuesto: lo gastado, el ritmo, los capítulos y los ministerios con sus programas', async () => {
+  let vista = null;
+  try {
+    vista = JSON.parse(await readFile(new URL('../../_site/data/vistas/presupuesto.json', import.meta.url), 'utf8'));
+  } catch {}
+  const { pagina, contexto } = await abrir('presupuesto/', ESCRITORIO);
+  if (!vista) {
+    assert.match(await pagina.textContent('#capitulos'), /no están disponibles/);
+    await contexto.close();
+    return;
+  }
+  assert.match(await pagina.textContent('#c-gastado'), /%/);
+  assert.match(await pagina.textContent('#c-presupuesto'), /millones de €/);
+  assert.ok(await pagina.locator('#ritmo .g-lineas').isVisible(), 'gráfico del ritmo');
+  assert.ok((await pagina.locator('#capitulos .g-fila').count()) >= 5);
+  assert.ok((await pagina.locator('.ministerio').count()) >= 15);
+  // Abrir un ministerio enseña sus programas
+  await pagina.locator('.ministerio summary').first().click();
+  assert.ok((await pagina.locator('.ministerio details[open] .g-avance .g-fila').count()) >= 1);
+  // Buscar un programa que no existe
+  await pagina.fill('#q', 'zzzzzz');
+  await pagina.waitForTimeout(400);
+  assert.match(await pagina.textContent('#resumen-programas'), /Ningún programa/);
+  await contexto.close();
+});
+
 test('fuentes: la tabla de partidas sale del código', async () => {
   const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
   assert.equal(await pagina.locator('#tabla-partidas tr').count(), PARTIDAS.length);
@@ -188,7 +214,7 @@ test('404: página propia con su código', async () => {
 });
 
 test('SEO y compartir: cada página tiene título, descripción, canónica e imagen', async () => {
-  for (const ruta of ['', 'a-donde-va/', 'quien-gasta/', 'lupa/', 'fuentes/']) {
+  for (const ruta of ['', 'a-donde-va/', 'quien-gasta/', 'presupuesto/', 'lupa/', 'fuentes/']) {
     const { pagina, contexto } = await abrir(ruta, ESCRITORIO);
     const meta = await pagina.evaluate(() => ({
       titulo: document.title,

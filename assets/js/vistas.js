@@ -64,10 +64,47 @@ export function vistaADondeVa(d) {
 /** Quién gasta: cuánto gasta cada administración y el reparto de cada función. */
 export function vistaQuienGasta(d) {
   const b = base(d);
-  return { ...b, administraciones: gastoPorAdministracion(d, b.año), funciones: reparto(d, b.año) };
+  return { ...b, poblacion: d.poblacion?.[b.año] ?? null, administraciones: gastoPorAdministracion(d, b.año), funciones: reparto(d, b.año) };
 }
 
 export const VISTAS = { portada: vistaPortada, 'a-donde-va': vistaADondeVa, 'quien-gasta': vistaQuienGasta };
+
+/**
+ * Presupuesto: lo presupuestado frente a lo gastado (IGAE). Parte del almacén de la ejecución, no de Eurostat.
+ * Lo principal son las operaciones no financieras (capítulos 1 a 7): sin la compra de activos ni la amortización
+ * de deuda, que son movimientos de dinero y no gasto.
+ */
+export function vistaPresupuesto(e) {
+  const meses = Object.keys(e?.meses ?? {}).sort();
+  const mes = meses.at(-1);
+  if (!mes) return null;
+  const m = e.meses[mes];
+  const año = mes.slice(0, 4);
+  const anterior = String(Number(año) - 1);
+  const pct = (x) => (x?.creditos > 0 && x.obligaciones !== null ? x.obligaciones / x.creditos : null);
+  const serie = (a) => meses.filter((x) => x.startsWith(`${a}-`)).map((x) => ({ mes: Number(x.slice(5)), ejecutado: pct(e.meses[x].noFinanciero) }));
+  const programasDe = new Map((m.programas ?? []).map((s) => [s.nombre, s.programas]));
+  const fila = ({ nombre, creditos, comprometidos, obligaciones, pagos, anterior: ant }) => ({
+    nombre, creditos, comprometidos, obligaciones, pagos,
+    ...(ant ? { anterior: { creditos: ant.creditos, obligaciones: ant.obligaciones } } : {}),
+  });
+  return {
+    mes,
+    año,
+    actualizado: e.actualizado,
+    ...(e.ejemplo ? { ejemplo: true } : {}),
+    url: m.url ?? null,
+    total: fila(m.noFinanciero),
+    financiero: m.total && m.noFinanciero ? { creditos: m.total.creditos - m.noFinanciero.creditos, obligaciones: m.total.obligaciones - m.noFinanciero.obligaciones } : null,
+    series: { [año]: serie(año), [anterior]: serie(anterior) },
+    capitulos: (m.capitulos ?? []).map((c) => ({ id: c.id, ...fila(c) })),
+    politicas: (m.areas ?? []).filter((a) => a.id !== '0').flatMap((a) => a.politicas.map((p) => ({ id: p.id, area: a.nombre, ...fila(p) }))),
+    secciones: (m.secciones ?? []).map((s) => ({
+      ...fila(s),
+      programas: (programasDe.get(s.nombre) ?? []).filter((p) => p.creditos > 0).map(fila).sort((a, b) => b.creditos - a.creditos),
+    })),
+  };
+}
 
 /** JSON compacto: los decimales, con 6 cifras significativas, que es más de lo que se enseña. */
 export const aJson = (x) => JSON.stringify(x, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Number(v.toPrecision(6)) : v));
