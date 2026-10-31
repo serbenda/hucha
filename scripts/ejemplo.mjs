@@ -25,6 +25,14 @@ await writeFile(new URL('contratos.json', lupa), JSON.stringify({ ejemplo: true,
 await writeFile(new URL('subvenciones.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), umbral: 1e6, subvenciones: [
   { id: 'S1', f: '2026-10-13', i: 28e6, b: 'AYUNTAMIENTO DE EJEMPLO', nif: 'P0000000A', c: 'EJEMPLO: plan de obras municipales', o: 'Dirección General de Ejemplo', n: 'Estado', l: null, u: null, te: [] },
 ] }));
-await writeFile(new URL('ayuda.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), unidad: 'millones de dólares', años: ['2023', '2024'], paises: { MAR: { 2023: 100, 2024: 120 }, UKR: { 2023: 80, 2024: 60 } } }));
+await writeFile(new URL('ayuda.json', lupa), JSON.stringify({
+  ejemplo: true, actualizado: new Date().toISOString(), unidad: 'millones de dólares', años: ['2022', '2023'],
+  totales: { 2022: 900, 2023: 1000 },
+  sectores: { 2022: { 120: 90, 150: 110, 720: 200, 930: 300 }, 2023: { 120: 100, 150: 120, 720: 230, 930: 320, 140: 40 } },
+  paises: { MAR: { 2022: 100, 2023: 120 }, UKR: { 2022: 80, 2023: 60 }, COL: { 2022: 40, 2023: 45 } },
+  porPais: { MAR: { 2023: { 120: 30, 140: 25, 150: 20, 310: 15 } }, UKR: { 2023: { 720: 50, 730: 10 } }, COL: { 2023: { 150: 25, 160: 10 } } },
+  proyectosAño: '2023',
+  proyectos: { MAR: [{ v: 3.2, t: 'EJEMPLO: centros de salud en el norte', s: '120', a: 'AECID', c: 'ONG y sociedad civil' }, { v: 2.1, t: 'EJEMPLO: agua potable en zonas rurales', s: '140', a: 'AECID', c: 'Sector público' }] },
+}));
 console.log('Lupa de EJEMPLO creada en almacen/');
 for (const r of await escaparate()) console.log(r);

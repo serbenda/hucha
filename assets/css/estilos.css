@@ -545,3 +545,6 @@ a.g-bloque:hover { filter: brightness(0.92); }
 .panorama-bloque > p { margin: 0.2rem 0 0.6rem; font-size: 0.85rem; }
 .panorama-bloque .g-fila { padding-inline: 0.35rem; }
 .panorama-bloque .g-nombre { font-weight: 500; font-size: 0.92rem; }
+.enlace { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.resultado h3 .enlace { font-weight: 600; }
+.volver { margin-bottom: 0.4rem; font-size: 0.95rem; color: var(--cobre); }

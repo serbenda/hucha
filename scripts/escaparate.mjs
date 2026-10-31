@@ -9,7 +9,7 @@
 //     lupa/contratos.json          Índice de la Lupa: los mayores, totales por tema y administración, meses
 //     lupa/contratos/AAAA-MM.json  Un fichero por mes, que solo se pide al buscar o filtrar
 //     lupa/subvenciones.json · lupa/subvenciones/AAAA-MM.json
-//     lupa/ayuda.json
+//     lupa/ayuda.json · lupa/ayuda/<país>.json   Ayuda por país y sector, y los proyectos de cada país
 //
 // Uso: node scripts/escaparate.mjs   (después de npm run datos / npm run lupa, o de npm run ejemplo)
 
@@ -60,8 +60,22 @@ export async function escaparate() {
     resumen.push(`lupa/${nombre}: índice ${(bytes / 1024).toFixed(1)} KB, ${Object.keys(meses).length} meses (el mayor, ${(mayor / 1024).toFixed(0)} KB)`);
   }
 
+  // Ayuda a otros países: un índice (totales por año, país y sector) y un fichero por país con sus proyectos
   const ayuda = await leer('ayuda.json');
-  if (ayuda) resumen.push(`lupa/ayuda: ${((await escribir('lupa/ayuda.json', ayuda)) / 1024).toFixed(1)} KB`);
+  if (ayuda) {
+    const { porPais = {}, proyectos = {}, ...resto } = ayuda;
+    const ultimo = ayuda.años?.at(-1);
+    const sectoresPais = Object.fromEntries(Object.entries(porPais).map(([p, años]) => [p, años[ultimo] ?? {}]));
+    const bytes = await escribir('lupa/ayuda.json', { ...resto, ...(ayuda.sectores ? { sectoresPais } : {}) });
+    await rm(new URL('lupa/ayuda/', data), { recursive: true, force: true });
+    let n = 0;
+    for (const pais of Object.keys(ayuda.paises ?? {})) {
+      if (!porPais[pais] && !proyectos[pais]) continue;
+      await escribir(`lupa/ayuda/${pais}.json`, { pais, años: ayuda.años, total: ayuda.paises[pais], sectores: porPais[pais] ?? {}, proyectosAño: ayuda.proyectosAño, proyectos: proyectos[pais] ?? [] });
+      n++;
+    }
+    resumen.push(`lupa/ayuda: índice ${(bytes / 1024).toFixed(1)} KB, ${n} países con detalle`);
+  }
   return resumen;
 }
 

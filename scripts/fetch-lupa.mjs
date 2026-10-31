@@ -5,7 +5,7 @@
 //   El feed se lee de lo más nuevo hacia atrás; cada ejecución añade lo nuevo y sigue rellenando hacia atrás,
 //   así que el histórico crece solo. El punto por el que va se guarda en el propio fichero.
 // - subvenciones.json: concesiones desde 1 millón de € a empresas y entidades, últimos 12 meses (BDNS).
-// - ayuda.json: ayuda oficial al desarrollo de España por país, últimos años (OCDE).
+// - ayuda.json: ayuda oficial al desarrollo de España por país y sector, y sus mayores proyectos (OCDE, CRS).
 // Cada parte es independiente: si una fuente falla, se queda la versión anterior de esa parte.
 
 import { readFile, writeFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
@@ -17,7 +17,7 @@ import { pipeline } from 'node:stream/promises';
 import { execFileSync } from 'node:child_process';
 import {
   parsearAtom, esContratoUtil, compactarContrato, urlConcesiones, parsearConcesiones, UMBRAL_SUBVENCIONES,
-  urlAyuda, parsearAyuda, UMBRAL_CONTRATOS, esMarcoPorTitulo,
+  urlCrs, urlCrsProyectos, lectorCsv, acumuladorCrs, acumuladorProyectos, UMBRAL_CONTRATOS, esMarcoPorTitulo,
 } from '../assets/js/lupa-datos.js';
 import { esPais } from '../assets/js/paises.js';
 import { anotar } from './estado.mjs';
@@ -240,15 +240,50 @@ async function subvenciones() {
 // ---------------------------------------------------------------------------
 // Ayuda a otros países
 
+/** Lee un CSV grande de la red por trozos, sin guardarlo entero en memoria. */
+async function leerCsv(url, alFila, minutos = 15) {
+  const r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(minutos * 60000) });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const lector = lectorCsv(alFila);
+  const dec = new TextDecoder();
+  for await (const trozo of r.body) lector.trozo(dec.decode(trozo, { stream: true }));
+  lector.trozo(dec.decode());
+  lector.fin();
+}
+
 async function ayuda() {
-  const desde = hoy.getFullYear() - 6;
-  const filas = parsearAyuda(await descargar(urlAyuda(desde))).filter((f) => esPais(f.pais));
-  if (filas.length < 50) throw new Error(`solo ${filas.length} datos`);
-  const años = [...new Set(filas.map((f) => f.año))].sort();
-  const porPais = {};
-  for (const f of filas) (porPais[f.pais] ??= {})[f.año] = Math.round(f.valor * 100) / 100;
-  await guardar('ayuda.json', { actualizado: new Date().toISOString(), unidad: 'millones de dólares', años, paises: porPais });
-  return `${Object.keys(porPais).length} países, ${años[0]}-${años.at(-1)}`;
+  // 1. Totales por país y sector de los últimos años
+  const crs = acumuladorCrs();
+  await leerCsv(urlCrs(hoy.getFullYear() - 7), crs.fila);
+  const r = crs.resultado();
+  const paises = Object.fromEntries(Object.entries(r.paises).filter(([p]) => esPais(p)));
+  if (Object.keys(paises).length < 50) throw new Error(`solo ${Object.keys(paises).length} países`);
+  const ultimo = r.años.at(-1);
+
+  // 2. Los proyectos del último año, para el detalle de cada país (si falla, se queda lo anterior)
+  let proyectos = (await leer('ayuda.json'))?.proyectos ?? {};
+  let notaProyectos = '';
+  try {
+    const p = acumuladorProyectos();
+    await leerCsv(urlCrsProyectos(ultimo), p.fila, 25);
+    proyectos = p.resultado();
+    notaProyectos = `, proyectos de ${Object.keys(proyectos).length} países`;
+  } catch (e) {
+    notaProyectos = `, sin proyectos nuevos (${e.message})`;
+  }
+
+  await guardar('ayuda.json', {
+    actualizado: new Date().toISOString(),
+    unidad: 'millones de dólares',
+    años: r.años,
+    totales: r.totales,
+    sectores: r.sectores,
+    paises,
+    porPais: Object.fromEntries(Object.entries(r.porPais).filter(([p]) => esPais(p))),
+    proyectosAño: ultimo,
+    proyectos,
+  });
+  return `${Object.keys(paises).length} países, ${r.años[0]}-${ultimo}; ${Object.keys(r.sectores[ultimo] ?? {}).length} sectores en ${ultimo}${notaProyectos}`;
 }
 
 // ---------------------------------------------------------------------------

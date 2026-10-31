@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parsearAtom, esContratoUtil, compactarContrato, parsearConcesiones, parsearAyuda, buscar, suma, esPersona,
-  normalizar, temas, finalidad, urlConcesiones, TEMAS, indiceDe, porMes, mesDe, totales, esMarcoPorTitulo,
+  parsearAtom, esContratoUtil, compactarContrato, parsearConcesiones, buscar, suma, esPersona,
+  normalizar, temas, finalidad, urlConcesiones, lectorCsv, acumuladorCrs, acumuladorProyectos, grupoSector, urlCrs, TEMAS, indiceDe, porMes, mesDe, totales, esMarcoPorTitulo,
 } from '../assets/js/lupa-datos.js';
 import { nombrePais, esPais } from '../assets/js/paises.js';
 
@@ -110,15 +110,51 @@ test('subvenciones: sin personas físicas, con convocatoria y nivel', () => {
   assert.equal(u.searchParams.get('direccion'), 'desc');
 });
 
-test('ayuda: SDMX genérico a millones de dólares por país', () => {
-  const xml = `<message:DataSet><generic:Series><generic:SeriesKey><generic:Value id="DONOR" value="ESP" /><generic:Value id="RECIPIENT" value="MAR" /></generic:SeriesKey>
-    <generic:Attributes><generic:Value id="UNIT_MULT" value="6" /></generic:Attributes>
-    <generic:Obs><generic:ObsDimension id="TIME_PERIOD" value="2023" /><generic:ObsValue value="123.45" /></generic:Obs>
-    <generic:Obs><generic:ObsDimension id="TIME_PERIOD" value="2024" /><generic:ObsValue value="150" /></generic:Obs></generic:Series></message:DataSet>`;
-  assert.deepEqual(parsearAyuda(xml), [{ pais: 'MAR', año: '2023', valor: 123.45 }, { pais: 'MAR', año: '2024', valor: 150 }]);
-  assert.equal(nombrePais('MAR'), 'Marruecos');
-  assert.ok(esPais('UKR') && !esPais('DPGC'));
+test('ayuda: CRS de la OCDE por país, sector y proyectos', () => {
+  const cab = 'STRUCTURE,DONOR,RECIPIENT,Recipient,SECTOR,Sector,CHANNEL,TIME_PERIOD,OBS_VALUE,UNIT_MULT,DONOR_AGENCY,PROJECT_TITLE,SHORT_DESCRIPTION';
+  const filas = [
+    cab,
+    'DATAFLOW,ESP,MAR,Morocco,1000,All,_T,2023,10.5,6,,,',
+    'DATAFLOW,ESP,MAR,Morocco,120,Health,_T,2023,4,6,,,',
+    'DATAFLOW,ESP,MAR,Morocco,151,"Government, general",_T,2023,2,6,,,',
+    'DATAFLOW,ESP,F,Africa,1000,All,_T,2023,99,6,,,',
+    'DATAFLOW,ESP,DPGC,Developing countries,1000,All,_T,2023,500,6,,,',
+    'DATAFLOW,ESP,DPGC,Developing countries,720,Emergency,_T,2023,80,6,,,',
+  ];
+  const a = acumuladorCrs();
+  const l = lectorCsv(a.fila);
+  l.trozo(filas.join('\r\n').slice(0, 120));
+  l.trozo(filas.join('\r\n').slice(120) + '\r\n');
+  l.fin();
+  const r = a.resultado();
+  assert.deepEqual(r.paises, { MAR: { 2023: 10.5 } });
+  assert.deepEqual(r.porPais.MAR['2023'], { 120: 4 });
+  assert.deepEqual(r.sectores['2023'], { 720: 80 });
+  assert.equal(r.totales['2023'], 500);
+  assert.equal(grupoSector('12220'), '120');
+  assert.equal(grupoSector('72040'), '720');
+  assert.equal(grupoSector('1000'), null);
+  assert.match(urlCrs(2019), /DSD_CRS@DF_CRS,1\.7\/ESP\.\.\.100\._T\._T\.D\.V\._T\.\.\?.*startPeriod=2019/);
+
+  const p = acumuladorProyectos(2);
+  for (const f of [
+    'RECIPIENT,SECTOR,CHANNEL,OBS_VALUE,UNIT_MULT,DONOR_AGENCY,PROJECT_TITLE,SHORT_DESCRIPTION',
+    'MAR,12220,20000,0.5,6,Spanish Agency for International Development Co-operation,Centros de salud en Tánger,Centros de salud en Tánger',
+    'MAR,31120,10000,1.5,6,Municipalities,Regadío,Mejora del regadío',
+    'MAR,99810,90000,0.1,6,Others,Pequeño,',
+  ]) p.fila(lectorFila(f));
+  const pr = p.resultado();
+  assert.equal(pr.MAR.length, 2);
+  assert.deepEqual(pr.MAR[0], { v: 1.5, t: 'Regadío', d: 'Mejora del regadío', s: '310', a: 'Ayuntamientos', c: 'Sector público' });
+  assert.deepEqual(pr.MAR[1], { v: 0.5, t: 'Centros de salud en Tánger', s: '120', a: 'AECID', c: 'ONG y sociedad civil' });
 });
+
+function lectorFila(linea) {
+  let fila;
+  const l = lectorCsv((f) => (fila = f));
+  l.trozo(linea + '\n');
+  return fila;
+}
 
 test('buscar: todas las palabras, sin tildes, ordenado por importe y por tema', () => {
   const lista = [
