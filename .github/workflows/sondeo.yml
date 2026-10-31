@@ -1,0 +1,43 @@
+name: Sondeo temporal
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  igae:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Página y ficheros de la IGAE (ejecución del presupuesto del Estado)
+        run: |
+          B="https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria"
+          UA="Mozilla/5.0 (hucha; github.com/serbenda/hucha)"
+          for a in 2026 2025; do
+            code=$(curl -sL -A "$UA" --max-time 60 "$B/Paginas/imejecucionpresupuesto$a.aspx" -o p$a.html -w "%{http_code}")
+            enlaces=$(grep -oi 'href="[^"]*\.xlsx\?"' p$a.html | sed 's/href="//;s/"$//' | sort -u | tr '\n' ' ')
+            echo "::notice title=IGAE página $a::http $code; enlaces: $(echo "$enlaces" | cut -c1-2500)"
+          done
+          # El último fichero de 2026 que aparezca en la página
+          f=$(grep -oi 'href="[^"]*\.xlsx\?"' p2026.html | sed 's/href="//;s/"$//' | grep -i mensual | tail -1)
+          [ -n "$f" ] || f="/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Documents/MENSUAL%20SEPTIEMBRE%202026%20(EXCEL).xlsx"
+          case "$f" in http*) u="$f";; *) u="https://www.igae.pap.hacienda.gob.es$f";; esac
+          u=$(echo "$u" | sed 's/ /%20/g')
+          code=$(curl -sL -A "$UA" --max-time 120 "$u" -o m.xlsx -w "%{http_code} %{size_download}")
+          echo "::notice title=IGAE libro::$u → $code"
+          unzip -l m.xlsx | tail -1
+          node -e "
+            const { execFileSync } = require('child_process');
+            const x = (p) => { try { return execFileSync('unzip', ['-p', 'm.xlsx', p], { encoding: 'utf8', maxBuffer: 1e9 }); } catch { return ''; } };
+            const libro = x('xl/workbook.xml');
+            const rels = x('xl/_rels/workbook.xml.rels');
+            const ss = [...x('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').trim());
+            const hojas = [...libro.matchAll(/<sheet [^>]*name=\"([^\"]+)\"[^>]*r:id=\"([^\"]+)\"/g)];
+            const salida = [];
+            for (const [, nombre, rid] of hojas) {
+              const destino = (rels.match(new RegExp('Id=\"' + rid + '\"[^>]*Target=\"([^\"]+)\"')) || rels.match(new RegExp('Target=\"([^\"]+)\"[^>]*Id=\"' + rid + '\"')) || [])[1];
+              const xml = x('xl/' + String(destino).replace(/^\/?xl\//, ''));
+              const textos = [...xml.matchAll(/<c [^>]*t=\"s\"[^>]*>\s*<v>(\d+)<\/v>/g)].slice(0, 6).map((m) => ss[+m[1]]).join(' | ');
+              salida.push(nombre + ': ' + textos.slice(0, 160));
+            }
+            for (let i = 0; i < salida.length; i += 12) console.log('::notice title=Hojas ' + (i + 1) + '-' + Math.min(i + 12, salida.length) + ' de ' + salida.length + '::' + salida.slice(i, i + 12).join(' ## '));
+          "
