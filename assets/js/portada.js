@@ -78,15 +78,14 @@ function pintarCifras(datos) {
   const pib = valor(datos, 'TOTAL', año, { unidad: 'PC_GDP' });
   const pibUe = valor(datos, 'TOTAL', año, { geo: 'ue', unidad: 'PC_GDP' });
   const cifras = $('cifras').querySelectorAll('dd');
-  cifras[0].textContent = millones(total);
-  cifras[1].textContent = euros(gastoPorPersona(datos, año));
-  cifras[1].insertAdjacentHTML('beforeend', '<small>al año, contando a todos: niños, jubilados…</small>');
-  cifras[2].textContent = delPib(pib);
-  if (pibUe !== null) {
+  const cifra = (dd, dato, nota) => {
     const small = document.createElement('small');
-    small.textContent = `La media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}`;
-    cifras[2].append(small);
-  }
+    small.textContent = nota || '\u00a0';
+    dd.replaceChildren(dato, small);
+  };
+  cifra(cifras[0], millones(total), `en ${año}`);
+  cifra(cifras[1], euros(gastoPorPersona(datos, año)), 'al año, contando a todos: niños, jubilados…');
+  cifra(cifras[2], delPib(pib), pibUe !== null ? `La media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}` : '');
   $('todos-texto').textContent =
     `En ${año}${esProvisional(datos, año) ? ' (datos provisionales)' : ''}, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.`;
 }

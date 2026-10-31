@@ -69,11 +69,18 @@ try {
   const lista = partidas(datos, año);
   const primera = lista[0];
 
-  $('entradilla').innerHTML =
-    `En ${año}, las administraciones gastaron <strong>${euros(porPersona)} por habitante</strong>. ` +
-    `La partida más grande, ${primera.nombre.toLowerCase()}, se llevó el ${porcentaje(primera.cuota)} del total.`;
-  $('partidas-texto').textContent =
-    `Euros por habitante en ${año}${esProvisional(datos, año) ? ' (datos provisionales)' : ''}. Pulsa una partida para ver qué incluye y cómo ha cambiado desde ${datos.años[0]}.`;
+  const pib = valor(datos, 'TOTAL', año, { unidad: 'PC_GDP' });
+  const pibUe = valor(datos, 'TOTAL', año, { geo: 'ue', unidad: 'PC_GDP' });
+  const cifra = (id, dato, nota) => {
+    const dd = $(id);
+    const small = document.createElement('small');
+    small.textContent = nota;
+    dd.replaceChildren(dato, small);
+  };
+  const provisional = esProvisional(datos, año) ? ', provisional' : '';
+  cifra('c-habitante', euros(porPersona), `al año, en ${año}${provisional}`);
+  cifra('c-mayor', porcentaje(primera.cuota), primera.nombre);
+  cifra('c-pib', delPib(pib), pibUe !== null ? `Media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}` : '');
 
   const mayor = lista[0].cuota;
   $('partidas').replaceChildren(
@@ -99,12 +106,6 @@ try {
     })
   );
 
-  // Total en % del PIB, en la entradilla si hay dato de la UE
-  const pib = valor(datos, 'TOTAL', año, { unidad: 'PC_GDP' });
-  const pibUe = valor(datos, 'TOTAL', año, { geo: 'ue', unidad: 'PC_GDP' });
-  if (pib !== null && pibUe !== null) {
-    $('entradilla').insertAdjacentHTML('beforeend', ` Todo el gasto público supone el ${delPib(pib)}, frente al ${delPib(pibUe).replace(' del PIB', '')} de media en la Unión Europea.`);
-  }
 } catch {
   $('partidas').replaceChildren();
 }
