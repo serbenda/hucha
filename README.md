@@ -136,6 +136,15 @@ Buscador (todas las palabras, sin importar tildes ni mayúsculas), filtros por *
 
 Primero, **en pocas palabras** y con un **glosario** de las palabras que salen en la web (PIB, créditos, obligaciones, acuerdo marco…), para quien no sabe de economía. Después, el detalle: de dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), el presupuesto, la Lupa, cómo se calcula el ticket, privacidad y cómo avisar de un error. Al final, el **aviso legal**: quién está detrás, qué es y qué no es, reutilización de datos públicos (Ley 37/2007), exactitud y responsabilidad, datos personales (minimización de personas físicas, cómo pedir que se retire algo), propiedad intelectual, enlaces y ley aplicable.
 
+### 🇬🇧 English · [`/en/`](https://hucha.bendi.dev/en/)
+
+Las mismas seis páginas en inglés, con los mismos scripts y los mismos datos. Cada página lleva arriba el enlace al otro idioma, y las dos versiones se enlazan con `hreflang` (también en `sitemap.xml`) para que los buscadores enseñen la que toca.
+
+- **No se mantiene a mano.** `scripts/ingles.mjs` genera `en/` al publicar a partir de las páginas en castellano: traduce los textos fijos con el diccionario `scripts/traduccion-en.mjs`, cambia `lang`, la canónica y las rutas de los recursos. Si se añade o cambia un texto en castellano y falta su traducción, `npm test` falla y dice cuál.
+- **Lo que escriben los scripts** se traduce en cada script con `t(castellano, inglés)` (`assets/js/idioma.js`, según el `lang` de la página). Los nombres propios de hucha (partidas, grupos, administraciones, temas, sectores de la ayuda, capítulos y políticas del presupuesto…) están en `assets/js/en.js`. Cifras y fechas, en formato inglés (`€1,235`, `€652 billion`, `31 October 2026`).
+- **Los datos de las fuentes no se traducen:** en la Lupa, los títulos de contratos, organismos, empresas, convocatorias y proyectos salen tal cual se publican; en Presupuesto, los nombres oficiales de ministerios y programas. Así nadie puede decir que hucha cambió un dato. La página lo avisa.
+- **En caso de discrepancia, manda el castellano** (lo dice el aviso legal en inglés).
+
 ---
 
 ## De dónde salen los datos
@@ -580,7 +589,10 @@ npm run e2e && npm run lighthouse && npm run capturas
 | El umbral de contratos o subvenciones | `UMBRAL_CONTRATOS` y `UMBRAL_SUBVENCIONES` en `lupa-datos.js` |
 | Cuánto histórico de contratos se guarda | `ANTIGUEDAD_MAX` en `scripts/fetch-lupa.mjs` |
 | Los mínimos de Lighthouse | `CATEGORIAS` en `scripts/lighthouse.mjs` |
-| Una página nueva | Su HTML, el menú de todas las páginas, `sitemap.xml`, `sw.js`, `PAGINAS` en `lighthouse.mjs`, y los tests de navegador |
+| Una página nueva | Su HTML, el menú de todas las páginas, `PAGINAS` en `scripts/ingles.mjs`, `sitemap.xml`, `sw.js`, `PAGINAS` en `lighthouse.mjs`, y los tests de navegador |
+| Un texto de una página | El HTML en castellano y su traducción en `scripts/traduccion-en.mjs` (el test avisa si falta) |
+| Un texto que escribe un script | El `t('…', '…')` del script, con las dos versiones |
+| Una partida, tema, sector o categoría | Además de su sitio, su nombre en inglés en `assets/js/en.js` (el test avisa si falta) |
 | Cualquier cosa de la web | Subir `VERSION` en `sw.js` |
 | Una fuente deja de responder | Llega un issue `datos`; la web sigue con los últimos datos buenos |
 

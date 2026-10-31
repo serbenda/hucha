@@ -6,14 +6,24 @@ import { colorPartida, tieneColor } from './colores.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, millones, delPib, leerImporte } from './formato.js';
+import { t, LOCALE, EN } from './idioma.js';
+import { PARTIDAS, en, enQue } from './en.js';
 
 const $ = (id) => document.getElementById(id);
 const entrada = $('bruto');
 const conEmpresa = $('empresa');
 
+// En inglés, los importes del HTML (escritos con punto de miles) se reescriben con coma: 30,000 y €23,000
+if (EN) {
+  entrada.value = new Intl.NumberFormat(LOCALE).format(30000);
+  document.querySelectorAll('[data-sueldo]').forEach((b) => {
+    if (/^[\d.]+\s€$/.test(b.textContent.trim())) b.textContent = euros(Number(b.dataset.sueldo));
+  });
+}
+
 // El sueldo puede venir en el enlace (?sueldo=30000&empresa=1): no lo generamos al compartir, pero se acepta
 const params = new URLSearchParams(location.search);
-if (leerImporte(params.get('sueldo')) > 0) entrada.value = new Intl.NumberFormat('es-ES').format(leerImporte(params.get('sueldo')));
+if (leerImporte(params.get('sueldo')) > 0) entrada.value = new Intl.NumberFormat(LOCALE).format(leerImporte(params.get('sueldo')));
 if (params.get('empresa') === '1') conEmpresa.checked = true;
 
 let lista = [];
@@ -44,25 +54,25 @@ function pintarTicket() {
   const reparto = $('reparto');
 
   if (!a) {
-    aporte.replaceChildren(linea('Escribe tu sueldo bruto anual', ''));
+    aporte.replaceChildren(linea(t('Escribe tu sueldo bruto anual', 'Enter your gross yearly salary'), ''));
     reparto.replaceChildren();
     $('resumen').replaceChildren();
     return;
   }
 
   const filas = [
-    linea('IRPF', euros(a.irpf), { titulo: 'Impuesto sobre la renta, estimado con las reglas de retención de la Agencia Tributaria' }),
-    linea('Seguridad Social', euros(a.cotizacionTrabajador), { titulo: 'Tu parte de las cotizaciones' }),
+    linea('IRPF', euros(a.irpf), { titulo: t('Impuesto sobre la renta, estimado con las reglas de retención de la Agencia Tributaria', 'Personal income tax, estimated with the Spanish Tax Agency withholding rules') }),
+    linea(t('Seguridad Social', 'Social Security'), euros(a.cotizacionTrabajador), { titulo: t('Tu parte de las cotizaciones', 'Your share of contributions') }),
   ];
-  if (conEmpresa.checked) filas.push(linea('Seguridad Social (tu empresa)', euros(a.cotizacionEmpresa), { clase: 'empresa' }));
+  if (conEmpresa.checked) filas.push(linea(t('Seguridad Social (tu empresa)', 'Social Security (your employer)'), euros(a.cotizacionEmpresa), { clase: 'empresa' }));
   const total = conEmpresa.checked ? a.conEmpresa : a.tuyo;
   filas.push(linea('Total', euros(total), { clase: 'total' }));
   aporte.replaceChildren(...filas);
 
   // En el móvil el ticket queda debajo: un resumen junto al campo para que se vea que algo ha cambiado
   const resumen = $('resumen');
-  resumen.replaceChildren('Pones ', Object.assign(document.createElement('strong'), { textContent: euros(total) }), ' al año · ');
-  const ir = Object.assign(document.createElement('a'), { href: '#ticket', textContent: 'ver a dónde va ↓' });
+  resumen.replaceChildren(t('Pones ', 'You put in '), Object.assign(document.createElement('strong'), { textContent: euros(total) }), t(' al año · ', ' a year · '));
+  const ir = Object.assign(document.createElement('a'), { href: '#ticket', textContent: t('ver a dónde va ↓', 'see where it goes ↓') });
   resumen.append(ir);
 
   if (!lista.length) return;
@@ -70,8 +80,10 @@ function pintarTicket() {
   reparto.replaceChildren(...repartidas.map((p) => linea(p.nombre, euros(p.euros), { titulo: p.que, extra: porcentaje(p.cuota), id: p.id })));
 
   $('ticket-pie').textContent =
-    `Si ganas ${euros(bruto)} brutos, te quedan unos ${euros(a.neto)} netos al año. ` +
-    `Reparto según el gasto público de ${año}${vista?.provisional ? ' (provisional)' : ''}. Reglas fiscales de ${REGLAS.año}. Estimación orientativa.`;
+    t(
+      `Si ganas ${euros(bruto)} brutos, te quedan unos ${euros(a.neto)} netos al año. Reparto según el gasto público de ${año}${vista?.provisional ? ' (provisional)' : ''}. Reglas fiscales de ${REGLAS.año}. Estimación orientativa.`,
+      `If you earn ${euros(bruto)} gross, you keep about ${euros(a.neto)} net a year. Split according to public spending in ${año}${vista?.provisional ? ' (provisional)' : ''}. ${REGLAS.año} tax rules. Rough estimate.`
+    );
 }
 
 let vista = null;
@@ -84,11 +96,14 @@ function pintarCifras(v) {
     small.textContent = nota || '\u00a0';
     dd.replaceChildren(dato, small);
   };
-  cifra(cifras[0], millones(total), `en ${año}`);
-  cifra(cifras[1], euros(v.porPersona), 'al año, contando a todos: niños, jubilados…');
-  cifra(cifras[2], delPib(pib), pibUe !== null ? `La media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}` : '');
+  cifra(cifras[0], millones(total), t(`en ${año}`, `in ${año}`));
+  cifra(cifras[1], euros(v.porPersona), t('al año, contando a todos: niños, jubilados…', 'a year, counting everyone: children, pensioners…'));
+  cifra(cifras[2], delPib(pib), pibUe !== null ? t(`La media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}`, `European Union average: ${delPib(pibUe).replace(' of GDP', '')}`) : '');
   $('todos-texto').textContent =
-    `En ${año}${v.provisional ? ' (datos provisionales)' : ''}, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.`;
+    t(
+      `En ${año}${v.provisional ? ' (datos provisionales)' : ''}, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.`,
+      `In ${año}${v.provisional ? ' (provisional data)' : ''}, all administrations together (central government, regions, local councils and Social Security) spent this.`
+    );
 }
 
 let espera;
@@ -103,7 +118,7 @@ $('formulario').addEventListener('submit', (e) => {
 });
 document.querySelectorAll('[data-sueldo]').forEach((b) =>
   b.addEventListener('click', () => {
-    entrada.value = new Intl.NumberFormat('es-ES').format(Number(b.dataset.sueldo));
+    entrada.value = new Intl.NumberFormat(LOCALE).format(Number(b.dataset.sueldo));
     pintarTicket();
   })
 );
@@ -111,17 +126,17 @@ document.querySelectorAll('[data-sueldo]').forEach((b) =>
 $('compartir').addEventListener('click', async () => {
   // Se comparte el reparto en porcentajes, nunca el sueldo
   const url = new URL('./', location.href).href;
-  const principales = lista.slice(0, 3).map((p) => `${Math.round(p.cuota * 100)} € a ${p.nombre.toLowerCase()}`);
+  const principales = lista.slice(0, 3).map((p) => t(`${Math.round(p.cuota * 100)} € a ${p.nombre.toLowerCase()}`, `€${Math.round(p.cuota * 100)} to ${p.nombre.toLowerCase()}`));
   const texto = lista.length
-    ? `De cada 100 € de gasto público en España, ${principales.join(', ')}. Mira a dónde van tus impuestos:`
-    : 'Mira a dónde van tus impuestos:';
+    ? t(`De cada 100 € de gasto público en España, ${principales.join(', ')}. Mira a dónde van tus impuestos:`, `Out of every €100 of public spending in Spain, ${principales.join(', ')}. See where your taxes go:`)
+    : t('Mira a dónde van tus impuestos:', 'See where your taxes go:');
   const boton = $('compartir');
   try {
-    if (navigator.share) await navigator.share({ title: 'hucha: a dónde va el dinero público', text: texto, url });
+    if (navigator.share) await navigator.share({ title: t('hucha: a dónde va el dinero público', 'hucha: where Spain’s public money goes'), text: texto, url });
     else {
       await navigator.clipboard.writeText(`${texto} ${url}`);
-      boton.textContent = 'Copiado';
-      setTimeout(() => (boton.textContent = 'Compartir el reparto'), 2500);
+      boton.textContent = t('Copiado', 'Copied');
+      setTimeout(() => (boton.textContent = t('Compartir el reparto', 'Share the breakdown')), 2500);
     }
   } catch {}
 });
@@ -131,23 +146,23 @@ pintarTicket();
 try {
   vista = await cargarVista('portada');
   año = vista.año;
-  lista = vista.partidas;
-  $('ticket-año').textContent = `Gasto público de España en ${año}`;
+  lista = vista.partidas.map((p) => ({ ...p, nombre: en(PARTIDAS, p.id, p.nombre), que: enQue(PARTIDAS, p.id, p.que) }));
+  $('ticket-año').textContent = t(`Gasto público de España en ${año}`, `Public spending in Spain, ${año}`);
   pintarTicket();
   pintarCifras(vista);
   // De cada 100 €: las partidas con color propio y, en gris, las demás juntas
   const conColor = lista.filter((p) => tieneColor(p.id));
   const otras = lista.filter((p) => !tieneColor(p.id));
   const resto = otras.reduce((t, p) => t + p.cuota, 0);
-  const euros100 = (c) => `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: c < 0.1 ? 1 : 0 }).format(c * 100)} €`;
+  const euros100 = (c) => { const n = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: c < 0.1 ? 1 : 0 }).format(c * 100); return t(`${n} €`, `€${n}`); };
   $('mapa').innerHTML = cien(
     [
       ...conColor.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, color: colorPartida(p.id), texto: euros100(p.cuota), href: `a-donde-va/#p-${p.id}` })),
-      ...(otras.length ? [{ id: 'otras', nombre: `Otras ${otras.length} partidas`, nota: otras.map((p) => p.nombre.toLowerCase()).join(', '), valor: resto, color: 'var(--serie-otros)', texto: euros100(resto), href: 'a-donde-va/#t-partidas' }] : []),
+      ...(otras.length ? [{ id: 'otras', nombre: t(`Otras ${otras.length} partidas`, `${otras.length} other items`), nota: otras.map((p) => p.nombre.toLowerCase()).join(', '), valor: resto, color: 'var(--serie-otros)', texto: euros100(resto), href: 'a-donde-va/#t-partidas' }] : []),
     ],
-    { titulo: 'De cada 100 € de gasto público' }
+    { titulo: t('De cada 100 € de gasto público', 'Out of every €100 of public spending') }
   );
   activarCien($('mapa'));
 } catch {
-  $('reparto').replaceChildren(linea('Sin datos ahora mismo', ''));
+  $('reparto').replaceChildren(linea(t('Sin datos ahora mismo', 'No data right now'), ''));
 }

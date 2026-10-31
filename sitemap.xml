@@ -1,9 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://hucha.bendi.dev/</loc></url>
-  <url><loc>https://hucha.bendi.dev/a-donde-va/</loc></url>
-  <url><loc>https://hucha.bendi.dev/quien-gasta/</loc></url>
-  <url><loc>https://hucha.bendi.dev/presupuesto/</loc></url>
-  <url><loc>https://hucha.bendi.dev/lupa/</loc></url>
-  <url><loc>https://hucha.bendi.dev/fuentes/</loc></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://hucha.bendi.dev/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/a-donde-va/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/a-donde-va/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/a-donde-va/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/a-donde-va/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/quien-gasta/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/quien-gasta/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/quien-gasta/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/quien-gasta/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/presupuesto/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/presupuesto/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/presupuesto/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/presupuesto/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/lupa/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/lupa/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/lupa/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/lupa/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/fuentes/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/fuentes/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/fuentes/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/fuentes/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/en/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/en/a-donde-va/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/a-donde-va/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/a-donde-va/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/a-donde-va/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/en/quien-gasta/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/quien-gasta/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/quien-gasta/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/quien-gasta/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/en/presupuesto/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/presupuesto/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/presupuesto/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/presupuesto/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/en/lupa/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/lupa/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/lupa/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/lupa/"/>
+  </url>
+  <url>
+    <loc>https://hucha.bendi.dev/en/fuentes/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://hucha.bendi.dev/fuentes/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://hucha.bendi.dev/en/fuentes/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hucha.bendi.dev/fuentes/"/>
+  </url>
 </urlset>

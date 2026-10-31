@@ -146,7 +146,9 @@ jobs:
       - name: Preparar la web
         run: |
           mkdir -p _site vendor
-          cp -r index.html 404.html a-donde-va quien-gasta presupuesto lupa fuentes assets data vendor \
+          # Versión en inglés (en/): las mismas páginas con los textos fijos traducidos
+          node scripts/ingles.mjs
+          cp -r index.html 404.html a-donde-va quien-gasta presupuesto lupa fuentes en assets data vendor \
             manifest.webmanifest sw.js sitemap.xml robots.txt .nojekyll _site/
           # Versión en los estilos y scripts de cada página, y en los módulos que importan entre sí:
           # al publicar, nadie mezcla HTML nuevo con CSS o JS viejos
