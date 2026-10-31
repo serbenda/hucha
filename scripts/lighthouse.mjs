@@ -44,6 +44,12 @@ for (const [nombre, ruta] of Object.entries(PAGINAS)) {
     const cls = a['layout-shifts']?.details?.items ?? [];
     if (cls.length) linea += `, desplazamientos: ${cls.slice(0, 3).map((x) => `${x.node?.snippet ?? '?'} ${x.score?.toFixed?.(3)}`).join(' | ')}`;
   }
+  for (const c of ['accessibility', 'best-practices', 'seo']) {
+    if ((lhr.categories[c]?.score ?? 1) < 1) {
+      const fallos = lhr.categories[c].auditRefs.filter((r) => r.weight > 0 && lhr.audits[r.id]?.score !== null && lhr.audits[r.id]?.score < 1).map((r) => r.id);
+      linea += `. ${CATEGORIAS[c].nombre} falla en: ${fallos.join(', ')}`;
+    }
+  }
   // En la Action, cada página sale como anotación en la PR
   console.log(process.env.GITHUB_ACTIONS ? `::notice title=Lighthouse ${nombre}::${linea}` : `${nombre}: ${linea}`);
 }

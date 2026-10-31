@@ -193,8 +193,9 @@ export const UMBRAL_SUBVENCIONES = 1000000;
 
 export function urlConcesiones(desde, hasta, pagina = 0, tamaño = 200) {
   const ddmmaaaa = (iso) => iso.split('-').reverse().join('/');
-  const p = new URLSearchParams({ page: String(pagina), pageSize: String(tamaño), vpd: 'GE', fechaDesde: ddmmaaaa(desde), fechaHasta: ddmmaaaa(hasta), sort: 'importe,desc' });
-  return `https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?${p}`;
+  const p = new URLSearchParams({ page: String(pagina), pageSize: String(tamaño), vpd: 'GE', fechaDesde: ddmmaaaa(desde), fechaHasta: ddmmaaaa(hasta) });
+  // El orden va aparte: la API solo lo entiende con la coma tal cual, no codificada (%2C)
+  return `https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?${p}&sort=importe,desc`;
 }
 
 /** Concesiones de una respuesta de la API, sin personas físicas. */
