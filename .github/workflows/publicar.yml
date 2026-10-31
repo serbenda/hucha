@@ -105,7 +105,7 @@ jobs:
             const leer = (f) => { try { return JSON.parse(readFileSync('almacen/' + f + '.json', 'utf8')); } catch { return null; } };
             const c = leer('contratos'), s = leer('subvenciones'), y = leer('ayuda');
             const m = (n) => Math.round(n / 1e6) + ' M€';
-            if (c) console.log('::notice title=Lupa contratos (' + c.contratos.length + ', desde ' + (c.desde ?? '?').slice(0, 10) + ')::' + c.contratos.slice(0, 8).map((x) => m(x.a) + ' ' + x.o + ' → ' + (x.g ?? []).join(', ') + ': ' + (x.t ?? '').slice(0, 70) + ' [' + (x.te ?? []).join(',') + ']').join(' | '));
+            if (c) console.log('::notice title=Lupa contratos (' + c.contratos.length + ', desde ' + (c.desde ?? '?').slice(0, 10) + ')::' + c.contratos.slice(0, 8).map((x) => m(x.a) + (x.m ? ' (acuerdo marco)' : '') + ' ' + x.o + ' → ' + (x.g ?? []).join(', ') + ': ' + (x.t ?? '').slice(0, 70) + ' [' + (x.te ?? []).join(',') + ']').join(' | '));
             if (c) { const tren = c.contratos.filter((x) => x.te?.includes('tren')); console.log('::notice title=Lupa tren (' + tren.length + ')::' + tren.slice(0, 6).map((x) => m(x.a) + ' ' + x.o + ' (' + x.fi + '): ' + (x.t ?? '').slice(0, 70)).join(' | ')); }
             if (s) console.log('::notice title=Lupa subvenciones (' + s.subvenciones.length + ')::' + s.subvenciones.slice(0, 8).map((x) => m(x.i) + ' ' + x.o + ' → ' + x.b + ': ' + (x.c ?? '').slice(0, 60)).join(' | '));
             if (y) { const ult = y.años.at(-1); console.log('::notice title=Lupa ayuda ' + ult + '::' + Object.entries(y.paises).sort((a, b) => (b[1][ult] ?? 0) - (a[1][ult] ?? 0)).slice(0, 10).map(([p, v]) => p + ' ' + (v[ult] ?? 0)).join(' | ')); }

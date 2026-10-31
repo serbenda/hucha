@@ -265,8 +265,9 @@ export function parsearConcesiones(json) {
 
 const CRS = 'https://sdmx.oecd.org/dcd-public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,1.7';
 const CSV = 'format=csvfilewithlabels&dimensionAtObservation=AllDimensions';
-/** Totales de España por país receptor y sector: AOD (100), desembolsos (D), dólares corrientes (V), agregados (_T). */
-export const urlCrs = (desde) => `${CRS}/ESP...100._T._T.D.V._T..?${CSV}&startPeriod=${desde}`;
+/** Totales de España de un año por país receptor y sector: AOD (100), desembolsos (D), dólares corrientes (V), agregados (_T).
+ * Año a año: pedir varios años de golpe hace que el servidor responda con error. */
+export const urlCrs = (año) => `${CRS}/ESP...100._T._T.D.V._T..?${CSV}&startPeriod=${año}&endPeriod=${año}`;
 /** Proyectos de España de un año (microdatos, DD). */
 export const urlCrsProyectos = (año) => `${CRS}/ESP...100...D.V.DD..?${CSV}&startPeriod=${año}&endPeriod=${año}`;
 

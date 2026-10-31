@@ -242,20 +242,45 @@ async function subvenciones() {
 
 /** Lee un CSV grande de la red por trozos, sin guardarlo entero en memoria. */
 async function leerCsv(url, alFila, minutos = 15) {
-  const r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(minutos * 60000) });
+  let r;
+  for (let intento = 1; ; intento++) {
+    r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(minutos * 60000) });
+    if (r.ok || r.status === 404 || intento === 3) break;
+    await new Promise((ok) => setTimeout(ok, 20000 * intento));
+  }
+  if (r.status === 404) return false; // la OCDE responde 404 cuando no hay datos (un año aún sin publicar)
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const lector = lectorCsv(alFila);
   const dec = new TextDecoder();
   for await (const trozo of r.body) lector.trozo(dec.decode(trozo, { stream: true }));
   lector.trozo(dec.decode());
   lector.fin();
+  return true;
 }
 
 async function ayuda() {
   // 1. Totales por país y sector de los últimos años
-  const crs = acumuladorCrs();
-  await leerCsv(urlCrs(hoy.getFullYear() - 7), crs.fila);
-  const r = crs.resultado();
+  // Año a año (de golpe el servidor falla). Cada año es un CSV con su cabecera: un acumulador por año.
+  const r = { años: [], totales: {}, sectores: {}, paises: {}, porPais: {} };
+  const fallos = [];
+  for (let año = hoy.getFullYear() - 7; año <= hoy.getFullYear() - 1; año++) {
+    const crs = acumuladorCrs();
+    try {
+      if (!(await leerCsv(urlCrs(año), crs.fila))) continue;
+    } catch (e) {
+      fallos.push(`${año}: ${e.message}`);
+      continue;
+    }
+    const x = crs.resultado();
+    if (!x.años.length) continue;
+    r.años.push(...x.años);
+    Object.assign(r.totales, x.totales);
+    Object.assign(r.sectores, x.sectores);
+    for (const [p, v] of Object.entries(x.paises)) Object.assign((r.paises[p] ??= {}), v);
+    for (const [p, v] of Object.entries(x.porPais)) Object.assign((r.porPais[p] ??= {}), v);
+  }
+  r.años = [...new Set(r.años)].sort();
+  if (fallos.length) console.warn(`Ayuda: años que han fallado: ${fallos.join('; ')}`);
   const paises = Object.fromEntries(Object.entries(r.paises).filter(([p]) => esPais(p)));
   if (Object.keys(paises).length < 50) throw new Error(`solo ${Object.keys(paises).length} países`);
   const ultimo = r.años.at(-1);
@@ -283,7 +308,7 @@ async function ayuda() {
     proyectosAño: ultimo,
     proyectos,
   });
-  return `${Object.keys(paises).length} países, ${r.años[0]}-${ultimo}; ${Object.keys(r.sectores[ultimo] ?? {}).length} sectores en ${ultimo}${notaProyectos}`;
+  return `${Object.keys(paises).length} países, ${r.años[0]}-${ultimo}; ${Object.keys(r.sectores[ultimo] ?? {}).length} sectores en ${ultimo}${notaProyectos}${fallos.length ? `; fallaron ${fallos.join(', ')}` : ''}`;
 }
 
 // ---------------------------------------------------------------------------

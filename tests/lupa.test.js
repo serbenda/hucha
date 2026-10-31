@@ -134,7 +134,7 @@ test('ayuda: CRS de la OCDE por país, sector y proyectos', () => {
   assert.equal(grupoSector('12220'), '120');
   assert.equal(grupoSector('72040'), '720');
   assert.equal(grupoSector('1000'), null);
-  assert.match(urlCrs(2019), /DSD_CRS@DF_CRS,1\.7\/ESP\.\.\.100\._T\._T\.D\.V\._T\.\.\?.*startPeriod=2019/);
+  assert.match(urlCrs(2019), /DSD_CRS@DF_CRS,1\.7\/ESP\.\.\.100\._T\._T\.D\.V\._T\.\.\?.*startPeriod=2019&endPeriod=2019/);
 
   const p = acumuladorProyectos(2);
   for (const f of [

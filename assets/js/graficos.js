@@ -98,7 +98,7 @@ export function bloques(items, { ancho = 100, alto = 62, titulo = '' } = {}) {
   if (fila.length) colocar(fila);
 
   const pct = (v, t) => `${((v / t) * 100).toFixed(3)}%`;
-  return `<div class="g-bloques" style="aspect-ratio: ${ancho} / ${alto}" role="list" aria-label="${esc(titulo)}">${rects
+  return `<div class="g-bloques" style="aspect-ratio: ${ancho} / ${alto}" role="group" aria-label="${esc(titulo)}">${rects
     .map((r, i) => {
       const grande = r.w * r.h > area * 0.035;
       const etiqueta = `${r.nombre}: ${r.texto}`;
@@ -106,8 +106,8 @@ export function bloques(items, { ancho = 100, alto = 62, titulo = '' } = {}) {
       const clase = `g-bloque${i < 3 ? ' fuerte' : ''}${grande ? '' : ' pequeno'}`;
       const dentro = grande ? `<span class="g-bloque-nombre">${esc(r.nombre)}</span><span class="g-bloque-cifra">${esc(r.texto)}</span>` : '';
       return r.href
-        ? `<a role="listitem" class="${clase}" href="${esc(r.href)}" style="${estilo}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</a>`
-        : `<span role="listitem" class="${clase}" style="${estilo}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</span>`;
+        ? `<a class="${clase}" href="${esc(r.href)}" style="${estilo}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</a>`
+        : `<span role="img" class="${clase}" style="${estilo}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</span>`;
     })
     .join('')}</div>`;
 }
