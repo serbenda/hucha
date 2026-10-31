@@ -1,0 +1,46 @@
+name: Sondeo temporal
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  igae:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Libros de agosto de 2026
+        run: |
+          B="https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Documents"
+          UA="Mozilla/5.0 (hucha; github.com/serbenda/hucha)"
+          cat > leer.js <<'JS'
+          const { execFileSync } = require('child_process');
+          const [fich, modo, hojaPedida] = process.argv.slice(2);
+          const x = (p) => { try { return execFileSync('unzip', ['-p', fich, p], { encoding: 'utf8', maxBuffer: 1e9 }); } catch { return ''; } };
+          const limpio = (t) => String(t ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+          const ss = [...x('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => limpio(m[1]));
+          const libro = x('xl/workbook.xml');
+          const rels = x('xl/_rels/workbook.xml.rels');
+          const hojas = [...libro.matchAll(/<sheet [^>]*name="([^"]+)"[^>]*r:id="([^"]+)"/g)].map(([, nombre, rid]) => {
+            const t = (rels.match(new RegExp('Id="' + rid + '"[^>]*Target="([^"]+)"')) || rels.match(new RegExp('Target="([^"]+)"[^>]*Id="' + rid + '"')) || [])[1];
+            return { nombre, ruta: 'xl/' + String(t).replace(/^\/?xl\//, '') };
+          });
+          const celdas = (xml) => [...xml.matchAll(/<row [^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)].map(([, r, fila]) => [...fila.matchAll(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map(([, col, attrs, dentro]) => { const v = (dentro || '').match(/<v>([\s\S]*?)<\/v>/)?.[1]; return col + '=' + (/t="s"/.test(attrs) ? ss[+v] : v ?? ''); }).filter((c) => !c.endsWith('=')).join(' ; '));
+          const nota = (t, m) => console.log('::notice title=' + t + '::' + m.replace(/[\r\n%]/g, ' ').slice(0, 3900));
+          if (modo === 'lista') {
+            const s = hojas.map((h) => { const f = celdas(x(h.ruta)); return h.nombre + ' [' + f.length + ']: ' + f.slice(0, 4).join(' / ').slice(0, 150); });
+            for (let i = 0; i < s.length; i += 10) nota(fich + ' hojas ' + (i + 1) + '-' + Math.min(i + 10, s.length) + '/' + s.length, s.slice(i, i + 10).join(' ## '));
+          } else {
+            const h = hojas.find((h) => h.nombre === hojaPedida) ?? hojas[0];
+            const f = celdas(x(h.ruta));
+            for (let i = 0; i < Math.min(f.length, 45); i += 5) nota(h.nombre + ' filas ' + (i + 1), f.slice(i, i + 5).join(' || '));
+          }
+          JS
+          curl -sL -A "$UA" --max-time 120 "$B/MENSUAL%20AGOSTO%202026.xlsx" -o m.xlsx
+      - name: GTOS 014 (secciones)
+        run: node leer.js m.xlsx filas "GTOS 014"
+      - name: GTOS 016 (políticas)
+        run: node leer.js m.xlsx filas "GTOS 016"
+      - name: GTOS 017 (programas)
+        run: node leer.js m.xlsx filas "GTOS 017"
+      - name: GTOS 004 (capítulos)
+        run: node leer.js m.xlsx filas "GTOS 004"
