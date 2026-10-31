@@ -37,17 +37,24 @@ jobs:
         continue-on-error: true
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
-      - name: Recuperar los datos publicados (por si Eurostat falla ahora)
+      - name: Recuperar el almacén (los datos acumulados hasta ayer)
+        # El almacén vive en la release «almacen» del repositorio, fuera de la web. Si aún no existe,
+        # se recupera de la web publicada (como se hacía antes de tener almacén).
         env:
+          GH_TOKEN: ${{ github.token }}
           BASE: ${{ steps.pages.outputs.base_url || 'https://hucha.bendi.dev' }}
         run: |
-          mkdir -p data
-          curl -fsSL --max-time 60 "$BASE/data/cofog.json" -o data/cofog.json || rm -f data/cofog.json
-          mkdir -p data/lupa
-          for f in contratos subvenciones ayuda; do
-            curl -fsSL --max-time 120 "$BASE/data/lupa/$f.json" -o "data/lupa/$f.json" || rm -f "data/lupa/$f.json"
-          done
-          ls -la data data/lupa
+          mkdir -p almacen
+          if gh release download almacen --repo "${{ github.repository }}" --dir almacen --clobber 2>/dev/null; then
+            echo "::notice title=Almacén::recuperado de la release"
+          else
+            curl -fsSL --max-time 60 "$BASE/data/cofog.json" -o almacen/cofog.json || rm -f almacen/cofog.json
+            for f in contratos subvenciones ayuda; do
+              curl -fsSL --max-time 120 "$BASE/data/lupa/$f.json" -o "almacen/$f.json" || rm -f "almacen/$f.json"
+            done
+            echo "::notice title=Almacén::sin release todavía; recuperado de la web"
+          fi
+          ls -la almacen
 
       - name: Descargar datos (Eurostat)
         run: npm run datos
@@ -58,20 +65,26 @@ jobs:
         env:
           # En las PR basta con unas pocas páginas de contratos para comprobar que todo funciona
           LUPA_PAGINAS: ${{ github.event_name == 'pull_request' && '3' || '40' }}
+          # Un fichero mensual del histórico por feed y ejecución, también en las PR para probarlo
+          LUPA_MESES: '1'
         run: npm run lupa
+
+      - name: Escaparate (lo que descarga la web, ya calculado)
+        run: npm run escaparate
 
       - name: Comprobar que hay datos
         run: |
-          test -s data/cofog.json || { echo "::error::No hay datos: ni Eurostat ni la última publicación"; exit 1; }
-          node -e "const d=require('./data/cofog.json'); if (d.ejemplo) { console.log('::error::Son datos de ejemplo'); process.exit(1) } console.log('Años:', d.años.join(', '), '| provisionales:', d.provisionales.join(', ') || 'ninguno')"
-          for f in data/lupa/*.json; do [ -e "$f" ] || continue; node -e "if (require('./$f').ejemplo) { console.log('::error::$f son datos de ejemplo'); process.exit(1) }"; done
+          test -s almacen/cofog.json || { echo "::error::No hay datos: ni Eurostat ni el almacén"; exit 1; }
+          test -s data/vistas/portada.json || { echo "::error::No se ha preparado el escaparate"; exit 1; }
+          node -e "const d=require('./almacen/cofog.json'); if (d.ejemplo) { console.log('::error::Son datos de ejemplo'); process.exit(1) } console.log('Años:', d.años.join(', '), '| provisionales:', d.provisionales.join(', ') || 'ninguno')"
+          for f in almacen/*.json; do [ -e "$f" ] || continue; node -e "if (require('./$f').ejemplo) { console.log('::error::$f son datos de ejemplo'); process.exit(1) }"; done
 
       - name: Resumen de las partidas (para revisarlas en la PR)
         run: |
           node --input-type=module -e "
             import { readFileSync } from 'node:fs';
             import { partidas, ultimoAño, gastoPorPersona, reparto, detallePartida, tiposDeGasto, ultimoAñoTipos } from './assets/js/cofog.js';
-            const d = JSON.parse(readFileSync('data/cofog.json', 'utf8'));
+            const d = JSON.parse(readFileSync('almacen/cofog.json', 'utf8'));
             const a = ultimoAño(d), pp = gastoPorPersona(d, a);
             const filas = partidas(d, a).map((p) => p.nombre + ': ' + (p.cuota * 100).toFixed(1) + ' %, ' + Math.round(p.cuota * pp) + ' €/hab');
             console.log('::notice title=Partidas ' + a + '::' + filas.join(' | '));
@@ -84,7 +97,7 @@ jobs:
             const at = ultimoAñoTipos(d);
             const t = at ? tiposDeGasto(d, 'TOTAL', at).map((x) => x.nombre + ' ' + (x.cuota * 100).toFixed(1) + ' %') : [];
             console.log('::notice title=Cómo se gasta ' + (at ?? '') + '::' + (t.join(' | ') || 'sin desglose por tipo'));
-            const leer = (f) => { try { return JSON.parse(readFileSync('data/lupa/' + f + '.json', 'utf8')); } catch { return null; } };
+            const leer = (f) => { try { return JSON.parse(readFileSync('almacen/' + f + '.json', 'utf8')); } catch { return null; } };
             const c = leer('contratos'), s = leer('subvenciones'), y = leer('ayuda');
             const m = (n) => Math.round(n / 1e6) + ' M€';
             if (c) console.log('::notice title=Lupa contratos (' + c.contratos.length + ', desde ' + (c.desde ?? '?').slice(0, 10) + ')::' + c.contratos.slice(0, 8).map((x) => m(x.a) + ' ' + x.o + ' → ' + (x.g ?? []).join(', ') + ': ' + (x.t ?? '').slice(0, 70) + ' [' + (x.te ?? []).join(',') + ']').join(' | '));
@@ -92,6 +105,14 @@ jobs:
             if (s) console.log('::notice title=Lupa subvenciones (' + s.subvenciones.length + ')::' + s.subvenciones.slice(0, 8).map((x) => m(x.i) + ' ' + x.o + ' → ' + x.b + ': ' + (x.c ?? '').slice(0, 60)).join(' | '));
             if (y) { const ult = y.años.at(-1); console.log('::notice title=Lupa ayuda ' + ult + '::' + Object.entries(y.paises).sort((a, b) => (b[1][ult] ?? 0) - (a[1][ult] ?? 0)).slice(0, 10).map(([p, v]) => p + ' ' + (v[ult] ?? 0)).join(' | ')); }
           "
+
+      - name: Subir el almacén para guardarlo
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: almacen
+          path: almacen/*.json
+          retention-days: 3
 
       - name: Instalar herramientas (navegador de pruebas, axe y Lighthouse)
         run: |
@@ -161,6 +182,34 @@ jobs:
           name: estado
           path: data/estado.json
           if-no-files-found: ignore
+
+  guardar:
+    # Guarda el almacén en la release «almacen», aunque la web no llegue a publicarse: los datos ya están
+    # comprobados y así no se pierde lo acumulado. Es el único trabajo que puede escribir en el repositorio,
+    # y solo en esa release (no crea commits).
+    if: always() && github.event_name != 'pull_request'
+    needs: construir
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - id: bajar
+        continue-on-error: true
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: almacen
+          path: almacen
+
+      - if: steps.bajar.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          ls -la almacen
+          gh release view almacen --repo "$REPO" >/dev/null 2>&1 || \
+            gh release create almacen --repo "$REPO" --prerelease --title "Almacén de datos" \
+              --notes "Datos completos y acumulados de hucha (Eurostat y la Lupa). Los actualiza la Action cada día; la web publica solo lo que enseña cada página."
+          gh release upload almacen almacen/*.json --repo "$REPO" --clobber
 
   publicar:
     # En las PR solo se construye y se prueba; se publica desde main

@@ -1,6 +1,6 @@
 // Genera los iconos de la app y la imagen para compartir (Open Graph) a partir del logo SVG y de los datos.
 // Lo ejecuta la Action con Playwright instalado; las imágenes no se guardan en el repositorio.
-// Uso: node scripts/imagenes.mjs   (necesita data/cofog.json y, si existe, usa vendor/ para la fuente)
+// Uso: node scripts/imagenes.mjs   (necesita almacen/cofog.json y, si existe, usa vendor/ para la fuente)
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
@@ -8,7 +8,7 @@ import { logoFijo, htmlIcono, htmlCompartir } from './plantillas-imagenes.mjs';
 
 const raiz = new URL('../', import.meta.url);
 const logo = logoFijo(await readFile(new URL('assets/img/favicon.svg', raiz), 'utf8'));
-const datos = JSON.parse(await readFile(new URL('data/cofog.json', raiz), 'utf8'));
+const datos = JSON.parse(await readFile(new URL('almacen/cofog.json', raiz), 'utf8'));
 
 let fuente = '';
 try {

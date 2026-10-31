@@ -279,8 +279,10 @@ export function buscar(lista, consulta, { campos, importe, tema } = {}) {
 export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0), 0);
 
 // ---------------------------------------------------------------------------
-// Portada: lo que la Lupa enseña nada más abrirse, en un fichero pequeño.
-// El fichero completo crece con el histórico; solo se pide al buscar, filtrar o ver más.
+// Escaparate de la Lupa: un índice pequeño y un fichero por mes.
+// El índice (los mayores, los totales por tema y por administración y la lista de meses) es lo que se descarga
+// al abrir la Lupa. Los meses se piden solo al buscar, filtrar o ver más, del más reciente al más antiguo,
+// así que la Lupa pesa lo mismo al abrirse aunque el histórico crezca.
 
 export const EN_PORTADA = 40;
 
@@ -290,9 +292,33 @@ export function totales(lista, importe) {
   return { n: lista.length, suma: suma(lista, importe) - suma(marcos, importe), marcos: { n: marcos.length, suma: suma(marcos, importe) } };
 }
 
-/** Del fichero completo de contratos o subvenciones, el de portada: los mayores y el total. */
-export function portadaDe(datos, clave, importe) {
+/** Mes (AAAA-MM) de un contrato o subvención: el de su fecha y, si no tiene, el de su última actualización. */
+export const mesDe = (x) => (x.f ?? x.up ?? '').slice(0, 7) || 'sin-fecha';
+
+/** Reparte una lista por meses: { 'AAAA-MM': [...] }, cada mes ordenado por importe. */
+export function porMes(lista, importe) {
+  const meses = {};
+  for (const x of lista) (meses[mesDe(x)] ??= []).push(x);
+  for (const m of Object.values(meses)) m.sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+  return meses;
+}
+
+/** El índice de la Lupa a partir de los datos completos del almacén. */
+export function indiceDe(datos, clave, importe) {
   const { cursores, [clave]: lista = [], ...resto } = datos;
   const orden = [...lista].sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
-  return { ...resto, total: totales(lista, importe), [clave]: orden.slice(0, EN_PORTADA) };
+  const agrupar = (claveDe) => {
+    const grupos = {};
+    for (const x of lista) for (const g of [claveDe(x)].flat().filter(Boolean)) (grupos[g] ??= []).push(x);
+    return Object.fromEntries(Object.entries(grupos).map(([g, xs]) => [g, totales(xs, importe)]));
+  };
+  const meses = porMes(lista, importe);
+  return {
+    ...resto,
+    total: totales(lista, importe),
+    porTema: agrupar((x) => x.te),
+    porNivel: agrupar((x) => x.n),
+    meses: Object.keys(meses).sort().reverse().map((mes) => ({ mes, n: meses[mes].length })),
+    [clave]: orden.slice(0, EN_PORTADA),
+  };
 }

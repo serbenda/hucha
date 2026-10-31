@@ -1,7 +1,6 @@
 // Portada: el ticket de tus impuestos y las cifras de todos.
 
-import { cargarDatos } from './datos.js';
-import { partidas, ultimoAño, esProvisional, gastoPorPersona, valor } from './cofog.js';
+import { cargarVista } from './datos.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, millones, delPib, leerImporte } from './formato.js';
@@ -70,15 +69,13 @@ function pintarTicket() {
 
   $('ticket-pie').textContent =
     `Si ganas ${euros(bruto)} brutos, te quedan unos ${euros(a.neto)} netos al año. ` +
-    `Reparto según el gasto público de ${año}${esProvisional(datosGlobal, año) ? ' (provisional)' : ''}. Reglas fiscales de ${REGLAS.año}. Estimación orientativa.`;
+    `Reparto según el gasto público de ${año}${vista?.provisional ? ' (provisional)' : ''}. Reglas fiscales de ${REGLAS.año}. Estimación orientativa.`;
 }
 
-let datosGlobal = null;
+let vista = null;
 
-function pintarCifras(datos) {
-  const total = valor(datos, 'TOTAL', año);
-  const pib = valor(datos, 'TOTAL', año, { unidad: 'PC_GDP' });
-  const pibUe = valor(datos, 'TOTAL', año, { geo: 'ue', unidad: 'PC_GDP' });
+function pintarCifras(v) {
+  const { total, pib, pibUe } = v;
   const cifras = $('cifras').querySelectorAll('dd');
   const cifra = (dd, dato, nota) => {
     const small = document.createElement('small');
@@ -86,10 +83,10 @@ function pintarCifras(datos) {
     dd.replaceChildren(dato, small);
   };
   cifra(cifras[0], millones(total), `en ${año}`);
-  cifra(cifras[1], euros(gastoPorPersona(datos, año)), 'al año, contando a todos: niños, jubilados…');
+  cifra(cifras[1], euros(v.porPersona), 'al año, contando a todos: niños, jubilados…');
   cifra(cifras[2], delPib(pib), pibUe !== null ? `La media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}` : '');
   $('todos-texto').textContent =
-    `En ${año}${esProvisional(datos, año) ? ' (datos provisionales)' : ''}, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.`;
+    `En ${año}${v.provisional ? ' (datos provisionales)' : ''}, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.`;
 }
 
 let espera;
@@ -130,12 +127,12 @@ $('compartir').addEventListener('click', async () => {
 pintarTicket();
 
 try {
-  datosGlobal = await cargarDatos();
-  año = ultimoAño(datosGlobal);
-  lista = partidas(datosGlobal, año);
+  vista = await cargarVista('portada');
+  año = vista.año;
+  lista = vista.partidas;
   $('ticket-año').textContent = `Gasto público de España en ${año}`;
   pintarTicket();
-  pintarCifras(datosGlobal);
+  pintarCifras(vista);
 } catch {
   $('reparto').replaceChildren(linea('Sin datos ahora mismo', ''));
 }

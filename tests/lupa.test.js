@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parsearAtom, esContratoUtil, compactarContrato, parsearConcesiones, parsearAyuda, buscar, suma, esPersona,
-  normalizar, temas, finalidad, urlConcesiones, TEMAS, portadaDe, totales, esMarcoPorTitulo,
+  normalizar, temas, finalidad, urlConcesiones, TEMAS, indiceDe, porMes, mesDe, totales, esMarcoPorTitulo,
 } from '../assets/js/lupa-datos.js';
 import { nombrePais, esPais } from '../assets/js/paises.js';
 
@@ -141,14 +141,21 @@ test('los botones de temas del HTML coinciden con los temas', async () => {
   assert.deepEqual(botones, [['', 'Todo'], ...TEMAS.map((t) => [t.id, t.nombre])]);
 });
 
-test('portada: los mayores y el total, sin los cursores internos', () => {
-  const contratos = Array.from({ length: 50 }, (_, k) => ({ id: String(k), a: k + 1 }));
-  const p = portadaDe({ actualizado: 'x', desde: 'y', cursores: { perfiles: {} }, contratos }, 'contratos', 'a');
-  assert.equal(p.cursores, undefined);
-  assert.equal(p.desde, 'y');
-  assert.deepEqual(p.total, { n: 50, suma: 1275, marcos: { n: 0, suma: 0 } });
-  assert.equal(p.contratos.length, 40);
-  assert.equal(p.contratos[0].a, 50);
+test('escaparate: índice con los mayores, totales por tema y nivel, y un fichero por mes', () => {
+  const contratos = Array.from({ length: 50 }, (_, k) => ({ id: String(k), a: k + 1, f: k < 30 ? '2026-10-02' : '2026-09-15', te: k % 2 ? ['tren'] : [], n: 'Estado' }));
+  const i = indiceDe({ actualizado: 'x', desde: 'y', cursores: { perfiles: {} }, contratos }, 'contratos', 'a');
+  assert.equal(i.cursores, undefined);
+  assert.equal(i.desde, 'y');
+  assert.deepEqual(i.total, { n: 50, suma: 1275, marcos: { n: 0, suma: 0 } });
+  assert.equal(i.contratos.length, 40);
+  assert.equal(i.contratos[0].a, 50);
+  assert.equal(i.porTema.tren.n, 25);
+  assert.equal(i.porNivel.Estado.n, 50);
+  assert.deepEqual(i.meses, [{ mes: '2026-10', n: 30 }, { mes: '2026-09', n: 20 }]);
+  const m = porMes(contratos, 'a');
+  assert.equal(m['2026-10'][0].a, 30);
+  assert.equal(mesDe({ up: '2026-08-01T10:00' }), '2026-08');
+  assert.equal(mesDe({}), 'sin-fecha');
 });
 
 test('acuerdos marco: por su código o por el título, y fuera de los totales', () => {

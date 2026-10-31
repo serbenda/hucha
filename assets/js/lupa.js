@@ -30,16 +30,17 @@ function pedir(fichero) {
   return cache[fichero];
 }
 
-// Al abrir la Lupa basta con la portada (los mayores y el total). El fichero completo, que crece con el
-// histórico, se pide al buscar, filtrar o ver más. Si la portada no existe, se usa el completo.
+// Al abrir la Lupa basta con el índice: los mayores, los totales por tema y por administración y la lista de
+// meses. Los meses se piden al buscar, filtrar o ver más; así la Lupa pesa lo mismo aunque el histórico crezca.
 const enPortada = () => !estado.q && !estado.tema && !estado.nivel && estado.mostrados <= POR_PAGINA;
-async function datos(tab, { completo = false } = {}) {
-  if (tab === 'ayuda') return pedir('ayuda');
-  if (completo || !enPortada()) return pedir(tab);
-  return pedir(`${tab}-portada`).catch(() => pedir(tab));
-}
-// En cuanto se va a buscar o filtrar, el completo se empieza a pedir para que esté listo
-const preparar = () => estado.tab !== 'ayuda' && pedir(estado.tab).catch(() => {});
+const indice = (tab) => pedir(tab === 'ayuda' ? 'ayuda' : tab);
+const mesesDe = (d) => d.meses ?? [];
+// En cuanto se va a buscar o filtrar, los meses se empiezan a pedir para que estén listos
+const preparar = () =>
+  estado.tab !== 'ayuda' &&
+  indice(estado.tab)
+    .then((d) => mesesDe(d).forEach(({ mes }) => pedir(`${estado.tab}/${mes}`).catch(() => {})))
+    .catch(() => {});
 
 function guardarUrl() {
   const p = new URLSearchParams();
@@ -114,7 +115,7 @@ async function pintar() {
 
   let d;
   try {
-    d = await datos(estado.tab);
+    d = await indice(estado.tab);
     if (mio !== turno) return; // ya hay otra búsqueda más nueva
   } catch {
     if (mio !== turno) return;
@@ -130,14 +131,64 @@ async function pintar() {
   }
 
   const contratos = estado.tab === 'contratos';
-  const todos = contratos ? d.contratos : d.subvenciones;
+  const clave = contratos ? 'contratos' : 'subvenciones';
   const campos = contratos ? ['t', 'o', 'g', 'l', 'fi', 'ti', 'n'] : ['c', 'o', 'b', 'l', 'n'];
   const importe = contratos ? 'a' : 'i';
-  let r = buscar(todos, estado.q, { campos, importe, tema: estado.tema });
-  if (estado.nivel) r = r.filter((x) => x.n === estado.nivel);
+  const filtrar = (todos) => {
+    const r = buscar(todos, estado.q, { campos, importe, tema: estado.tema });
+    return estado.nivel ? r.filter((x) => x.n === estado.nivel) : r;
+  };
+  const meses = mesesDe(d);
 
-  // En la portada el total viene ya hecho; con el fichero completo se cuenta lo filtrado
-  const t = d.total?.marcos && enPortada() ? d.total : totales(r, importe);
+  // Sin buscar ni filtrar, o con un índice antiguo sin meses: todo sale del índice
+  if (enPortada() || !meses.length) {
+    const r = filtrar(d[clave]);
+    const t = enPortada() && d.total ? d.total : totales(r, importe);
+    pintarResultados(t, r, { contratos, disponibles: Math.max(t.n, r.length) });
+    return;
+  }
+
+  // Con un solo filtro, el total ya viene en el índice y se enseña al momento
+  const rapido = !estado.q && (estado.tema && !estado.nivel ? d.porTema?.[estado.tema] : estado.nivel && !estado.tema ? d.porNivel?.[estado.nivel] : null);
+  let cargados = [];
+  let hechos = 0;
+  let fallos = 0;
+  let pendiente = false;
+  const repintar = () => {
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(() => {
+      pendiente = false;
+      if (mio !== turno) return;
+      const r = filtrar(cargados);
+      const completo = hechos === meses.length;
+      pintarResultados(completo || !rapido ? totales(r, importe) : rapido, r, {
+        contratos,
+        progreso: completo ? (fallos ? `No se han podido cargar ${fallos} de ${meses.length} meses.` : '') : `Buscando en ${hechos} de ${meses.length} meses…`,
+      });
+    });
+  };
+  if (rapido) pintarResultados(rapido, [], { contratos, progreso: 'Cargando la lista…' });
+  else resumen.textContent = 'Buscando…';
+  await Promise.all(
+    meses.map(({ mes }) =>
+      pedir(`${estado.tab}/${mes}`)
+        .then((m) => {
+          cargados = cargados.concat(m[clave] ?? []);
+        })
+        .catch(() => fallos++)
+        .finally(() => {
+          hechos++;
+          repintar();
+        })
+    )
+  );
+}
+
+function pintarResultados(t, r, { contratos, progreso = '', disponibles = r.length }) {
+  const resumen = $('resumen-lupa');
+  const lista = $('resultados');
+  const mas = $('mas');
   const { n } = t;
   const nm = t.marcos?.n ?? 0;
   const fmt = (x) => new Intl.NumberFormat('es-ES').format(x);
@@ -149,14 +200,16 @@ async function pintar() {
   // Los acuerdos marco van aparte: su importe es un techo para contratos posteriores, no gasto
   const quien = nm === 1 ? 'un acuerdo marco' : `${fmt(nm)} acuerdos marco`;
   const techo = nm ? `con un techo de ${millones(t.marcos.suma)} para contratos posteriores, que no suma porque aún no es gasto` : '';
-  resumen.innerHTML = !n
-    ? `No hay ${contratos ? 'contratos' : 'subvenciones'}${con} en lo que cubre la Lupa.`
-    : n > nm
-      ? `<strong>${cuantos(n - nm)}</strong> por <strong>${millones(t.suma)}</strong>${con}.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`
-      : `Solo hay ${quien}${con}, ${techo}.`;
+  const nota = progreso ? ` <span class="tenue">${esc(progreso)}</span>` : '';
+  resumen.innerHTML =
+    (!n
+      ? progreso ? '' : `No hay ${contratos ? 'contratos' : 'subvenciones'}${con} en lo que cubre la Lupa.`
+      : n > nm
+        ? `<strong>${cuantos(n - nm)}</strong> por <strong>${millones(t.suma)}</strong>${con}.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`
+        : `Solo hay ${quien}${con}, ${techo}.`) + nota;
   lista.innerHTML = r.slice(0, estado.mostrados).map(contratos ? fichaContrato : fichaSubvencion).join('');
-  mas.hidden = n <= estado.mostrados;
-  mas.textContent = `Ver más (quedan ${new Intl.NumberFormat('es-ES').format(n - estado.mostrados)})`;
+  mas.hidden = progreso !== '' || disponibles <= estado.mostrados;
+  mas.textContent = `Ver más (quedan ${fmt(disponibles - estado.mostrados)})`;
 }
 
 function pintarAyuda(d) {
@@ -194,18 +247,18 @@ async function pintarCobertura() {
   const caja = $('cobertura');
   const textos = {
     contratos: async () => {
-      const d = await datos('contratos');
+      const d = await indice('contratos');
       return `<p><strong>Contratos adjudicados desde ${millones(d.umbral)} (sin IVA)</strong> publicados en la <a href="https://contrataciondelestado.es/">Plataforma de Contratación del Sector Público</a>, incluidos los de las plataformas propias de comunidades y ayuntamientos que se agregan a ella. Recoge los movimientos desde el ${fecha(d.desde)} y los va reuniendo cada día, así que el histórico crece solo.</p>
         <p><strong>Los acuerdos marco</strong> aparecen con su importe máximo y no suman en los totales: fijan un techo para contratos posteriores, no un gasto. Esos contratos posteriores, si pasan del millón, aparecen por su cuenta.</p>
         <p><strong>Lo que no aparece:</strong> los contratos menores y los de menos de un millón; lo que una plataforma propia no haya enviado a la estatal; y lo que se paga al final, que puede cambiar por modificados o revisiones de precio. Los adjudicatarios que son personas físicas aparecen sin nombre.</p>`;
     },
     subvenciones: async () => {
-      const d = await datos('subvenciones');
+      const d = await indice('subvenciones');
       return `<p><strong>Subvenciones y ayudas concedidas desde ${millones(d.umbral)}</strong> en los últimos 12 meses, de la <a href="https://www.infosubvenciones.es/">Base de Datos Nacional de Subvenciones</a>, que reúne las del Estado, comunidades y ayuntamientos.</p>
         <p><strong>Lo que no aparece:</strong> las de menos de un millón; las concedidas a personas físicas (por privacidad); y las que una administración no haya registrado, aunque la ley obliga a hacerlo. Una subvención concedida no siempre se paga entera.</p>`;
     },
     ayuda: async () => {
-      const d = await datos('ayuda');
+      const d = await indice('ayuda');
       return `<p><strong>Ayuda oficial al desarrollo de España por país</strong> (desembolsos, en millones de dólares de cada año), de la <a href="https://data-explorer.oecd.org/">OCDE</a>, que recoge lo que declara la Cooperación Española. Datos de ${d.años[0]} a ${d.años.at(-1)}.</p>
         <p><strong>Lo que no aparece:</strong> la ayuda a organismos internacionales (ONU, Banco Mundial, UE) y a regiones sin un país concreto, que es una parte importante; y el detalle proyecto a proyecto. Los datos de un año se publican a finales del año siguiente.</p>`;
     },

@@ -21,7 +21,7 @@ before(async () => {
   servidor = await arrancar();
   base = servidor.base;
   navegador = await chromium.launch();
-  datos = JSON.parse(await readFile(new URL('../../_site/data/cofog.json', import.meta.url), 'utf8'));
+  datos = JSON.parse(await readFile(new URL('../../almacen/cofog.json', import.meta.url), 'utf8'));
 });
 
 after(async () => {
