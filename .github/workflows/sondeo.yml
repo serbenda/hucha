@@ -32,13 +32,15 @@ jobs:
           } else {
             const h = hojas.find((h) => h.nombre === hojaPedida) ?? hojas[0];
             const f = celdas(x(h.ruta));
-            for (let i = 0; i < Math.min(f.length, 60); i += 12) nota(fich + ' ' + h.nombre + ' filas ' + (i + 1), f.slice(i, i + 12).join(' || '));
+            for (let i = 0; i < Math.min(f.length, 45); i += 5) nota(h.nombre + ' filas ' + (i + 1), f.slice(i, i + 5).join(' || '));
           }
           JS
-          for f in "MENSUAL AGOSTO 2026.xlsx" "MENSUAL AGOSTO 2026 ANEXO I.xlsx" "MENSUAL AGOSTO 2026 ANEXO II.xlsx"; do
-            n=$(echo "$f" | tr ' ' '_')
-            curl -sL -A "$UA" --max-time 120 "$B/$(echo "$f" | sed 's/ /%20/g')" -o "$n" -w "::notice title=$n::%{http_code} %{size_download}\n"
-            node leer.js "$n" lista
-          done
-          node leer.js "MENSUAL_AGOSTO_2026_ANEXO_I.xlsx" filas
-          node leer.js "MENSUAL_AGOSTO_2026_ANEXO_II.xlsx" filas
+          curl -sL -A "$UA" --max-time 120 "$B/MENSUAL%20AGOSTO%202026.xlsx" -o m.xlsx
+      - name: GTOS 014 (secciones)
+        run: node leer.js m.xlsx filas "GTOS 014"
+      - name: GTOS 016 (políticas)
+        run: node leer.js m.xlsx filas "GTOS 016"
+      - name: GTOS 017 (programas)
+        run: node leer.js m.xlsx filas "GTOS 017"
+      - name: GTOS 004 (capítulos)
+        run: node leer.js m.xlsx filas "GTOS 004"
