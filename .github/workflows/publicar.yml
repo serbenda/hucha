@@ -59,6 +59,10 @@ jobs:
       - name: Descargar datos (Eurostat)
         run: npm run datos
 
+      - name: Ejecución del presupuesto del Estado (IGAE)
+        # Si falla, se queda la versión anterior del almacén
+        run: node scripts/fetch-ejecucion.mjs
+
       - name: Lupa (contratos, subvenciones y ayuda a otros países)
         # Cada fuente es independiente; si una falla, se queda su versión anterior
         timeout-minutes: 30
@@ -113,6 +117,8 @@ jobs:
             if (c) console.log('::notice title=Lupa contratos (' + c.contratos.length + ', desde ' + (c.desde ?? '?').slice(0, 10) + ')::' + c.contratos.slice(0, 8).map((x) => m(x.a) + (x.m ? ' (acuerdo marco)' : '') + ' ' + x.o + ' → ' + (x.g ?? []).join(', ') + ': ' + (x.t ?? '').slice(0, 70) + ' [' + (x.te ?? []).join(',') + ']').join(' | '));
             if (c) { const tren = c.contratos.filter((x) => x.te?.includes('tren')); console.log('::notice title=Lupa tren (' + tren.length + ')::' + tren.slice(0, 6).map((x) => m(x.a) + ' ' + x.o + ' (' + x.fi + '): ' + (x.t ?? '').slice(0, 70)).join(' | ')); }
             if (s) console.log('::notice title=Lupa subvenciones (' + s.subvenciones.length + ')::' + s.subvenciones.slice(0, 8).map((x) => m(x.i) + ' ' + x.o + ' → ' + x.b + ': ' + (x.c ?? '').slice(0, 60)).join(' | '));
+            const e = leer('ejecucion');
+            if (e) { const ult = Object.keys(e.meses).sort().at(-1); const m = e.meses[ult]; const p = (x) => x && x.creditos ? Math.round(x.obligaciones / x.creditos * 1000) / 10 + ' %' : '?'; console.log('::notice title=Presupuesto hasta ' + ult + '::no financiero ' + p(m.noFinanciero) + ' (un año antes ' + p(m.noFinanciero.anterior) + ') | ' + m.capitulos.filter((c) => +c.id <= 7).map((c) => c.nombre + ' ' + p(c)).join(' | ') + ' || ' + m.secciones.sort((a, b) => b.creditos - a.creditos).slice(0, 8).map((s) => s.nombre + ' ' + p(s)).join(' | ')); }
             if (y) { const ult = y.años.at(-1); console.log('::notice title=Lupa ayuda ' + ult + '::' + Object.entries(y.paises).sort((a, b) => (b[1][ult] ?? 0) - (a[1][ult] ?? 0)).slice(0, 10).map(([p, v]) => p + ' ' + (v[ult] ?? 0)).join(' | ')); }
           "
 
@@ -140,7 +146,7 @@ jobs:
       - name: Preparar la web
         run: |
           mkdir -p _site vendor
-          cp -r index.html 404.html a-donde-va quien-gasta lupa fuentes assets data vendor \
+          cp -r index.html 404.html a-donde-va quien-gasta presupuesto lupa fuentes assets data vendor \
             manifest.webmanifest sw.js sitemap.xml robots.txt .nojekyll _site/
           # Versión en los estilos y scripts de cada página, y en los módulos que importan entre sí:
           # al publicar, nadie mezcla HTML nuevo con CSS o JS viejos

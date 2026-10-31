@@ -214,7 +214,7 @@ test('iconos: los del HTML son los de iconos.js y cada partida, función y tema 
   const { readFile } = await import('node:fs/promises');
   const { icono, NOMBRES, ICONO_PARTIDA, ICONO_FUNCION, ICONO_TEMA, ICONO_ADMINISTRACION } = await import('../assets/js/iconos.js');
   const { PARTIDAS, FUNCIONES, SUBSECTORES } = await import('../assets/js/cofog.js');
-  for (const pagina of ['index.html', '404.html', 'a-donde-va/index.html', 'quien-gasta/index.html', 'lupa/index.html', 'fuentes/index.html']) {
+  for (const pagina of ['index.html', '404.html', 'a-donde-va/index.html', 'quien-gasta/index.html', 'presupuesto/index.html', 'lupa/index.html', 'fuentes/index.html']) {
     const html = await readFile(new URL(`../${pagina}`, import.meta.url), 'utf8');
     for (const [svg, nombre] of html.matchAll(/<svg class="[^"]*" data-icono="([^"]+)"[\s\S]*?<\/svg>/g)) {
       assert.ok(NOMBRES.includes(nombre), `${pagina}: no existe el icono ${nombre}`);

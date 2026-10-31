@@ -120,3 +120,56 @@ export function bloques(items, { ancho = 100, alto = 62, titulo = '', otros = nu
     })
     .join('')}</div>`;
 }
+
+/**
+ * Avance: cuánto se lleva de un total, con una marca de «dónde se debería ir» (por ejemplo, la parte del año
+ * transcurrida). items: [{ id, nombre, valor (0-1), texto, nota?, icono? }]; marca: 0-1; con accion, cada fila es un botón.
+ */
+export function avance(items, { marca = null, textoMarca = '', accion = '', enLinea = false } = {}) {
+  if (!items.length) return '';
+  // enLinea: solo con <span>, para usarlo dentro de un <summary>
+  if (enLinea) {
+    const x = items[0];
+    const ancho = Math.max(0, Math.min(1, x.valor ?? 0)) * 100;
+    return `<span class="g-fila g-en-linea"><span class="g-nombre">${x.icono ?? ''}<span>${esc(x.nombre)}</span></span><span class="g-cifra">${esc(x.texto)}${x.nota ? `<small>${esc(x.nota)}</small>` : ''}</span><span class="g-pista" aria-hidden="true"><i style="--ancho: ${ancho.toFixed(1)}%"></i>${marca !== null ? `<b class="g-marca" style="--marca: ${(marca * 100).toFixed(1)}%"></b>` : ''}</span></span>`;
+  }
+  return `<ul class="g-avance">${items
+    .map((x) => {
+      const ancho = Math.max(0, Math.min(1, x.valor ?? 0)) * 100;
+      const dentro = `<span class="g-nombre">${x.icono ?? ''}<span>${esc(x.nombre)}</span></span>
+        <span class="g-cifra">${esc(x.texto)}${x.nota ? `<small>${esc(x.nota)}</small>` : ''}</span>
+        <span class="g-pista" aria-hidden="true"><i style="--ancho: ${ancho.toFixed(1)}%"></i>${marca !== null ? `<b class="g-marca" style="--marca: ${(marca * 100).toFixed(1)}%" title="${esc(textoMarca)}"></b>` : ''}</span>`;
+      return `<li>${
+        accion
+          ? `<button type="button" class="g-fila" data-${accion}="${esc(x.id)}" aria-expanded="false" title="${esc(`${x.nombre}: ${x.texto}`)}">${dentro}</button>`
+          : `<div class="g-fila" title="${esc(`${x.nombre}: ${x.texto}`)}">${dentro}</div>`
+      }</li>`;
+    })
+    .join('')}</ul>`;
+}
+
+/**
+ * Líneas sobre los 12 meses del año (0-100 %). series: [{ nombre, clase, puntos: [{ mes (1-12), valor (0-1) }] }].
+ * Las líneas van en SVG y los textos en HTML encima. La primera serie se rotula al final de la línea.
+ */
+export function lineasDelAño(series, { titulo = '', referencia = true } = {}) {
+  const x = (mes) => ((mes - 0.5) / 12) * 100;
+  const y = (v) => 100 - v * 100;
+  const camino = (puntos) => puntos.filter((p) => p.valor !== null).map((p, i) => `${i ? 'L' : 'M'}${x(p.mes).toFixed(2)},${y(p.valor).toFixed(2)}`).join(' ');
+  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const principal = series[0]?.puntos.filter((p) => p.valor !== null).at(-1);
+  const texto = series.map((s) => `${s.nombre}: ${s.puntos.filter((p) => p.valor !== null).map((p) => `${meses[p.mes - 1]} ${Math.round(p.valor * 100)} %`).join(', ')}`).join('. ');
+  return `<figure class="g-lineas" role="img" aria-label="${esc(`${titulo}. ${texto}`)}">
+    <div class="g-lineas-lienzo">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        ${[0.25, 0.5, 0.75, 1].map((v) => `<line class="g-rejilla" x1="0" x2="100" y1="${y(v)}" y2="${y(v)}"/>`).join('')}
+        ${referencia ? `<line class="g-referencia" x1="0" y1="100" x2="100" y2="0"/>` : ''}
+        ${series.map((s) => `<path class="g-serie ${s.clase ?? ''}" d="${camino(s.puntos)}"/>`).join('')}
+      </svg>
+      ${[0.25, 0.5, 0.75, 1].map((v) => `<span class="g-eje-y" style="top: ${y(v)}%">${v * 100} %</span>`).join('')}
+      ${principal ? `<span class="g-rotulo" style="left: ${x(principal.mes)}%; top: ${y(principal.valor)}%">${Math.round(principal.valor * 100)} %</span>` : ''}
+    </div>
+    <div class="g-eje g-eje-meses" aria-hidden="true">${meses.map((m, i) => `<span style="left: ${x(i + 1)}%">${i % 2 === 0 ? m : ''}</span>`).join('')}</div>
+    <figcaption class="leyenda">${series.map((s) => `<span><i class="g-muestra ${s.clase ?? ''}"></i>${esc(s.nombre)}</span>`).join('')}${referencia ? '<span><i class="g-muestra g-referencia"></i>Al mismo ritmo todo el año</span>' : ''}</figcaption>
+  </figure>`;
+}

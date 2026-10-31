@@ -14,7 +14,8 @@
     "capturas": "node scripts/capturas.mjs",
     "imagenes": "node scripts/imagenes.mjs",
     "lupa": "node scripts/fetch-lupa.mjs",
-    "escaparate": "node scripts/escaparate.mjs"
+    "escaparate": "node scripts/escaparate.mjs",
+    "presupuesto": "node scripts/fetch-ejecucion.mjs"
   },
   "engines": {
     "node": ">=20"

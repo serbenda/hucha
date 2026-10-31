@@ -52,7 +52,7 @@ Datos oficiales actualizados automáticamente. Sin cookies, sin anuncios, sin re
 
 ## Qué es
 
-hucha es una web que enseña **a dónde va el dinero público en España** a cualquiera, sin saber de economía. Responde a cuatro preguntas: cuánto pongo yo, a qué se dedica, quién lo gasta y a quién se le paga.
+hucha es una web que enseña **a dónde va el dinero público en España** a cualquiera, sin saber de economía. Responde a cinco preguntas: cuánto pongo yo, a qué se dedica, quién lo gasta, si se gasta lo presupuestado y a quién se le paga.
 
 Principios que guían cada decisión:
 
@@ -111,6 +111,17 @@ Arriba, tres cifras: gasto por habitante, la partida más grande y el gasto sobr
 
 Qué parte de cada cosa pagan el **Estado**, las **comunidades**, los **ayuntamientos** y la **Seguridad Social**: cuánto gasta cada administración y, para cada función (sanidad, educación, pensiones…), una barra con el reparto.
 
+### 📈 Presupuesto · [`/presupuesto/`](https://hucha.bendi.dev/presupuesto/)
+
+¿Se gasta lo que se presupuesta? El presupuesto del Estado de este año frente a lo que lleva gastado, con los datos que publica cada mes la IGAE:
+
+- **Tres cifras**: el presupuesto del año, lo gastado hasta el último mes publicado y lo que se llevaba gastado un año antes a esas alturas.
+- **A qué ritmo**: la parte gastada al final de cada mes, este año y el anterior, frente a un ritmo igual todo el año.
+- **En qué tipo de gasto** (sueldos, compras, intereses, transferencias, inversiones…) y **para qué** (políticas: defensa, infraestructuras, sanidad…), con una raya que marca la parte del año que ha pasado.
+- **Quién lo gasta**: cada ministerio y, al pulsarlo, sus programas, con un buscador («ferroviario», «becas»…). Se puede enlazar una búsqueda: `/presupuesto/?q=ferroviario`.
+
+Sin adjetivos: el ritmo del gasto no es igual todo el año (las inversiones se concentran al final), así que la comparación justa es con el mismo mes del año anterior, y la página lo explica.
+
 ### 🔍 La Lupa · [`/lupa/`](https://hucha.bendi.dev/lupa/)
 
 El detalle con nombre y cifra:
@@ -133,6 +144,7 @@ De dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada d
 |---|---|---|---|
 | [Eurostat `gov_10a_exp`](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | Gasto de las Administraciones Públicas por funciones (COFOG) y por tipo de operación, de España por administración y de la media de la UE, desde 2010. Para España lo elabora la [IGAE](https://www.igae.pap.hacienda.gob.es/). | Anual (febrero), con revisiones en abril y octubre | Cada día |
 | [Eurostat `demo_gind`](https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table) | Población media anual, para los euros por habitante | Anual | Cada día |
+| [IGAE · ejecución del presupuesto](https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Paginas/imejecucionpresupuesto.aspx) | Presupuesto del Estado (créditos definitivos) y lo gastado (obligaciones reconocidas), por capítulos, ministerios, políticas y programas | Cada mes, con unos dos meses de retraso | Cada día |
 | [Plataforma de Contratación del Sector Público](https://contrataciondelestado.es/) | Contratos adjudicados desde 1 M€, de los órganos que publican en ella y de las plataformas autonómicas y locales que se agregan | Continuo | Cada día; el histórico crece solo |
 | [BDNS · Infosubvenciones](https://www.infosubvenciones.es/) | Subvenciones concedidas desde 1 M€ a empresas y entidades, últimos 12 meses | Continuo | Cada día |
 | [OCDE · CRS](https://data-explorer.oecd.org/) | Ayuda oficial al desarrollo de España por país, por sector y proyecto a proyecto | Anual (finales del año siguiente) | Cada día |
@@ -151,6 +163,16 @@ Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto. Llega c
 - Antes de guardar, `problema()` en `cofog.js` rechaza los datos si: no hay años, hay menos de 5, ningún año tiene gasto y población a la vez, el gasto total es sospechoso, o falta detalle para más del 5 % del gasto.
 - **No retroceder**: si lo ya publicado llega a un año más reciente que lo que devuelve Eurostat, no se sobrescribe.
 - Eurostat a veces responde con un JSON de error o con la tabla «en preparación»: se reintenta y, si no, se queda la versión anterior.
+</details>
+
+<details>
+<summary><strong>IGAE: ejecución del presupuesto del Estado</strong></summary>
+
+- La página del año en curso (`imejecucionpresupuesto.aspx`) y la de cada año anterior (`imejecucionpresupuestoAAAA.aspx`) enlazan un libro de Excel por mes: `MENSUAL <MES> <AÑO>.xlsx` (algunos con «(EXCEL)» en el nombre). Los anexos no se usan.
+- Del libro se leen cuatro hojas: `GTOS 004` (capítulos, con el mismo mes del año anterior), `GTOS 014` (secciones, con el año anterior), `GTOS 016` (áreas de gasto y políticas) y `GTOS 017` (programas por sección). Importes en miles de euros, que se guardan en millones.
+- Los libros se leen sin dependencias (`scripts/xlsx.mjs`: un .xlsx es un ZIP con XML). Las columnas se buscan por su cabecera («CRÉDITOS DEFINITIVOS», «OBLIGACIONES RECONOCIDAS»…), no por su letra, y se comprueba que el libro dice el mes que toca. Un guion de la fuente se guarda como «sin dato», nunca como cero.
+- Cada día se leen los meses que faltan en el almacén y, siempre, el último de cada año, por si se ha revisado. Se guardan el año en curso y el anterior.
+- Hay más en el libro que hucha aún no usa: modificaciones del presupuesto, ingresos, déficit de caja y la ejecución del Mecanismo de Recuperación (fondos europeos) por ministerio.
 </details>
 
 <details>
@@ -313,6 +335,7 @@ flowchart LR
 | Tests | `npm test` | No sigue |
 | Recuperar el almacén | Descarga los datos acumulados de la release `almacen` (si aún no existe, de la web publicada) | Empieza de cero |
 | Eurostat | `npm run datos` | Se queda lo anterior y queda anotado |
+| Presupuesto | `node scripts/fetch-ejecucion.mjs`: los libros de la IGAE que falten | Se queda lo anterior y queda anotado |
 | Lupa | `npm run lupa` (30 minutos como mucho) | Cada parte por separado: se queda su versión anterior |
 | Escaparate | `npm run escaparate`: del almacén, lo que descarga cada página (vistas, índices y meses) | No sigue |
 | Comprobar que hay datos | Que existan y que no sean de ejemplo | No sigue |
@@ -387,6 +410,7 @@ data/
 ├── vistas/portada.json        Tu ticket: cuotas de cada partida y cifras de todos (≈3 KB)
 ├── vistas/a-donde-va.json     Cada partida con su detalle, cómo se gasta y su serie frente a la UE (≈20 KB)
 ├── vistas/quien-gasta.json    Administraciones y reparto de cada función (≈4 KB)
+├── vistas/presupuesto.json    Presupuesto del Estado frente a lo gastado (≈30 KB)
 ├── lupa/contratos.json        Índice: los 40 mayores, totales por tema, por administración y por mes
 ├── lupa/contratos/AAAA-MM.json   Los contratos de cada mes
 ├── lupa/subvenciones.json · lupa/subvenciones/AAAA-MM.json
@@ -461,6 +485,7 @@ hucha/
 ├── index.html                    Tu ticket
 ├── a-donde-va/index.html         A dónde va
 ├── quien-gasta/index.html        Quién gasta
+├── presupuesto/index.html        ¿Se gasta lo presupuestado?
 ├── lupa/index.html               La Lupa
 ├── fuentes/index.html            Fuentes y condiciones
 ├── 404.html                      Página no encontrada
@@ -471,6 +496,7 @@ hucha/
 │       ├── jsonstat.js           Lector del formato JSON-stat de Eurostat
 │       ├── cofog.js              Partidas, grupos, tipos, quién gasta, por habitante
 │       ├── impuestos.js          IRPF y cotizaciones de 2026
+│       ├── ejecucion.js          Ejecución del presupuesto del Estado (IGAE): lectura de sus libros
 │       ├── lupa-datos.js         Contratos, subvenciones y ayuda: lectura, clasificación y búsqueda
 │       ├── paises.js             Códigos y nombres de países
 │       ├── iconos.js             Los iconos de la web y qué icono lleva cada cosa
@@ -479,10 +505,12 @@ hucha/
 │       ├── graficos.js           Gráficos en HTML: barras, columnas y mapa de bloques
 │       ├── datos.js              Carga la vista de cada página y las bandas de aviso
 │       ├── comun.js              Service worker y contador de visitas
-│       └── portada.js · a-donde-va.js · quien-gasta.js · lupa.js · fuentes.js
+│       └── portada.js · a-donde-va.js · quien-gasta.js · presupuesto.js · lupa.js · fuentes.js
 │                                 Un script por página
 ├── scripts/
 │   ├── fetch-cofog.mjs           Descarga Eurostat (npm run datos)
+│   ├── fetch-ejecucion.mjs       Descarga la ejecución del presupuesto (npm run presupuesto)
+│   ├── xlsx.mjs                  Lector de libros de Excel sin dependencias
 │   ├── fetch-lupa.mjs            Descarga la Lupa (npm run lupa)
 │   ├── escaparate.mjs            Del almacén, lo que descarga la web (npm run escaparate)
 │   ├── estado.mjs                Anota si cada parte ha ido bien
@@ -523,6 +551,7 @@ Node 20 o superior. Para la web no hace falta instalar nada.
 npm test          # tests unitarios
 npm run datos       # descarga los datos reales de Eurostat al almacén (almacen/)
 npm run lupa        # descarga la Lupa al almacén (LUPA_PAGINAS=3 LUPA_MESES=0 para ir rápido)
+npm run presupuesto # descarga la ejecución del presupuesto del Estado al almacén
 npm run escaparate  # prepara data/, lo que descarga la web
 npm run ejemplo     # o, sin conexión, almacén y escaparate de EJEMPLO (la web lo avisa con una banda)
 npm run dev       # sirve la web en local
@@ -559,8 +588,8 @@ npm run e2e && npm run lighthouse && npm run capturas
 
 ## Lo que no aparece (todavía)
 
-- **El presupuesto**: hucha enseña gasto realmente hecho. Lo presupuestado y su ejecución llegarán con el bloque de desviaciones.
-- **El año en curso**: Eurostat va con más de un año de retraso.
+- **El presupuesto de comunidades y ayuntamientos**: la página de presupuesto solo cubre el Estado.
+- **El año en curso** en las partidas: Eurostat va con más de un año de retraso. La página de presupuesto sí tiene el año en curso, del Estado.
 - **Contratos menores y de menos de 1 M€**, y lo que una plataforma autonómica o local no haya enviado a la estatal. Lo que se paga al final puede cambiar por modificados o revisiones de precio.
 - **Subvenciones de menos de 1 M€** y las concedidas a personas físicas. Una subvención concedida no siempre se paga entera.
 - **Ayuda a organismos internacionales** (ONU, Banco Mundial, UE) y a regiones sin un país concreto.
@@ -579,8 +608,8 @@ npm run e2e && npm run lighthouse && npm run capturas
 - [x] Gráficos: mapa de bloques de las partidas y panorama de la Lupa
 - [x] Ayuda a otros países por sector y proyecto a proyecto
 - [ ] **Europa**: fondos recibidos (Next Generation, FEDER, FSE+, PAC) y para qué, aportación de España, saldo neto y deuda con la UE (préstamos del Plan de Recuperación y SURE)
-- [ ] **Desviaciones**: presupuestado frente a pagado por ministerio y programa (ejecución mensual de la IGAE), fondos europeos asignados, recibidos y ejecutados, licitado frente a adjudicado
-- [ ] Presupuesto del Estado por programas (por ejemplo, infraestructuras ferroviarias)
+- [x] **Presupuesto frente a lo gastado** del Estado, por capítulos, políticas, ministerios y programas (IGAE)
+- [ ] **Más desviaciones**: lo presupuestado al principio frente a lo modificado, fondos europeos asignados, recibidos y ejecutados, licitado frente a adjudicado
 - [ ] «Lo que no aparece» en todas las secciones
 - [ ] Ficha por empresa y por administración, con enlace para compartir
 - [ ] Datos descargables en CSV

@@ -6,6 +6,7 @@ const TRAZOS = {
   // Secciones de la web
   ticket: 'M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z M9 8h6 M9 12h6 M9 16h3',
   'a-donde-va': 'M12 3a9 9 0 1 0 9 9h-9Z M15 3.5A9 9 0 0 1 20.5 9H15Z',
+  presupuesto: 'M3.5 17a8.5 8.5 0 1 1 17 0 M12 17l4.5-5.5 M3.5 17h17',
   'quien-gasta': 'M3 21h18 M4 10h16 M12 3l8 4.5H4Z M6 10v8 M10 10v8 M14 10v8 M18 10v8',
   lupa: 'M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z M20.5 20.5l-5.4-5.4',
   fuentes: 'M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2Z M4 20a2 2 0 0 0 2 2h13v-4',

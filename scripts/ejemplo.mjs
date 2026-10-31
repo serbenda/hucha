@@ -6,6 +6,8 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { prepararDatos } from '../assets/js/cofog.js';
 import { respuestasEjemplo } from '../tests/ayuda.js';
 import { escaparate } from './escaparate.mjs';
+import { leerLibro } from '../assets/js/ejecucion.js';
+import { GTOS004, GTOS014, GTOS016, GTOS017 } from '../tests/ejecucion-ejemplo.js';
 
 const { gasto, poblacion, tipos } = respuestasEjemplo();
 const datos = { ...prepararDatos(gasto, poblacion, tipos), ejemplo: true, actualizado: new Date().toISOString() };
@@ -35,4 +37,12 @@ await writeFile(new URL('ayuda.json', lupa), JSON.stringify({
   proyectos: { MAR: [{ v: 3.2, t: 'EJEMPLO: centros de salud en el norte', s: '120', a: 'AECID', c: 'ONG y sociedad civil' }, { v: 2.1, t: 'EJEMPLO: agua potable en zonas rurales', s: '140', a: 'AECID', c: 'Sector público' }] },
 }));
 console.log('Lupa de EJEMPLO creada en almacen/');
+
+// Ejecución del presupuesto de EJEMPLO: el mismo libro para varios meses, escalado
+const libro = leerLibro({ 'GTOS 004': GTOS004, 'GTOS 014': GTOS014, 'GTOS 016': GTOS016, 'GTOS 017': GTOS017 }, '2026-08');
+const meses = {};
+for (const [mes, f] of [['2025-06', 0.45], ['2025-07', 0.5], ['2025-08', 0.57], ['2025-09', 0.64], ['2025-10', 0.71], ['2025-11', 0.79], ['2025-12', 0.95], ['2026-06', 0.47], ['2026-07', 0.54], ['2026-08', 0.607]]) {
+  meses[mes] = { ...structuredClone(libro), mes, noFinanciero: { ...libro.noFinanciero, obligaciones: libro.noFinanciero.creditos * f } };
+}
+await writeFile(new URL('ejecucion.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), meses }));
 for (const r of await escaparate()) console.log(r);

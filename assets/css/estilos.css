@@ -471,7 +471,10 @@ section + section { margin-top: 3.5rem; }
 .nav a .icono { opacity: 0.8; }
 .nav a[aria-current='page'] .icono { color: var(--cobre); opacity: 1; }
 @media (max-width: 40rem) {
-  .nav a { flex-direction: column; gap: 0.15rem; font-size: 0.8rem; }
+  /* Seis secciones en una fila: icono arriba y nombre debajo, cada una con el mismo ancho */
+  .nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0 0.15rem; }
+  .nav a { flex-direction: column; gap: 0.15rem; font-size: 0.7rem; line-height: 1.15; text-align: center; letter-spacing: -0.01em; min-width: 0; }
+  .nav a span { overflow-wrap: anywhere; hyphens: auto; }
   .nav a .icono { width: 1.35rem; height: 1.35rem; }
   .nav a[aria-current='page'] { text-decoration: none; }
 }
@@ -548,3 +551,41 @@ a.g-bloque:hover { filter: brightness(0.92); }
 .enlace { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
 .resultado h3 .enlace { font-weight: 600; }
 .volver { margin-bottom: 0.4rem; font-size: 0.95rem; color: var(--cobre); }
+
+/* Avance (cuánto se lleva gastado) */
+.g-avance { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.15rem; }
+.g-avance .g-pista { position: relative; overflow: visible; }
+.g-avance .g-pista i { border-radius: 999px; }
+.g-marca { position: absolute; top: -0.25rem; bottom: -0.25rem; left: var(--marca); width: 2px; margin-left: -1px; background: var(--tinta); border-radius: 1px; }
+button.g-fila[aria-expanded='true'] { background: var(--cobre-suave); }
+
+/* Líneas del año */
+.g-lineas { margin: 0; }
+.g-lineas-lienzo { position: relative; height: 11rem; margin-left: 2.6rem; margin-right: 2.4rem; }
+.g-lineas-lienzo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.g-rejilla { stroke: var(--linea); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.g-referencia { stroke: var(--tenue); stroke-width: 1.5; stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; fill: none; }
+.g-serie { fill: none; stroke: var(--cobre); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.g-serie.anterior { stroke: var(--tenue); stroke-width: 2; stroke-dasharray: 6 4; }
+.g-eje-y { position: absolute; left: -0.5rem; transform: translate(-100%, -50%); font-size: 12px; color: var(--tenue); }
+.g-rotulo { position: absolute; transform: translate(0.4rem, -50%); font-size: 13px; font-weight: 800; color: var(--cobre); white-space: nowrap; }
+.g-eje-meses { margin-left: 2.6rem; margin-right: 2.4rem; }
+.g-eje-meses span { transform: translateX(-50%); }
+.g-muestra { display: inline-block; width: 1.4em; height: 0; border-top: 3px solid var(--cobre); vertical-align: 0.25em; margin-right: 0.4em; }
+.g-muestra.anterior { border-top: 2px dashed var(--tenue); }
+.g-muestra.g-referencia { border-top: 2px dotted var(--tenue); }
+
+/* Presupuesto: ministerios desplegables con sus programas */
+.ministerios { list-style: none; padding: 0; margin: 0.5rem 0 0; border-top: 2px solid var(--tinta); }
+.ministerio { border-bottom: 1px solid var(--linea); }
+.ministerio summary { list-style: none; cursor: pointer; padding: 0.35rem 0; }
+.ministerio summary::-webkit-details-marker { display: none; }
+.ministerio summary .g-fila { padding-right: 1.8rem; position: relative; }
+.ministerio summary .g-fila::after { content: ''; position: absolute; right: 0.6rem; top: 0.9rem; width: 0.5rem; height: 0.5rem; border: solid var(--tenue); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.2s; }
+.ministerio details[open] summary .g-fila::after { transform: translateY(0.25rem) rotate(-135deg); }
+.ministerio summary:hover .g-fila { background: var(--cobre-suave); }
+.ministerio details > .g-avance { padding: 0 0 0.8rem 1rem; border-left: 3px solid var(--cobre-suave); margin-left: 0.5rem; }
+.ministerio details > .g-avance .g-nombre { font-weight: 500; font-size: 0.92rem; }
+.g-en-linea { display: grid; }
+.g-en-linea .g-pista { position: relative; overflow: visible; }
+.hueco-grafico { min-height: 14rem; }
