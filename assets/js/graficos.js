@@ -160,8 +160,8 @@ export function lineasDelAño(series, { titulo = '', referencia = true } = {}) {
   const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const principal = series[0]?.puntos.filter((p) => p.valor !== null).at(-1);
   const texto = series.map((s) => `${s.nombre}: ${s.puntos.filter((p) => p.valor !== null).map((p) => `${meses[p.mes - 1]} ${Math.round(p.valor * 100)} %`).join(', ')}`).join('. ');
-  return `<figure class="g-lineas" role="img" aria-label="${esc(`${titulo}. ${texto}`)}">
-    <div class="g-lineas-lienzo">
+  return `<figure class="g-lineas">
+    <div class="g-lineas-lienzo" role="img" aria-label="${esc(`${titulo}. ${texto}`)}">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         ${[0.25, 0.5, 0.75, 1].map((v) => `<line class="g-rejilla" x1="0" x2="100" y1="${y(v)}" y2="${y(v)}"/>`).join('')}
         ${referencia ? `<line class="g-referencia" x1="0" y1="100" x2="100" y2="0"/>` : ''}

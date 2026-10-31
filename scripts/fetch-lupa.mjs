@@ -236,8 +236,10 @@ async function subvenciones() {
     const mes = desde.slice(0, 7);
     meses.push(mes);
     const nuevas = new Map();
+    let primera = null;
     for (let pagina = 0; pagina < 10; pagina++) {
       const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json' });
+      primera ??= json;
       const importes = (json?.content ?? []).map((c) => c.importe ?? 0);
       if (importes.some((v, k) => k > 0 && v > importes[k - 1] + 0.01)) throw new Error(`la API no devuelve las concesiones ordenadas por importe (${importes.slice(0, 5).join(', ')}…)`);
       for (const c of parsearConcesiones(json)) if (c.i >= UMBRAL_SUBVENCIONES) nuevas.set(c.id, c);
@@ -246,7 +248,9 @@ async function subvenciones() {
     }
     const antes = porMes.get(mes)?.length ?? 0;
     if (nuevas.size) porMes.set(mes, [...nuevas.values()]);
-    leidos.push(`${mes}: ${nuevas.size}${!nuevas.size && antes ? ` (se quedan ${antes})` : ''}`);
+    // Si un mes llega vacío, se anota qué ha respondido la API (para saber si es que no hay datos o que ha cambiado)
+    const diagnostico = nuevas.size ? '' : ` [api: total ${primera?.totalElements ?? '?'}, ${primera?.content?.length ?? 'sin content'} filas, claves ${Object.keys(primera ?? {}).slice(0, 6).join('/')}]`;
+    leidos.push(`${mes}: ${nuevas.size}${!nuevas.size && antes ? ` (se quedan ${antes})` : ''}${diagnostico}`);
   }
   // Solo los meses de la ventana (los últimos 12)
   const lista = meses.flatMap((mes) => porMes.get(mes) ?? []).sort((a, b) => b.i - a.i);
@@ -356,7 +360,7 @@ async function ayuda() {
   let notaProyectos = '';
   if (PROYECTOS && (proyectosAño !== ultimo || hoy.getDay() === 1 || !Object.keys(proyectos).length)) {
     try {
-      const p = await leerCsv(urlCrsProyectos(ultimo), () => acumuladorProyectos(), 25);
+      const p = await leerCsv(urlCrsProyectos(ultimo), () => acumuladorProyectos(), 30);
       if (p) {
         proyectos = p.resultado();
         proyectosAño = ultimo;
