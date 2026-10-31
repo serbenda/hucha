@@ -5,10 +5,15 @@
 import { TEMAS, buscar, totales, normalizar } from './lupa-datos.js';
 import { nombrePais } from './paises.js';
 import { euros, fecha } from './formato.js';
+import { barras, columnas } from './graficos.js';
+import { icono, ICONO_TEMA } from './iconos.js';
 
 const $ = (id) => document.getElementById(id);
 const POR_PAGINA = 40;
-const millones = (n) => `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: n >= 100e6 ? 0 : 1 }).format(n / 1e6)} millones de €`;
+const millones = (n) => {
+  const texto = new Intl.NumberFormat('es-ES', { maximumFractionDigits: n >= 100e6 ? 0 : 1 }).format(n / 1e6);
+  return `${texto} ${texto === '1' ? 'millón' : 'millones'} de €`;
+};
 const fechaCorta = (iso) => (iso ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) : '');
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -126,11 +131,13 @@ async function pintar() {
   }
 
   if (estado.tab === 'ayuda') {
+    $('panorama-rejilla').replaceChildren();
     pintarAyuda(d);
     return;
   }
 
   const contratos = estado.tab === 'contratos';
+  pintarPanorama(d, contratos);
   const clave = contratos ? 'contratos' : 'subvenciones';
   const campos = contratos ? ['t', 'o', 'g', 'l', 'fi', 'ti', 'n'] : ['c', 'o', 'b', 'l', 'n'];
   const importe = contratos ? 'a' : 'i';
@@ -184,6 +191,39 @@ async function pintar() {
     )
   );
 }
+
+// Panorama: de un vistazo, en qué temas, quién paga y mes a mes. Pulsar una barra filtra la lista.
+const NIVELES = ['Estado', 'Comunidades', 'Ayuntamientos', 'Universidades', 'Otros'];
+const mesCorto = (mes) => new Intl.DateTimeFormat('es-ES', { month: 'short', year: '2-digit' }).format(new Date(`${mes}-15`));
+const mesLargo = (mes) => new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(`${mes}-15`));
+function pintarPanorama(d, contratos) {
+  const caja = $('panorama-rejilla');
+  if (!d.porTema && !d.porNivel) {
+    caja.replaceChildren();
+    return;
+  }
+  const que = contratos ? 'contratos' : 'subvenciones';
+  const fila = (t) => `${new Intl.NumberFormat('es-ES').format(t.n - (t.marcos?.n ?? 0))} ${que}`;
+  const temas = TEMAS.filter((t) => d.porTema?.[t.id]?.suma > 0)
+    .map((t) => ({ id: t.id, nombre: t.nombre, valor: d.porTema[t.id].suma, texto: millones(d.porTema[t.id].suma), nota: fila(d.porTema[t.id]), icono: icono(ICONO_TEMA[t.id]) }))
+    .sort((a, b) => b.valor - a.valor);
+  const niveles = NIVELES.filter((n) => d.porNivel?.[n]?.suma > 0).map((n) => ({ id: n, nombre: n, valor: d.porNivel[n].suma, texto: millones(d.porNivel[n].suma), nota: fila(d.porNivel[n]) }));
+  const meses = [...(d.meses ?? [])].filter((m) => m.mes !== 'sin-fecha').reverse();
+  const bloque = (titulo, texto, contenido) => (contenido ? `<div class="panorama-bloque"><h3>${titulo}</h3><p class="tenue">${texto}</p>${contenido}</div>` : '');
+  caja.innerHTML =
+    bloque('Por tema', `Importe ${contratos ? 'adjudicado' : 'concedido'}. Un ${contratos ? 'contrato' : 'pago'} puede estar en varios temas. Pulsa uno para ver la lista.`, barras(temas.slice(0, 8), { accion: 'p-tema', activo: estado.tema })) +
+    bloque('Quién paga', 'Pulsa una administración para ver lo suyo.', barras(niveles, { accion: 'p-nivel', activo: estado.nivel })) +
+    (meses.length > 1 ? bloque('Mes a mes', `Importe ${contratos ? 'adjudicado' : 'concedido'} cada mes, sin acuerdos marco.`, columnas(meses.map((m) => ({ etiqueta: mesLargo(m.mes), corta: mesCorto(m.mes), valor: m.suma ?? 0, texto: millones(m.suma ?? 0), rotulo: `${new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 }).format((m.suma ?? 0) / 1e6)} M€` })), { titulo: 'Importe por mes' })) : '');
+}
+$('panorama-rejilla').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-p-tema], [data-p-nivel]');
+  if (!b) return;
+  if (b.dataset.pTema !== undefined) estado.tema = estado.tema === b.dataset.pTema ? '' : b.dataset.pTema;
+  else estado.nivel = estado.nivel === b.dataset.pNivel ? '' : b.dataset.pNivel;
+  estado.mostrados = POR_PAGINA;
+  pintarTemas();
+  pintar().then(() => $('resumen-lupa').scrollIntoView({ block: 'start', behavior: 'smooth' }));
+});
 
 function pintarResultados(t, r, { contratos, progreso = '', disponibles = r.length }) {
   const resumen = $('resumen-lupa');

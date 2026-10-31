@@ -1,6 +1,7 @@
 // Portada: el ticket de tus impuestos y las cifras de todos.
 
 import { cargarVista } from './datos.js';
+import { bloques } from './graficos.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, millones, delPib, leerImporte } from './formato.js';
@@ -133,6 +134,10 @@ try {
   $('ticket-año').textContent = `Gasto público de España en ${año}`;
   pintarTicket();
   pintarCifras(vista);
+  $('mapa').innerHTML = bloques(
+    lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${Math.round(p.cuota * 100)} €`, href: `a-donde-va/#p-${p.id}` })),
+    { titulo: 'De cada 100 € de gasto público, cuánto va a cada partida' }
+  );
 } catch {
   $('reparto').replaceChildren(linea('Sin datos ahora mismo', ''));
 }

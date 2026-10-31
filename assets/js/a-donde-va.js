@@ -1,6 +1,7 @@
 // «A dónde va»: las partidas en euros por habitante, con su evolución frente a la UE.
 
 import { cargarVista } from './datos.js';
+import { bloques } from './graficos.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, delPib } from './formato.js';
 
@@ -98,6 +99,7 @@ try {
     ...lista.map((p) => {
       const li = document.createElement('li');
       li.className = 'partida';
+      li.id = `p-${p.id}`;
       const { serie, grupos, tipos } = p;
       const esPib = serie.at(-1)?.es ?? null;
       const uePib = serie.at(-1)?.ue ?? null;
@@ -119,6 +121,20 @@ try {
       return li;
     })
   );
+
+  $('mapa').innerHTML = bloques(
+    lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${euros(p.cuota * porPersona)} · ${porcentaje(p.cuota)}`, href: `#p-${p.id}` })),
+    { titulo: `Gasto público de ${año} por partidas, en euros por habitante` }
+  );
+  // Un enlace a una partida (#p-sanidad) la abre
+  const abrir = () => {
+    const li = location.hash.startsWith('#p-') && document.getElementById(location.hash.slice(1));
+    if (!li) return;
+    li.querySelector('details').open = true;
+    li.scrollIntoView({ block: 'start' });
+  };
+  addEventListener('hashchange', abrir);
+  abrir();
 
   // Cómo se gasta todo: sueldos, pagos a personas, compras, inversión…
   const total = v.tipos;

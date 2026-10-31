@@ -151,7 +151,8 @@ test('escaparate: índice con los mayores, totales por tema y nivel, y un ficher
   assert.equal(i.contratos[0].a, 50);
   assert.equal(i.porTema.tren.n, 25);
   assert.equal(i.porNivel.Estado.n, 50);
-  assert.deepEqual(i.meses, [{ mes: '2026-10', n: 30 }, { mes: '2026-09', n: 20 }]);
+  assert.deepEqual(i.meses.map(({ mes, n }) => ({ mes, n })), [{ mes: '2026-10', n: 30 }, { mes: '2026-09', n: 20 }]);
+  assert.equal(i.meses[0].suma, 465);
   const m = porMes(contratos, 'a');
   assert.equal(m['2026-10'][0].a, 30);
   assert.equal(mesDe({ up: '2026-08-01T10:00' }), '2026-08');

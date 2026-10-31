@@ -38,11 +38,11 @@ jobs:
       - name: OCDE CRS (ayuda por país y sector)
         run: |
           curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/dataflow/OECD.DCD.FSD/DSD_CRS@DF_CRS/latest?references=datastructure" -o crs.xml
-          grep -o '<structure:Dimension [^>]*>' crs.xml | head -20 | sed 's/^/::notice::dim /'
-          grep -o '<structure:TimeDimension [^>]*>' crs.xml | head -2 | sed 's/^/::notice::tiempo /'
+          echo "::notice::estructura $(wc -c < crs.xml) bytes: $(head -c 400 crs.xml | tr '\n' ' ')"
+          grep -o '<[A-Za-z]*:Dimension [^>]*>' crs.xml | head -20 | sed 's/^/::notice::dim /'
           node -e "
             const x=require('fs').readFileSync('crs.xml','utf8');
-            const dims=[...x.matchAll(/<structure:Dimension ([^>]*)>/g)].map(m=>({id:(m[1].match(/\bid=\"([^\"]+)\"/)||[])[1],pos:+((m[1].match(/position=\"(\\d+)\"/)||[])[1]||0)})).filter(d=>d.id);
+            const dims=[...x.matchAll(/<[A-Za-z]*:Dimension ([^>]*)>/g)].map(m=>({id:(m[1].match(/\bid=\"([^\"]+)\"/)||[])[1],pos:+((m[1].match(/position=\"(\\d+)\"/)||[])[1]||0)})).filter(d=>d.id);
             dims.sort((a,b)=>a.pos-b.pos);
             require('fs').writeFileSync('dims.txt', dims.map(d=>d.id).join(','));
             console.log('::notice::orden '+dims.map(d=>d.pos+':'+d.id).join(' '));

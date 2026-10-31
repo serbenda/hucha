@@ -318,7 +318,7 @@ export function indiceDe(datos, clave, importe) {
     total: totales(lista, importe),
     porTema: agrupar((x) => x.te),
     porNivel: agrupar((x) => x.n),
-    meses: Object.keys(meses).sort().reverse().map((mes) => ({ mes, n: meses[mes].length })),
+    meses: Object.keys(meses).sort().reverse().map((mes) => ({ mes, n: meses[mes].length, suma: totales(meses[mes], importe).suma })),
     [clave]: orden.slice(0, EN_PORTADA),
   };
 }
