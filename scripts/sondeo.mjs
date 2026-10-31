@@ -2,17 +2,11 @@
 const cabeceras = { 'User-Agent': 'hucha (github.com/serbenda/hucha)', Accept: '*/*' };
 const grupo = process.argv[2];
 const PRUEBAS = {
-  bdns: [
-    'https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?page=0&pageSize=3&vpd=GE&fechaDesde=01/10/2026&fechaHasta=31/10/2026&sort=importe,desc',
-    'https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?page=0&pageSize=3&vpd=GE&fechaDesde=01/10/2026&fechaHasta=31/10/2026&order=importe&direccion=desc',
-  ],
   oecd: [
-    'https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,1.7/all?startPeriod=2023&endPeriod=2023&dimensionAtObservation=AllDimensions&format=csvfilewithlabels',
-    'https://sdmx.oecd.org/public/rest/datastructure/OECD.DCD.FSD/DSD_DAC2/latest',
-    'HEAD https://webfs-dcd.oecd.org/files/dotStat/DSD_DAC2/Table2a_Data.zip',
-  ],
-  placsp: [
-    'https://contrataciondelestado.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom',
+    'https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,/ESP.DPGC.206.USD.Q?startPeriod=2022&format=csvfilewithlabels',
+    'https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,1.7/ESP.DPGC.206.USD.Q?startPeriod=2022&format=csv',
+    'https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,/ESP+50.MAR.206.USD.Q?startPeriod=2022',
+    'https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,/.MAR.206.USD.Q?startPeriod=2023&format=csvfilewithlabels',
   ],
 };
 const esc = (t) => t.replace(/%/g, '%25').replace(/\r/g, '').replace(/\n/g, '%0A');
