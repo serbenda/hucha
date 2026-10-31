@@ -22,6 +22,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="hucha: de cada 100 euros de gasto público, cuánto va a cada partida">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="vendor/fuentes/archivo-latin-wdth-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="vendor/fuentes/archivo.css">
   <link rel="stylesheet" href="assets/css/estilos.css">
 </head>
@@ -89,7 +90,20 @@
 
         <h2>A dónde va</h2>
         <dl class="reparto" id="reparto">
-          <div class="linea-ticket"><dt>Cargando datos…</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
+          <div class="linea-ticket esqueleto" aria-hidden="true"><dt>&nbsp;</dt><dd></dd></div>
         </dl>
 
         <p class="ticket-pie" id="ticket-pie">Estimación orientativa · datos de Eurostat</p>
@@ -103,12 +117,12 @@
     <section aria-labelledby="t-todos">
       <div class="seccion-titulo">
         <h2 id="t-todos">Entre todos</h2>
-        <p id="todos-texto">Lo que gastan juntas todas las administraciones: Estado, comunidades, ayuntamientos y Seguridad Social.</p>
+        <p id="todos-texto">En el último año con datos, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.</p>
       </div>
       <dl class="cifras" id="cifras">
-        <div class="cifra"><dt>Gasto público total</dt><dd>—</dd></div>
-        <div class="cifra"><dt>Por habitante</dt><dd>—</dd></div>
-        <div class="cifra"><dt>Sobre lo que produce España</dt><dd>—</dd></div>
+        <div class="cifra"><dt>Gasto público total</dt><dd>—<small>&nbsp;</small></dd></div>
+        <div class="cifra"><dt>Por habitante</dt><dd>—<small>&nbsp;</small></dd></div>
+        <div class="cifra"><dt>Sobre lo que produce España</dt><dd>—<small>&nbsp;</small></dd></div>
       </dl>
     </section>
 

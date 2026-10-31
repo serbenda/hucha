@@ -22,10 +22,10 @@ jobs:
   construir:
     runs-on: ubuntu-latest
     steps:
-      # Actions fijadas por commit (v4, v5…) para que no cambien sin que lo sepamos
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # Actions fijadas por commit para que no cambien sin que lo sepamos (versión en el comentario)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
 
@@ -35,7 +35,7 @@ jobs:
       - id: pages
         if: github.event_name != 'pull_request'
         continue-on-error: true
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Recuperar los datos publicados (por si Eurostat falla ahora)
         env:
@@ -66,18 +66,18 @@ jobs:
             console.log('::notice title=Quién gasta ' + a + '::' + r.join(' | '));
           "
 
+      - name: Instalar herramientas (navegador de pruebas, axe y Lighthouse)
+        run: |
+          npm run herramientas
+          npx playwright install --with-deps chromium
+
       - name: Fuente servida desde la web
         # Si falla, la web sigue funcionando con la fuente del sistema
         continue-on-error: true
-        run: |
-          npm install --no-save --no-package-lock @fontsource-variable/archivo@5
-          node scripts/vendor.mjs
+        run: node scripts/vendor.mjs
 
       - name: Iconos e imagen para compartir (con los datos de ahora)
-        run: |
-          npm install --no-save --no-package-lock playwright@1
-          npx playwright install --with-deps chromium
-          node scripts/imagenes.mjs
+        run: node scripts/imagenes.mjs
 
       - name: Preparar la web
         run: |
@@ -90,6 +90,29 @@ jobs:
           find _site -name '*.html' -exec sed -i -E "s#(href=\"[^\"]+\.css)\"#\1?v=$v\"#g; s#(src=\"[^\"]+\.js)\"#\1?v=$v\"#g" {} +
           sed -i -E "s#(from '\./[a-z0-9-]+\.js)'#\1?v=$v'#g" _site/assets/js/*.js
           grep -q "?v=$v" _site/assets/js/portada.js || { echo "::error::No se han versionado los imports"; exit 1; }
+          test -f _site/vendor/fuentes/archivo-latin-wdth-normal.woff2 || echo "::warning::La fuente precargada ya no se llama archivo-latin-wdth-normal.woff2: actualiza el preload de las páginas"
+
+      - name: Tests de navegador y accesibilidad (móvil y escritorio, claro y oscuro)
+        run: |
+          set -o pipefail
+          npm run e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log" || {
+            # Los fallos salen como anotaciones en la PR, para verlos sin abrir el registro
+            grep -E "^not ok|AssertionError|Error:|expected|actual|message:|^\s+[+-] " "$RUNNER_TEMP/e2e.log" | head -40 | sed 's/^/::error::/'
+            exit 1
+          }
+
+      - name: Lighthouse (rendimiento, accesibilidad, buenas prácticas y SEO)
+        run: |
+          set -o pipefail
+          npm run lighthouse 2>&1 | tee "$RUNNER_TEMP/lh.log" || {
+            grep -E "mínimo|Error" "$RUNNER_TEMP/lh.log" | head -20 | sed 's/^/::error::/'
+            exit 1
+          }
+
+      - name: Capturas para el README
+        # Si fallan no pasa nada: el README seguirá enseñando las anteriores
+        continue-on-error: true
+        run: npm run capturas
 
       - name: Estado de las fuentes
         if: always()
@@ -97,13 +120,13 @@ jobs:
           node -e "const e=require('./data/estado.json');for(const[k,v]of Object.entries(e))console.log((v.ok?'::notice::':'::warning::')+k+': '+v.detalle)" || true
 
       - if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site
 
       - name: Subir el estado de las fuentes para el aviso
         if: always() && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: estado
           path: data/estado.json
@@ -122,7 +145,7 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - id: despliegue
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   avisar:
     # Abre un issue si falla Eurostat, los tests o la publicación, y lo cierra al recuperarse
@@ -132,12 +155,12 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         continue-on-error: true
         with:
           name: estado
 
-      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           RESULTADO_CONSTRUIR: ${{ needs.construir.result }}
           RESULTADO_PUBLICAR: ${{ needs.publicar.result }}

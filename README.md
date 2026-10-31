@@ -10,10 +10,17 @@ Datos oficiales actualizados automáticamente. Sin cookies, sin anuncios, sin re
 [![Abrir la web](https://img.shields.io/badge/abrir_la_web-hucha.bendi.dev-9a5418?style=for-the-badge)](https://hucha.bendi.dev/)
 
 [![Publicación](https://github.com/serbenda/hucha/actions/workflows/publicar.yml/badge.svg)](https://github.com/serbenda/hucha/actions/workflows/publicar.yml)
+[![Rendimiento](https://img.shields.io/endpoint?url=https%3A%2F%2Fhucha.bendi.dev%2Finsignias%2Frendimiento.json&logo=lighthouse&logoColor=white)](https://github.com/serbenda/hucha/actions/workflows/publicar.yml)
+[![Accesibilidad](https://img.shields.io/endpoint?url=https%3A%2F%2Fhucha.bendi.dev%2Finsignias%2Faccesibilidad.json&logo=lighthouse&logoColor=white)](https://github.com/serbenda/hucha/actions/workflows/publicar.yml)
+[![Buenas prácticas](https://img.shields.io/endpoint?url=https%3A%2F%2Fhucha.bendi.dev%2Finsignias%2Fbuenas-practicas.json&logo=lighthouse&logoColor=white)](https://github.com/serbenda/hucha/actions/workflows/publicar.yml)
+[![SEO](https://img.shields.io/endpoint?url=https%3A%2F%2Fhucha.bendi.dev%2Finsignias%2Fseo.json&logo=lighthouse&logoColor=white)](https://github.com/serbenda/hucha/actions/workflows/publicar.yml)
+<br>
 ![Sin dependencias](https://img.shields.io/badge/dependencias-0-9a5418)
 ![Sin cookies](https://img.shields.io/badge/cookies-0-9a5418)
 [![Apoya en GitHub Sponsors](https://img.shields.io/badge/apoya-GitHub_Sponsors-bf3989?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/serbenda)
 [![Todos los derechos reservados](https://img.shields.io/badge/licencia-todos_los_derechos_reservados-1c2230)](LICENSE)
+
+<a href="https://hucha.bendi.dev/"><img src="https://hucha.bendi.dev/capturas/portada.png" width="860" alt="Portada de hucha: el sueldo bruto y el ticket con lo que pones al año y a dónde va"></a>
 
 </div>
 
@@ -28,6 +35,21 @@ Datos oficiales actualizados automáticamente. Sin cookies, sin anuncios, sin re
 | 🏛️ | **[Quién gasta](https://hucha.bendi.dev/quien-gasta/)** | Qué parte de cada cosa pagan el Estado, las comunidades, los ayuntamientos y la Seguridad Social. |
 
 El tono es neutral a propósito: cifras, comparaciones con la misma vara y fuentes al lado. Nada de adjetivos.
+
+<table>
+<tr>
+<td width="50%"><img src="https://hucha.bendi.dev/capturas/a-donde-va.png" alt="A dónde va: partidas en euros por habitante y evolución frente a la UE"></td>
+<td width="50%"><img src="https://hucha.bendi.dev/capturas/quien-gasta.png" alt="Quién gasta: reparto de cada función entre Estado, comunidades, ayuntamientos y Seguridad Social"></td>
+</tr>
+</table>
+
+<div align="center">
+<img src="https://hucha.bendi.dev/capturas/movil.png" width="260" alt="Portada en el móvil, en modo oscuro">
+&nbsp;&nbsp;
+<img src="https://hucha.bendi.dev/capturas/movil-ticket.png" width="260" alt="El ticket en el móvil, en modo oscuro">
+<br>
+<sub>Pensada para el móvil, con modo oscuro. Las capturas se hacen solas en cada publicación con los datos de ese día.</sub>
+</div>
 
 ---
 
@@ -51,14 +73,17 @@ Web **estática**: HTML, CSS y JavaScript sin frameworks ni dependencias. Una Gi
 flowchart LR
     EU["📊 Eurostat"] --> DES
     subgraph Action["GitHub Action · cada lunes, al fusionar y en cada PR"]
-        TEST["Tests"] --> REC["Recupera los datos<br/>ya publicados"] --> DES["Descarga y comprueba<br/>los datos"] --> WEB["Prepara la web"]
+        TEST["Tests"] --> REC["Recupera los datos<br/>ya publicados"] --> DES["Descarga y comprueba<br/>los datos"] --> WEB["Prepara la web<br/>e imágenes"]
+        WEB --> E2E["Tests de navegador<br/>y accesibilidad (axe)"] --> LH["Lighthouse<br/>con mínimos"] --> CAP["Capturas e<br/>insignias"]
     end
-    WEB --> PAGES["🌐 hucha.bendi.dev"]
+    CAP --> PAGES["🌐 hucha.bendi.dev"]
     Action -. "si algo falla" .-> ISSUE["🔔 Issue «datos»"]
 ```
 
 - Si Eurostat falla o los datos no tienen buena pinta (pocos años, más de un 5 % del gasto sin detalle, o un año más antiguo que lo publicado), **la web sigue con los últimos datos buenos** y se abre un issue con la etiqueta `datos`. Se cierra solo cuando vuelve a funcionar.
-- En las PR hace todo menos publicar, así que el check de la PR ya dice si los datos llegan bien.
+- **Tests de navegador** con Playwright en todas las páginas, en móvil y escritorio y en modo claro y oscuro: sin errores, sin desbordar, el ticket calcula bien, compartir no lleva el sueldo, y **auditoría de accesibilidad** con axe (WCAG 2.2 AA).
+- **Lighthouse** en móvil para cada página, con mínimos: rendimiento 90, accesibilidad 100, buenas prácticas 95 y SEO 100. Si no llega, **no se publica**.
+- En las PR hace todo menos publicar, así que el check de la PR ya dice si todo va bien.
 - Las Actions están fijadas por commit.
 
 ---
@@ -78,8 +103,8 @@ hucha/
 │       ├── impuestos.js      IRPF y cotizaciones de 2026
 │       ├── formato.js        Números y fechas en castellano
 │       └── …                 Un script por página, datos.js y comun.js
-├── scripts/                  Descarga de Eurostat, datos de ejemplo y fuente
-├── tests/                    Tests unitarios (node:test)
+├── scripts/                  Datos, fuente, imágenes, Lighthouse y capturas
+├── tests/                    Tests unitarios (node:test) y de navegador (tests/e2e)
 └── sw.js                     Funciona sin conexión
 ```
 
@@ -98,6 +123,15 @@ npm run ejemplo   # o, sin conexión, datos de EJEMPLO (la web lo avisa con una 
 npm run dev       # sirve la web en local
 ```
 
+Para tenerlo todo, como en la Action (imágenes, tests de navegador, Lighthouse y capturas):
+
+```bash
+npm run herramientas && npx playwright install chromium
+node scripts/vendor.mjs && npm run imagenes
+# copia la web a _site/ como hace la Action y luego:
+npm run e2e && npm run lighthouse && npm run capturas
+```
+
 ---
 
 ## Mantenimiento
@@ -106,6 +140,7 @@ npm run dev       # sirve la web en local
 |---|---|
 | El IRPF, las cotizaciones o el salario mínimo (cada enero) | `REGLAS` en `assets/js/impuestos.js` y sus tests |
 | Cómo se agrupan las partidas | `PARTIDAS` en `assets/js/cofog.js` (la tabla de la página de fuentes sale de ahí) |
+| Los mínimos de Lighthouse | `CATEGORIAS` en `scripts/lighthouse.mjs` |
 | Una fuente deja de responder | Llega un issue `datos`; la web sigue con los últimos datos buenos |
 
 ---

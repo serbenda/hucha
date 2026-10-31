@@ -7,7 +7,12 @@
     "datos": "node scripts/fetch-cofog.mjs",
     "ejemplo": "node scripts/ejemplo.mjs",
     "test": "node --test tests/*.test.js",
-    "dev": "npx --yes serve ."
+    "dev": "npx --yes serve .",
+    "e2e": "node --test tests/e2e/*.e2e.mjs",
+    "herramientas": "npm install --no-save --no-package-lock @fontsource-variable/archivo@5 playwright@1 @axe-core/playwright@4 lighthouse@12 chrome-launcher@1",
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "capturas": "node scripts/capturas.mjs",
+    "imagenes": "node scripts/imagenes.mjs"
   },
   "engines": {
     "node": ">=20"

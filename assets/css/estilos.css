@@ -12,8 +12,8 @@
   /* Administraciones */
   --estado: #1c2230;
   --comunidades: #9a5418;
-  --ayuntamientos: #2e7d7a;
-  --seguridad-social: #8a90a0;
+  --ayuntamientos: #1f6b68;
+  --seguridad-social: #5f6574;
 
   --fuente: 'Archivo', system-ui, sans-serif;
   --medida: 68ch;
@@ -376,3 +376,23 @@ section + section { margin-top: 3.5rem; }
   .cabecera nav, .sueldo, .ticket-acciones, .pie .apoyo { display: none; }
   .ticket { box-shadow: none; border: 1px solid #999; }
 }
+
+/* Huecos mientras cargan los datos, del alto de una partida: así la página no salta al llegar */
+.partida.esqueleto { height: 4.95rem; }
+.partida.esqueleto::before {
+  content: '';
+  display: block;
+  margin-top: 1.1rem;
+  width: 40%;
+  height: 1rem;
+  border-radius: 4px;
+  background: var(--linea);
+  opacity: 0.6;
+}
+
+/* Cifras de cabecera: alto fijo para que no salte nada al llegar los datos */
+.cifras-intro { margin-top: 1.75rem; }
+.cifra dd small { min-height: 2.6em; }
+
+.funcion.esqueleto { height: 5.6rem; border-radius: 4px; background: linear-gradient(var(--linea), var(--linea)) 0 1.9rem / 100% 2rem no-repeat; opacity: 0.6; }
+.linea-ticket.esqueleto::after { opacity: 0.25; }

@@ -15,12 +15,17 @@ try {
   const educacion = funciones.find((f) => f.id === 'GF09');
   const social = funciones.find((f) => f.id === 'GF10');
 
-  $('entradilla').textContent =
-    `En ${año}, las comunidades gestionaron el ${porcentaje(cuota(sanidad, 'S1312'))} del gasto en sanidad y el ${porcentaje(cuota(educacion, 'S1312'))} del de educación. ` +
-    `La Seguridad Social, el ${porcentaje(cuota(social, 'S1314'))} del de pensiones y protección social.`;
+  const cifra = (id, dato, nota) => {
+    const small = document.createElement('small');
+    small.textContent = nota;
+    $(id).replaceChildren(dato, small);
+  };
+  cifra('c-sanidad', porcentaje(cuota(sanidad, 'S1312')), `las comunidades, en ${año}`);
+  cifra('c-educacion', porcentaje(cuota(educacion, 'S1312')), `las comunidades, en ${año}`);
+  cifra('c-social', porcentaje(cuota(social, 'S1314')), `la Seguridad Social, en ${año}`);
 
   $('cuanto-texto').textContent =
-    `Gasto de ${año}${esProvisional(datos, año) ? ' (provisional)' : ''}, sin contar el dinero que el Estado pasa a comunidades y ayuntamientos para que lo gasten ellos.`;
+    `En ${año}${esProvisional(datos, año) ? ' (provisional)' : ''}, sin contar el dinero que el Estado pasa a comunidades y ayuntamientos para que lo gasten ellos.`;
 
   $('administraciones').replaceChildren(
     ...gastoPorAdministracion(datos, año).map((a) => {
