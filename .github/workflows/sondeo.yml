@@ -40,15 +40,10 @@ jobs:
           B="https://sdmx.oecd.org/dcd-public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,1.7"
           Q="format=csvfilewithlabels&dimensionAtObservation=AllDimensions&startPeriod=2023&endPeriod=2023"
           i=0
-          for k in "ESP.MAR.........." "ESP....._T._T....." "ESP..........."; do
+          for k in "ESP...100._T._T.D.V._T.." "ESP...100._T._T.D.V.DD.."; do
             i=$((i+1))
-            code=$(curl -s --max-time 900 -A "hucha (github.com/serbenda/hucha)" "$B/$k?$Q" -o d$i.csv -w "%{http_code} %{size_download}")
-            node -e "
-              const t=require('fs').readFileSync('d$i.csv','utf8').split(/\r?\n/).filter(Boolean);
-              const split=(l)=>{const r=[];let c='',q=false;for(const ch of l){if(ch==='\"'){q=!q;continue}if(ch===','&&!q){r.push(c);c='';continue}c+=ch}r.push(c);return r};
-              const h=split(t[0]||'');
-              const filas=t.slice(1).map(split);
-              const res=h.map((c,j)=>{const v=new Set(filas.map(f=>f[j]));return c+'('+v.size+'):'+[...v].slice(0,12).join('|')}).join(' ;; ');
-              console.log('::notice title=CRS $k::http $code; filas '+filas.length+'; '+(filas.length?res.slice(0,3500):t.slice(0,3).join(' ').slice(0,400)));
-            "
+            code=$(curl -s --max-time 1200 -A "hucha (github.com/serbenda/hucha)" "$B/$k?$Q" -o d$i.csv -w "%{http_code} %{size_download} %{time_total}s")
+            echo "::notice title=CRS $k::http $code; líneas $(wc -l < d$i.csv)"
+            head -1 d$i.csv | cut -c1-3000 | sed "s/^/::notice title=Columnas $i::/"
+            sed -n '2p;500p' d$i.csv | cut -c1-2500 | sed "s/^/::notice title=Ejemplo $i::/"
           done
