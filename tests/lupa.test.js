@@ -137,7 +137,7 @@ test('buscar: todas las palabras, sin tildes, ordenado por importe y por tema', 
 test('los botones de temas del HTML coinciden con los temas', async () => {
   const { readFile } = await import('node:fs/promises');
   const html = await readFile(new URL('../lupa/index.html', import.meta.url), 'utf8');
-  const botones = [...html.matchAll(/data-tema="([^"]*)">([^<]+)</g)].map((m) => [m[1], m[2]]);
+  const botones = [...html.matchAll(/data-tema="([^"]*)">(?:<svg[\s\S]*?<\/svg>)?([^<]+)</g)].map((m) => [m[1], m[2]]);
   assert.deepEqual(botones, [['', 'Todo'], ...TEMAS.map((t) => [t.id, t.nombre])]);
 });
 
@@ -164,4 +164,21 @@ test('acuerdos marco: por su código o por el título, y fuera de los totales', 
   assert.ok(!esMarcoPorTitulo('Servicio basado en el acuerdo marco 12/2024') && esMarcoPorTitulo('Sistema dinámico de adquisición de suministros'));
   const t = totales([{ a: 10, m: 1 }, { a: 5, m: 0 }, { a: 3 }], 'a');
   assert.deepEqual(t, { n: 3, suma: 8, marcos: { n: 1, suma: 10 } });
+});
+
+test('iconos: los del HTML son los de iconos.js y cada partida, función y tema tiene el suyo', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { icono, NOMBRES, ICONO_PARTIDA, ICONO_FUNCION, ICONO_TEMA, ICONO_ADMINISTRACION } = await import('../assets/js/iconos.js');
+  const { PARTIDAS, FUNCIONES, SUBSECTORES } = await import('../assets/js/cofog.js');
+  for (const pagina of ['index.html', '404.html', 'a-donde-va/index.html', 'quien-gasta/index.html', 'lupa/index.html', 'fuentes/index.html']) {
+    const html = await readFile(new URL(`../${pagina}`, import.meta.url), 'utf8');
+    for (const [svg, nombre] of html.matchAll(/<svg class="[^"]*" data-icono="([^"]+)"[\s\S]*?<\/svg>/g)) {
+      assert.ok(NOMBRES.includes(nombre), `${pagina}: no existe el icono ${nombre}`);
+      assert.equal(svg.replace(/class="[^"]*"/, ''), icono(nombre).replace(/class="[^"]*"/, ''), `${pagina}: el icono ${nombre} no coincide con iconos.js`);
+    }
+  }
+  for (const p of PARTIDAS) assert.ok(NOMBRES.includes(ICONO_PARTIDA[p.id]), `partida ${p.id}`);
+  for (const f of FUNCIONES) assert.ok(NOMBRES.includes(ICONO_FUNCION[f.id]), `función ${f.id}`);
+  for (const t of TEMAS) assert.ok(NOMBRES.includes(ICONO_TEMA[t.id]), `tema ${t.id}`);
+  for (const a of SUBSECTORES) assert.ok(NOMBRES.includes(ICONO_ADMINISTRACION[a.id]), `administración ${a.id}`);
 });

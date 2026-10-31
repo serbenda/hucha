@@ -2,6 +2,7 @@
 
 import { cargarDatos } from './datos.js';
 import { partidas, ultimoAño, esProvisional, gastoPorPersona, seriePartida, valor, detallePartida, tiposDeGasto, ultimoAñoTipos } from './cofog.js';
+import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, delPib } from './formato.js';
 
 const $ = (id) => document.getElementById(id);
@@ -113,7 +114,7 @@ try {
       const tipos = añoTipos ? tiposDeGasto(datos, p.id, añoTipos) : [];
       li.innerHTML = `<details>
         <summary>
-          <span class="partida-nombre">${p.nombre}</span>
+          <span class="partida-nombre"><span class="insignia">${icono(ICONO_PARTIDA[p.id])}</span><span>${p.nombre}</span></span>
           <span class="partida-euros">${euros(p.cuota * porPersona)}<small>${porcentaje(p.cuota)} del gasto</small></span>
           <span class="partida-barra" aria-hidden="true"><i style="--ancho: ${((p.cuota / mayor) * 100).toFixed(1)}%"></i></span>
         </summary>

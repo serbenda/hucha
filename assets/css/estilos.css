@@ -251,7 +251,11 @@ section + section { margin-top: 3.5rem; }
 /* Lista de secciones */
 .secciones { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--tinta); }
 .secciones li { border-bottom: 1px solid var(--linea); }
-.secciones a { display: block; padding: 1.25rem 0; text-decoration: none; }
+.secciones a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 1rem; padding: 1.25rem 0; text-decoration: none; }
+.secciones .insignia { --tam: 3rem; }
+.secciones a:hover .insignia { background: var(--cobre); color: var(--papel); }
+.seccion-flecha { align-self: center; color: var(--tenue); transition: transform 0.2s, color 0.2s; }
+.secciones a:hover .seccion-flecha { color: var(--cobre); transform: translateX(4px); }
 .secciones a:hover h3 { text-decoration: underline; text-underline-offset: 5px; }
 .secciones h3 { font-stretch: 112%; font-size: 1.3rem; }
 .secciones p { margin: 0.3rem 0 0; color: var(--tenue); max-width: 60ch; }
@@ -268,14 +272,15 @@ section + section { margin-top: 3.5rem; }
   cursor: pointer;
 }
 .partida summary::-webkit-details-marker { display: none; }
-.partida-nombre { font-weight: 700; font-size: 1.05rem; }
-.partida-nombre::before { content: '+'; display: inline-block; width: 1.1em; color: var(--tenue); font-weight: 400; }
-.partida[open] .partida-nombre::before { content: '−'; }
+.partida-nombre { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 0.7rem; }
+.partida-nombre::after { content: ''; flex: none; width: 0.5rem; height: 0.5rem; margin-left: 0.1rem; border: solid var(--tenue); border-width: 0 2px 2px 0; transform: translateY(-0.15rem) rotate(45deg); transition: transform 0.2s; }
+.partida[open] .partida-nombre::after { transform: translateY(0.1rem) rotate(-135deg); }
+.partida summary:hover .insignia { background: var(--cobre); color: var(--papel); }
 .partida-euros { text-align: right; font-weight: 800; font-stretch: 112%; font-size: 1.15rem; white-space: nowrap; }
 .partida-euros small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--tenue); font-stretch: 100%; }
 .partida-barra { grid-column: 1 / -1; height: 0.6rem; background: var(--linea); border-radius: 999px; overflow: hidden; }
 .partida-barra i { display: block; height: 100%; width: var(--ancho); background: var(--cobre); border-radius: 999px; }
-.partida-detalle { padding: 0 0 1.25rem 1.1em; display: grid; gap: 0.75rem; max-width: var(--medida); }
+.partida-detalle { padding: 0 0 1.25rem 3.1rem; display: grid; gap: 0.75rem; max-width: var(--medida); }
 .partida-detalle p { margin: 0; }
 .comparacion { color: var(--tenue); font-size: 0.95rem; }
 .comparacion strong { color: var(--tinta); }
@@ -304,7 +309,9 @@ section + section { margin-top: 3.5rem; }
 .administraciones .cifra { border-top: 6px solid var(--color); }
 .funciones { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: 1.1rem; }
 .leyenda i[class^='c-'] { background: var(--color); }
-.funcion h3 { font-size: 1.05rem; font-stretch: 100%; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.funcion h3 { font-size: 1.05rem; font-stretch: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap; }
+.funcion-nombre { display: inline-flex; align-items: center; gap: 0.6rem; }
+.funcion .insignia { --tam: 2rem; }
 .funcion h3 small { font-weight: 400; color: var(--tenue); font-size: 0.85rem; }
 .apilada { display: flex; height: 2rem; margin-top: 0.4rem; border-radius: 4px; overflow: hidden; background: var(--linea); }
 .apilada span {
@@ -452,4 +459,45 @@ section + section { margin-top: 3.5rem; }
 @media (max-width: 520px) {
   .resultado-cabeza { grid-template-columns: 1fr; }
   .resultado-importe { text-align: left; }
+}
+
+/* Iconos: trazos de 24×24 que toman el color del texto */
+.icono { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.2em; }
+.insignia { --tam: 2.4rem; display: inline-grid; place-items: center; flex: none; width: var(--tam); height: var(--tam); border-radius: 50%; background: var(--cobre-suave); color: var(--cobre); transition: background 0.2s, color 0.2s; }
+.insignia .icono { width: 55%; height: 55%; }
+
+/* Menú con iconos */
+.nav a { display: inline-flex; align-items: center; gap: 0.4rem; }
+.nav a .icono { opacity: 0.8; }
+.nav a[aria-current='page'] .icono { color: var(--cobre); opacity: 1; }
+@media (max-width: 40rem) {
+  .nav a { flex-direction: column; gap: 0.15rem; font-size: 0.8rem; }
+  .nav a .icono { width: 1.35rem; height: 1.35rem; }
+  .nav a[aria-current='page'] { text-decoration: none; }
+}
+
+/* Ticket: icono de cada partida */
+.reparto .linea-ticket dt { display: inline-flex; align-items: flex-start; gap: 0.45rem; }
+.reparto .linea-ticket dt .icono { color: var(--cobre); margin-top: 0.2em; }
+
+/* Quién gasta: tarjetas de administraciones */
+.administraciones .cifra dt { display: flex; align-items: center; gap: 0.5rem; color: var(--tinta); font-weight: 600; }
+.administraciones .cifra dt .icono { color: var(--color); width: 1.4em; height: 1.4em; }
+
+/* Lupa: pestañas y temas */
+.pestanas-lupa button { display: inline-flex; align-items: center; gap: 0.45rem; }
+.chips button { display: inline-flex; align-items: center; gap: 0.35rem; }
+.chips button .icono { width: 1.05em; height: 1.05em; }
+
+/* Fuentes: títulos con icono */
+h2.con-icono { display: flex; align-items: center; gap: 0.75rem; }
+h2.con-icono .insignia { --tam: 2.2rem; }
+.texto .entradilla + section { margin-top: 2.5rem; }
+
+/* En el móvil, los temas de la Lupa van en una fila que se desliza */
+@media (max-width: 40rem) {
+  .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -1rem; padding: 0.1rem 1rem; scroll-padding-inline: 1rem; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips button { flex: none; white-space: nowrap; }
+  .filtros-lupa { display: grid; }
 }

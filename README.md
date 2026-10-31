@@ -26,16 +26,49 @@ Datos oficiales actualizados automáticamente. Sin cookies, sin anuncios, sin re
 
 ---
 
-## Cuatro preguntas
 
-| | Página | Qué responde |
-|---|---|---|
-| 🧾 | **[Tu ticket](https://hucha.bendi.dev/)** | Escribes tu sueldo bruto y ves cuánto pones al año (IRPF y Seguridad Social, y si quieres lo que paga tu empresa) y a dónde va cada euro. |
-| 📊 | **[A dónde va](https://hucha.bendi.dev/a-donde-va/)** | Todo el gasto público en 14 partidas que se entienden, en euros por habitante, con lo que incluye cada una y su evolución frente a la media europea. |
-| 🏛️ | **[Quién gasta](https://hucha.bendi.dev/quien-gasta/)** | Qué parte de cada cosa pagan el Estado, las comunidades, los ayuntamientos y la Seguridad Social. |
-| 🔍 | **[La Lupa](https://hucha.bendi.dev/lupa/)** | Contratos, subvenciones y ayuda a otros países con nombre y cifra: quién paga, a quién, para qué y cuánto. Buscador y filtros por tema (tren, sanidad, carreteras…) y por administración. |
+## Índice
 
-El tono es neutral a propósito: cifras, comparaciones con la misma vara y fuentes al lado. Nada de adjetivos.
+1. [Qué es](#qué-es)
+2. [Las páginas](#las-páginas)
+3. [De dónde salen los datos](#de-dónde-salen-los-datos)
+4. [Cómo se calcula cada cifra](#cómo-se-calcula-cada-cifra)
+5. [La Lupa a fondo](#la-lupa-a-fondo)
+6. [Privacidad y datos personales](#privacidad-y-datos-personales)
+7. [Cómo se publica](#cómo-se-publica)
+8. [Calidad: tests, accesibilidad y rendimiento](#calidad-tests-accesibilidad-y-rendimiento)
+9. [Avisos cuando algo falla](#avisos-cuando-algo-falla)
+10. [Los ficheros de datos](#los-ficheros-de-datos)
+11. [Estructura del código](#estructura-del-código)
+12. [Diseño](#diseño)
+13. [En local](#en-local)
+14. [Mantenimiento: qué tocar cuando cambia algo](#mantenimiento-qué-tocar-cuando-cambia-algo)
+15. [Lo que no aparece (todavía)](#lo-que-no-aparece-todavía)
+16. [Hoja de ruta](#hoja-de-ruta)
+17. [Cómo se trabaja en el repositorio](#cómo-se-trabaja-en-el-repositorio)
+18. [Licencia](#licencia)
+
+---
+
+## Qué es
+
+hucha es una web que enseña **a dónde va el dinero público en España** a cualquiera, sin saber de economía. Responde a cuatro preguntas: cuánto pongo yo, a qué se dedica, quién lo gasta y a quién se le paga.
+
+Principios que guían cada decisión:
+
+| Principio | Qué significa en la práctica |
+|---|---|
+| **Solo datos oficiales** | Cada cifra sale de un organismo público (Eurostat, IGAE, Plataforma de Contratación, BDNS, OCDE, Agencia Tributaria) y lleva su fuente al lado. |
+| **Neutral** | Sin adjetivos ni opiniones. Se compara con la misma vara (la media de la UE, el mismo año, la misma clasificación). |
+| **Se actualiza sola** | Una GitHub Action descarga los datos cada día. Nadie toca las cifras a mano. |
+| **Si una fuente falla, no se inventa nada** | La web sigue con los últimos datos buenos y se abre un aviso. |
+| **Dice lo que no cubre** | Cada sección explica qué queda fuera, para no dar una imagen incompleta como si fuera completa. |
+| **Privada** | Sin cookies, sin cuentas, sin anuncios. Tu sueldo no sale de tu navegador. Las personas físicas no aparecen con nombre. |
+| **Para todos** | Accesible (WCAG 2.2 AA, 100 en Lighthouse), rápida en un móvil normal y con modo oscuro. |
+
+---
+
+## Las páginas
 
 <table>
 <tr>
@@ -52,101 +85,467 @@ El tono es neutral a propósito: cifras, comparaciones con la misma vara y fuent
 <sub>Pensada para el móvil, con modo oscuro. Las capturas se hacen solas en cada publicación con los datos de ese día.</sub>
 </div>
 
+
+### 🧾 Tu ticket · [`/`](https://hucha.bendi.dev/)
+
+Escribes tu sueldo bruto anual y sale un ticket con:
+
+- **Lo que pones al año**: IRPF y Seguridad Social del trabajador. Con el interruptor, también lo que paga tu empresa por ti.
+- **A dónde va**: ese total repartido entre las 14 partidas, en la misma proporción que el gasto público real del último año.
+- **Compartir el reparto**: comparte los porcentajes, **nunca el sueldo**. Los enlaces antiguos con `?sueldo=` y `?empresa=1` se siguen aceptando.
+- **Entre todos**: el gasto total, por habitante y en % del PIB frente a la media de la UE.
+
+En el móvil, debajo del campo del sueldo aparece un resumen («Pones X € al año · ver a dónde va ↓») para no tener que bajar a ciegas.
+
+### 📊 A dónde va · [`/a-donde-va/`](https://hucha.bendi.dev/a-donde-va/)
+
+Todo el gasto público en **14 partidas** que se entienden, en euros por habitante. Al abrir cada una:
+
+- **En qué se va**: el segundo nivel de la clasificación (hospitales, centros de salud, medicamentos; infantil, secundaria, universidad…).
+- **Cómo se gasta**: sueldos, compras, pagos a personas, inversión, subvenciones, intereses…
+- **Frente a Europa**: el % del PIB de España y de la media de la UE, con una gráfica desde 2010 (con la marca del COVID en 2020).
+
+Arriba, tres cifras: gasto por habitante, la partida más grande y el gasto sobre el PIB. Y un bloque con **cómo se gasta cada euro** del total.
+
+### 🏛️ Quién gasta · [`/quien-gasta/`](https://hucha.bendi.dev/quien-gasta/)
+
+Qué parte de cada cosa pagan el **Estado**, las **comunidades**, los **ayuntamientos** y la **Seguridad Social**: cuánto gasta cada administración y, para cada función (sanidad, educación, pensiones…), una barra con el reparto.
+
+### 🔍 La Lupa · [`/lupa/`](https://hucha.bendi.dev/lupa/)
+
+El detalle con nombre y cifra:
+
+- **Contratos** adjudicados desde 1 millón de €: quién paga, quién gana, cuánto, para qué y el enlace al expediente.
+- **Subvenciones** concedidas desde 1 millón de € a empresas y entidades en los últimos 12 meses.
+- **Ayuda a otros países**: la ayuda oficial al desarrollo de España por país.
+
+Buscador (todas las palabras, sin importar tildes ni mayúsculas), filtros por **tema** (tren, carreteras, sanidad, educación… 15 en total) y por **administración**. La búsqueda queda en la dirección, así que se puede compartir: [`/lupa/?q=adif&tema=tren`](https://hucha.bendi.dev/lupa/?q=adif&tema=tren).
+
+### 📖 Fuentes · [`/fuentes/`](https://hucha.bendi.dev/fuentes/)
+
+De dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), cómo se calcula el ticket, privacidad, cómo avisar de un error y condiciones de uso.
+
 ---
 
 ## De dónde salen los datos
 
-| Fuente | Qué se usa | Se actualiza |
-|---|---|---|
-| [Eurostat `gov_10a_exp`](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | Gasto de las Administraciones Públicas por funciones (COFOG), de España por administración y de la media de la UE, en millones de euros y % del PIB, desde 2010. Para España lo elabora la IGAE. | Anual (febrero), con revisiones en abril y octubre |
-| [Eurostat `demo_gind`](https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table) | Población media anual, para los euros por habitante | Anual |
-| [Plataforma de Contratación](https://contrataciondelestado.es/) | Contratos adjudicados desde 1 M€, directos y agregados de plataformas autonómicas y locales | Cada día; el histórico crece solo |
-| [BDNS](https://www.infosubvenciones.es/) | Subvenciones concedidas desde 1 M€ a empresas y entidades, últimos 12 meses | Cada día |
-| [OCDE (DAC2A)](https://data-explorer.oecd.org/) | Ayuda oficial al desarrollo de España por país | Anual |
-| [Agencia Tributaria](https://www3.agenciatributaria.gob.es/static_files/Sede/Programas_ayuda/Retenciones/2026/ALGORITMO_2026.pdf) y orden de cotización | Reglas del IRPF y de las cotizaciones de 2026, para el ticket | A mano, cada año |
+| Fuente | Qué se usa | Cada cuánto publica | Cada cuánto lo mira hucha |
+|---|---|---|---|
+| [Eurostat `gov_10a_exp`](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | Gasto de las Administraciones Públicas por funciones (COFOG) y por tipo de operación, de España por administración y de la media de la UE, desde 2010. Para España lo elabora la [IGAE](https://www.igae.pap.hacienda.gob.es/). | Anual (febrero), con revisiones en abril y octubre | Cada día |
+| [Eurostat `demo_gind`](https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table) | Población media anual, para los euros por habitante | Anual | Cada día |
+| [Plataforma de Contratación del Sector Público](https://contrataciondelestado.es/) | Contratos adjudicados desde 1 M€, de los órganos que publican en ella y de las plataformas autonómicas y locales que se agregan | Continuo | Cada día; el histórico crece solo |
+| [BDNS · Infosubvenciones](https://www.infosubvenciones.es/) | Subvenciones concedidas desde 1 M€ a empresas y entidades, últimos 12 meses | Continuo | Cada día |
+| [OCDE · DAC2A](https://data-explorer.oecd.org/) | Ayuda oficial al desarrollo de España por país receptor | Anual (finales del año siguiente) | Cada día |
+| [Agencia Tributaria](https://www3.agenciatributaria.gob.es/static_files/Sede/Programas_ayuda/Retenciones/2026/ALGORITMO_2026.pdf) y orden de cotización (BOE) | Reglas del IRPF y de las cotizaciones de 2026, para el ticket | Anual | A mano, cada enero |
 
-Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto: los Presupuestos Generales vigentes son los de 2023 prorrogados.
+Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto. Llega con retraso: los datos de un año salen a principios del año siguiente al siguiente, y el último año va marcado como provisional.
+
+<details>
+<summary><strong>Eurostat: cómo se pide y qué se comprueba</strong></summary>
+
+- API de difusión en JSON-stat 2.0: `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/<tabla>?…&lang=EN`. Con `lang=ES` responde con error: los nombres en castellano salen del propio código (`GRUPOS` en `cofog.js`).
+- **Gasto** (`urlGasto`): `gov_10a_exp`, operación `TE` (gasto total), unidades `MIO_EUR` y `PC_GDP`, sectores `S13` (todas), `S1311` (Estado), `S1312` (comunidades), `S1313` (ayuntamientos) y `S1314` (Seguridad Social), funciones COFOG de primer y segundo nivel, España y `EU27_2020`, desde 2010.
+- **Tipos de gasto** (`urlTipos`): la misma tabla con las operaciones `D1`, `D62`, `P2`, `D632`, `P5`, `D3`, `D4`, `D7` y `D9`, desde 2015. Si falla, se mantienen los anteriores y la web lo aguanta.
+- **Población** (`urlPoblacion`): `demo_gind`, indicador `AVG`.
+- `jsonstat.js` aplana el formato (valores densos o dispersos) y guarda el estado de cada dato (`p` = provisional).
+- Antes de guardar, `problema()` en `cofog.js` rechaza los datos si: no hay años, hay menos de 5, ningún año tiene gasto y población a la vez, el gasto total es sospechoso, o falta detalle para más del 5 % del gasto.
+- **No retroceder**: si lo ya publicado llega a un año más reciente que lo que devuelve Eurostat, no se sobrescribe.
+- Eurostat a veces responde con un JSON de error o con la tabla «en preparación»: se reintenta y, si no, se queda la versión anterior.
+</details>
+
+<details>
+<summary><strong>Plataforma de Contratación: feeds y cursores</strong></summary>
+
+- Dos feeds ATOM con los pliegos en formato CODICE:
+  - `sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom`: los órganos que publican directamente (Estado y muchos más).
+  - `sindicacion_1044/PlataformasAgregadasSinMenores.atom`: las plataformas propias de comunidades y ayuntamientos que se agregan a la estatal, sin contratos menores.
+- Cada página pesa unos 7 MB y enlaza a la anterior con `rel="next"`: se leen de lo más nuevo hacia atrás.
+- En cada ejecución, por cada feed: primero lo nuevo, desde la portada hasta lo ya leído; luego, con las páginas y el tiempo que queden, se sigue **rellenando hacia atrás**. El punto por el que va cada feed (`cursores`) se guarda en el propio `contratos.json`.
+- Límites por ejecución: `LUPA_PAGINAS` páginas por feed (40 en la publicación diaria, 3 en las PR) y 9 minutos por feed.
+- Se guardan hasta **2 años** por fecha de adjudicación.
+</details>
+
+<details>
+<summary><strong>BDNS: la API de concesiones</strong></summary>
+
+- `https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?vpd=GE&fechaDesde=dd/mm/aaaa&fechaHasta=dd/mm/aaaa&page=N&pageSize=200&order=importe&direccion=desc`
+- El orden se pide con `order` y `direccion`. Con el habitual `sort` responde, pero sin ordenar.
+- Se piden los 12 últimos meses, mes a mes, hasta 10 páginas por mes, y se para al bajar del umbral. El script **comprueba que vienen ordenadas**: si no, falla con los primeros importes para verlo.
+</details>
+
+<details>
+<summary><strong>OCDE: ayuda oficial al desarrollo</strong></summary>
+
+- SDMX: `https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,/ESP..206.USD.V?startPeriod=AAAA` (donante España, medida 206 = ayuda oficial total neta, dólares corrientes).
+- Se usa la respuesta XML genérica: con `format=csv` el servidor da error 500.
+- Solo se quedan los **países** (no regiones ni «sin especificar»), con `esPais()` de `paises.js`. Los nombres en castellano salen de `Intl.DisplayNames`.
+</details>
 
 ---
 
-## Cómo funciona
+## Cómo se calcula cada cifra
 
-Web **estática**: HTML, CSS y JavaScript sin frameworks ni dependencias. Una GitHub Action descarga los datos, los prueba y publica en GitHub Pages. Los datos no se guardan en el repositorio.
+### Las 14 partidas
+
+Cada partida junta funciones COFOG de Naciones Unidas. Entre todas cubren el **100 % del gasto sin contar nada dos veces** (hay un test que lo comprueba). Si a un año le falta detalle, la diferencia va a «Sin detalle» para que las cuotas sigan sumando 100 %.
+
+| Partida | Funciones COFOG |
+|---|---|
+| Pensiones de jubilación y viudedad | GF1002, GF1003 |
+| Sanidad | GF07 |
+| Educación | GF09 |
+| Bajas, incapacidad, familia y otras ayudas | GF10 (menos GF1002, GF1003, GF1005) |
+| Funcionamiento de las administraciones | GF01 (menos GF0107) |
+| Empleo, empresas, campo y energía | GF04 (menos GF0405) |
+| Intereses de la deuda | GF0107 |
+| Carreteras, trenes y transporte | GF0405 |
+| Paro | GF1005 |
+| Policía, justicia y prisiones | GF03 |
+| Cultura, deporte y religión | GF08 |
+| Medio ambiente y basuras | GF05 |
+| Defensa | GF02 |
+| Vivienda, urbanismo y agua | GF06 |
+
+- **Euros por habitante** = gasto de la partida (millones de €) × 10⁶ ÷ población media del año.
+- **Frente a Europa** = % del PIB de España frente a la media de la UE-27, misma partida y mismo año.
+- **En qué se va** = los grupos COFOG de segundo nivel de la partida, con sus nombres en castellano (`GRUPOS`).
+- **Cómo se gasta** = las 9 operaciones de contabilidad nacional; lo que no encaja en ninguna va a «Otros».
+
+### Quién gasta
+
+- Cuánto gasta cada administración no cuenta las transferencias generales entre administraciones (GF0108), para no contar dos veces el dinero que el Estado pasa a comunidades y ayuntamientos para que lo gasten ellos.
+- El reparto de cada función es la cuota de cada sector sobre la suma de los cuatro.
+
+### Tu ticket
+
+Calcula lo que paga un asalariado con contrato indefinido, sin hijos ni deducciones, con las reglas de 2026 (`REGLAS` en `impuestos.js`):
+
+| Paso | Regla |
+|---|---|
+| **Seguridad Social del trabajador** | 6,50 % del bruto hasta la base máxima (61.214,40 € al año), más la cotización de solidaridad por encima de ella |
+| **Empresa** (opcional) | 30,65 % hasta la base máxima, más su parte de solidaridad |
+| **Rendimiento neto** | bruto − cotizaciones del trabajador |
+| **Reducción por trabajo** | 7.302 € hasta 14.852 € de rendimiento neto; baja en dos tramos hasta 0 € a partir de 19.747,50 € |
+| **Base** | rendimiento neto − reducción − 2.000 € de otros gastos |
+| **Cuota** | escala estatal + autonómica general (19 %, 24 %, 30 %, 37 %, 45 %, 47 %) sobre la base, menos la misma escala sobre el mínimo personal (5.550 €) |
+| **Límites** | 0 € hasta el salario mínimo (17.094 €) y, por encima, nunca más del 43 % de lo que pasa del salario mínimo, para que no haya saltos |
+
+Con 30.000 € brutos: IRPF 4.926 € y Seguridad Social 1.950 € (hay tests con estos valores). El reparto aplica a ese total las cuotas de las partidas del último año.
+
+**No entran** el IVA ni los impuestos especiales (dependen de lo que compres), el IBI ni otros impuestos locales, y las particularidades de cada comunidad. Como las administraciones gastan más de lo que ingresan, parte del gasto se paga con deuda.
+
+---
+
+## La Lupa a fondo
+
+### Contratos
+
+| Qué | Cómo |
+|---|---|
+| **Qué entra** | Contratos en estado `ADJ` (adjudicado) o `RES` (resuelto) con al menos **1 millón de € adjudicado, sin IVA** |
+| **Importe** | La suma de los lotes con resultado 8 (adjudicado) o 9 (formalizado). Los desiertos y desistidos no cuentan |
+| **Quién gana** | Las empresas adjudicatarias de cada lote, sin repetir. Las personas físicas salen como «Persona física» |
+| **Quién paga** | El órgano de contratación y, por su jerarquía, el **nivel**: Estado, Comunidades, Ayuntamientos, Universidades u Otros, y el **lugar** |
+| **Tipo** | Suministro, Servicios, Obras, Concesión… (código `TypeCode`) |
+| **Para qué** | Por el primer código CPV: Obra (45), Mantenimiento y reparación (50), Compra de bienes (0-3), Servicios y estudios, Transporte y logística |
+| **Temas** | Los 15 temas por CPV y por palabras del título (tabla `TEMAS` en `lupa-datos.js`). Un contrato puede tener varios |
+| **Licitado frente a adjudicado** | Si difieren, la ficha dice cuánto baja o sube |
+| **Acuerdos marco** | Si es un acuerdo marco o un sistema dinámico de adquisición (`ContractingSystemCode` 1 o 2, o el título si no viene), su importe es un **techo** de lo que se podrá gastar después, no gasto. Sale como «como máximo» y **no suma en los totales**. Los contratos *basados* en un acuerdo marco sí son gasto y cuentan |
+
+### Subvenciones
+
+Concesiones desde 1 millón de € de los últimos 12 meses. Para cada una: quién la recibe, cuánto, la convocatoria (con enlace), el órgano que la concede y su nivel. **Las concedidas a personas físicas no se incluyen.**
+
+### Ayuda a otros países
+
+Desembolsos netos de ayuda oficial al desarrollo por país, en millones de dólares de cada año, de los últimos años con datos. Solo lo asignado a un país concreto: la ayuda a organismos internacionales y a regiones va aparte y no aparece.
+
+### Cómo se busca
+
+- Todo en el navegador, sin servidor: al abrir solo se descarga un fichero pequeño de **portada** (los 40 mayores y los totales). El completo se descarga al buscar, filtrar o pulsar «Ver más», y empieza a bajar en cuanto tocas el buscador.
+- Se buscan **todas las palabras** en título, órgano, empresas, lugar, tipo y finalidad, sin importar tildes ni mayúsculas, y se ordena por importe.
+- El estado (pestaña, búsqueda, tema y nivel) va en la dirección: `?tab=subvenciones&q=…&tema=…&nivel=…`.
+
+---
+
+## Privacidad y datos personales
+
+- **Sin cookies, sin cuentas, sin anuncios.**
+- **Tu sueldo no sale de tu navegador**: el ticket se calcula en tu dispositivo y, al compartir, solo van los porcentajes.
+- **Visitas** contadas con [GoatCounter](https://www.goatcounter.com/), que no guarda datos personales ni usa cookies.
+- **Personas físicas**: en contratos salen como «Persona física» (se detectan por el NIF: empieza por número o por X, Y, Z, K, L o M); en subvenciones no se incluyen. Lo comprueba un test.
+- **Para avisar de un error** se usan los issues de GitHub, que son públicos: la web avisa de no poner datos personales.
+
+---
+
+## Cómo se publica
+
+Web **estática**: HTML, CSS y JavaScript sin frameworks ni dependencias en la web. Una GitHub Action descarga los datos, los comprueba y publica en GitHub Pages. **Los datos no se guardan en el repositorio**: cada ejecución parte de los últimos publicados.
 
 ```mermaid
 flowchart LR
     EU["📊 Eurostat"] --> DES
+    PL["📑 Contratación · BDNS · OCDE"] --> LUPA
     subgraph Action["GitHub Action · cada día, al fusionar y en cada PR"]
-        TEST["Tests"] --> REC["Recupera los datos<br/>ya publicados"] --> DES["Descarga y comprueba<br/>los datos"] --> WEB["Prepara la web<br/>e imágenes"]
-        WEB --> E2E["Tests de navegador<br/>y accesibilidad (axe)"] --> LH["Lighthouse<br/>con mínimos"] --> CAP["Capturas e<br/>insignias"]
+        TEST["Tests"] --> REC["Recupera los datos<br/>ya publicados"] --> DES["Eurostat"] --> LUPA["Lupa"] --> CHK["Comprueba<br/>los datos"] --> WEB["Prepara la web<br/>e imágenes"]
+        WEB --> E2E["Tests de navegador<br/>y accesibilidad"] --> LH["Lighthouse"] --> CAP["Capturas e<br/>insignias"]
     end
     CAP --> PAGES["🌐 hucha.bendi.dev"]
     Action -. "si algo falla" .-> ISSUE["🔔 Issue «datos»"]
 ```
 
-- Si Eurostat falla o los datos no tienen buena pinta (pocos años, más de un 5 % del gasto sin detalle, o un año más antiguo que lo publicado), **la web sigue con los últimos datos buenos** y se abre un issue con la etiqueta `datos`. Se cierra solo cuando vuelve a funcionar.
-- **Tests de navegador** con Playwright en todas las páginas, en móvil y escritorio y en modo claro y oscuro: sin errores, sin desbordar, el ticket calcula bien, compartir no lleva el sueldo, y **auditoría de accesibilidad** con axe (WCAG 2.2 AA).
-- **Lighthouse** en móvil para cada página, con mínimos: rendimiento 90, accesibilidad 100, buenas prácticas 95 y SEO 100. Si no llega, **no se publica**.
-- En las PR hace todo menos publicar, así que el check de la PR ya dice si todo va bien.
-- Las Actions están fijadas por commit.
+| Paso | Qué hace | Si falla |
+|---|---|---|
+| Tests | `npm test` | No sigue |
+| Recuperar lo publicado | Descarga `data/cofog.json` y `data/lupa/*.json` de la web | Empieza de cero |
+| Eurostat | `npm run datos` | Se queda lo anterior y queda anotado |
+| Lupa | `npm run lupa` (30 minutos como mucho) | Cada parte por separado: se queda su versión anterior |
+| Comprobar que hay datos | Que existan y que no sean de ejemplo | No sigue |
+| Resumen | Anotaciones con las cifras clave (partidas, quién gasta, mayores contratos…) para revisarlas en la PR sin abrir la web | — |
+| Herramientas | Playwright, axe, Lighthouse y la fuente Archivo (solo para construir: la web no tiene dependencias) | No sigue |
+| Imágenes | Iconos y la imagen para compartir con los datos del día (`compartir.png`) | No sigue |
+| Preparar la web | Copia a `_site/` y añade `?v=<commit>` a estilos, scripts e imports, para que nadie mezcle HTML nuevo con JS viejo | No sigue |
+| Tests de navegador | Playwright y axe | No sigue |
+| Lighthouse | Ver [calidad](#calidad-tests-accesibilidad-y-rendimiento) | Según la categoría |
+| Capturas | Las del README, con los datos del día | Siguen las anteriores |
+| Publicar | GitHub Pages (solo desde `main`) | Aviso |
+| Avisar | Abre o cierra el issue `datos` | — |
+
+**Cuándo se ejecuta**: cada día a las 05:17 UTC (06:17 en invierno y 07:17 en verano en la España peninsular), al fusionar en `main`, a mano y en cada PR. En las PR hace todo **menos publicar**, así que el check de la PR ya dice si todo va bien. Las Actions están fijadas por commit, con la versión en un comentario.
+
+**Funciona sin conexión**: el service worker (`sw.js`) guarda las páginas, los estilos, los scripts y los datos. Al cambiar algo de la web se sube su versión (`hucha-vN`).
 
 ---
 
-## Estructura
+## Calidad: tests, accesibilidad y rendimiento
+
+### Tests unitarios (`npm test`, con `node:test`)
+
+Los módulos de `assets/js/` son los mismos en el navegador y en Node: **lo que se prueba es lo que corre en la web**.
+
+| Fichero | Qué comprueba |
+|---|---|
+| `tests/cofog.test.js` | Lectura de JSON-stat; URLs de Eurostat; que las partidas cubren el 100 % sin solaparse; «Sin detalle»; datos insuficientes; gasto por persona; serie frente a la UE; quién gasta; nombres de todos los grupos; en qué se va y cómo se gasta |
+| `tests/impuestos.test.js` | Escala por tramos; cotizaciones y base máxima; reducción por trabajo; IRPF cero hasta el salario mínimo y sin saltos; 30.000 € de ejemplo; que crece con el sueldo; formatos |
+| `tests/lupa.test.js` | Lectura del feed de contratos con lotes; personas físicas; umbral; nivel por jerarquía; temas y finalidad; subvenciones; ayuda (SDMX); búsqueda; botones de temas; fichero de portada; acuerdos marco; iconos |
+
+### Tests de navegador (`npm run e2e`, Playwright)
+
+Todas las páginas en **móvil y escritorio, modo claro y oscuro**: sin errores de JavaScript, sin desbordar la pantalla, y **auditoría de accesibilidad con axe** (WCAG 2.2 AA). Además: el ticket calcula y suma el 100 %, el resumen del móvil, compartir no lleva el sueldo, los enlaces antiguos, el detalle y la gráfica de cada partida, quién gasta, la tabla de fuentes, la 404, el SEO de cada página y la Lupa (buscador, temas, nivel, estado en la dirección, subvenciones y ayuda).
+
+### Lighthouse (`npm run lighthouse`, móvil)
+
+| Categoría | Mínimo | Si no llega |
+|---|---:|---|
+| Rendimiento | 90 | Se mide hasta dos veces más y cuenta la mejor. En las PR, no se fusiona. En la publicación diaria, **se publica igual** con los datos nuevos y se abre el aviso |
+| Accesibilidad | 100 | No se publica |
+| Buenas prácticas | 95 | No se publica |
+| SEO | 100 | No se publica |
+
+Si el rendimiento baja de 95, la anotación dice qué métrica lo baja (LCP, FCP, TBT, CLS) y qué elemento. Las puntuaciones alimentan las insignias del principio de este README.
+
+---
+
+## Avisos cuando algo falla
+
+Cada parte anota en `data/estado.json` si ha ido bien (`eurostat`, `eurostat-tipos`, `lupa-contratos`, `lupa-subvenciones`, `lupa-ayuda`, `lighthouse`). Al terminar, el trabajo `avisar`:
+
+- Si algo ha fallado, abre un issue con la etiqueta `datos` (o comenta en el que ya esté abierto) con la lista y el enlace a la ejecución. El título dice si la web se ha publicado igual («Algo que revisar en la web») o sigue con la versión anterior («Fallo al actualizar la web»).
+- Cuando todo vuelve a ir bien, lo comenta y **lo cierra solo**.
+
+---
+
+## Los ficheros de datos
+
+Se generan en la Action y se publican con la web, en `https://hucha.bendi.dev/data/…`.
+
+<details>
+<summary><strong><code>data/cofog.json</code></strong>: gasto y población</summary>
+
+| Clave | Contenido |
+|---|---|
+| `es` | `{ sector: { unidad: { funcion: { año: valor } } } }`: España, sectores `S13`, `S1311`–`S1314`, unidades `MIO_EUR` y `PC_GDP` |
+| `ue` | Lo mismo para la media de la UE-27 (solo `S13`) |
+| `tipos` | `{ funcion: { operacion: { año: millones } } }` para España |
+| `poblacion` | `{ año: habitantes }` |
+| `años` | Años con gasto total de España |
+| `provisionales` | Años marcados como provisionales por Eurostat |
+| `fuente` | Tabla y fecha de actualización de cada fuente |
+| `actualizado` | Cuándo se descargó |
+| `ejemplo` | `true` solo en datos de ejemplo (la web lo avisa y la Action no los publica) |
+</details>
+
+<details>
+<summary><strong><code>data/lupa/contratos.json</code></strong> y <code>contratos-portada.json</code></summary>
+
+`{ actualizado, umbral, desde, cursores, contratos: [...] }`. La portada no lleva `cursores`, sí `total: { n, suma, marcos: { n, suma } }`, y solo los 40 mayores. Claves cortas para que pese menos:
+
+| Clave | Contenido | Clave | Contenido |
+|---|---|---|---|
+| `id` | Identificador (`p…` perfiles, `a…` agregadas) | `li` | Importe licitado sin IVA |
+| `t` | Título | `a` | Importe adjudicado sin IVA |
+| `o` | Órgano de contratación | `f` | Fecha de adjudicación |
+| `n` | Nivel de la administración | `g` | Adjudicatarios |
+| `l` | Lugar | `u` | Enlace al expediente |
+| `ti` | Tipo de contrato | `up` | Última actualización en la Plataforma |
+| `fi` | Finalidad | `m` | 1 si es acuerdo marco |
+| `te` | Temas | | |
+</details>
+
+<details>
+<summary><strong><code>data/lupa/subvenciones.json</code></strong> y <code>subvenciones-portada.json</code></summary>
+
+`{ actualizado, umbral, subvenciones: [...] }` (la portada, con `total`):
+
+| Clave | Contenido | Clave | Contenido |
+|---|---|---|---|
+| `id` | Código de concesión | `c` | Convocatoria |
+| `f` | Fecha de concesión | `o` | Órgano que concede |
+| `i` | Importe | `n` | Nivel |
+| `b` | Beneficiario | `l` | Lugar |
+| `nif` | NIF del beneficiario (solo entidades) | `u` | Enlace a la convocatoria |
+| `te` | Temas | | |
+</details>
+
+<details>
+<summary><strong><code>data/lupa/ayuda.json</code></strong> y <code>data/estado.json</code></summary>
+
+- `ayuda.json`: `{ actualizado, unidad: "millones de dólares", años: [...], paises: { ISO3: { año: valor } } }`
+- `estado.json`: `{ fuente: { ok, detalle, fecha } }`
+</details>
+
+---
+
+## Estructura del código
 
 ```
 hucha/
-├── index.html                Tu ticket
-├── a-donde-va/  quien-gasta/  lupa/  fuentes/
+├── index.html                    Tu ticket
+├── a-donde-va/index.html         A dónde va
+├── quien-gasta/index.html        Quién gasta
+├── lupa/index.html               La Lupa
+├── fuentes/index.html            Fuentes y condiciones
+├── 404.html                      Página no encontrada
 ├── assets/
-│   ├── css/estilos.css       Un solo fichero de estilos, con modo oscuro
-│   ├── img/favicon.svg       Logo
+│   ├── css/estilos.css           Un solo fichero de estilos, con modo oscuro
+│   ├── img/favicon.svg           Logo (los PNG se generan en la Action)
 │   └── js/
-│       ├── jsonstat.js       Lector del formato de Eurostat
-│       ├── cofog.js          Partidas, quién gasta, por habitante (navegador y Node)
-│       ├── impuestos.js      IRPF y cotizaciones de 2026
-│       ├── lupa-datos.js     Contratos, subvenciones y ayuda: lectura de las fuentes y búsqueda
-│       ├── formato.js        Números y fechas en castellano
-│       └── …                 Un script por página, datos.js y comun.js
-├── scripts/                  Datos, fuente, imágenes, Lighthouse y capturas
-├── tests/                    Tests unitarios (node:test) y de navegador (tests/e2e)
-└── sw.js                     Funciona sin conexión
+│       ├── jsonstat.js           Lector del formato JSON-stat de Eurostat
+│       ├── cofog.js              Partidas, grupos, tipos, quién gasta, por habitante
+│       ├── impuestos.js          IRPF y cotizaciones de 2026
+│       ├── lupa-datos.js         Contratos, subvenciones y ayuda: lectura, clasificación y búsqueda
+│       ├── paises.js             Códigos y nombres de países
+│       ├── iconos.js             Los iconos de la web y qué icono lleva cada cosa
+│       ├── formato.js            Números, euros y fechas en castellano
+│       ├── datos.js              Carga de data/cofog.json y bandas de aviso
+│       ├── comun.js              Service worker y contador de visitas
+│       └── portada.js · a-donde-va.js · quien-gasta.js · lupa.js · fuentes.js
+│                                 Un script por página
+├── scripts/
+│   ├── fetch-cofog.mjs           Descarga Eurostat (npm run datos)
+│   ├── fetch-lupa.mjs            Descarga la Lupa (npm run lupa)
+│   ├── estado.mjs                Anota si cada parte ha ido bien
+│   ├── ejemplo.mjs               Datos de EJEMPLO para trabajar sin conexión
+│   ├── vendor.mjs                Copia la fuente Archivo a vendor/
+│   ├── imagenes.mjs              Iconos PNG e imagen para compartir
+│   ├── plantillas-imagenes.mjs   Plantillas HTML de esas imágenes
+│   ├── lighthouse.mjs            Lighthouse con mínimos e insignias
+│   └── capturas.mjs              Capturas del README
+├── tests/
+│   ├── *.test.js                 Tests unitarios
+│   ├── ayuda.js                  Respuestas de ejemplo de Eurostat para los tests
+│   └── e2e/                      Tests de navegador y servidor local
+├── .github/workflows/publicar.yml
+├── sw.js · manifest.webmanifest · sitemap.xml · robots.txt
+└── package.json                  Solo scripts: la web no tiene dependencias
 ```
 
-Los módulos de `assets/js/` son los mismos en el navegador y en Node: lo que prueban los tests es lo que corre en la web.
+---
+
+## Diseño
+
+- **Tipografía**: [Archivo](https://fonts.google.com/specimen/Archivo) (variable, con anchura), servida desde la propia web y precargada para que el texto no salte.
+- **Color**: papel claro, tinta azul noche y cobre como acento. Las cuatro administraciones tienen color propio, revisado para tener contraste suficiente con el texto encima. Todo con variables CSS en `:root`, redefinidas para el modo oscuro.
+- **Iconos**: propios, de trazo, en `assets/js/iconos.js`. Cada sección del menú, partida, función, administración, pestaña y tema de la Lupa lleva el suyo. Toman el color del texto y son decorativos (`aria-hidden`): el texto de al lado ya dice lo que es. Un test comprueba que los del HTML coinciden con los de `iconos.js` y que no falta ninguno.
+- **Móvil primero**: en el móvil el menú pasa a iconos con su nombre debajo y los temas de la Lupa a una fila que se desliza.
+- **Sin saltos al cargar**: las tarjetas de cifras tienen altura fija y hay esqueletos mientras llegan los datos.
+- **Accesible**: foco visible, gráficas con su texto alternativo, el estado de pestañas y botones con ARIA y todo usable con teclado.
 
 ---
 
 ## En local
 
-Node 20 o superior, sin nada que instalar.
+Node 20 o superior. Para la web no hace falta instalar nada.
 
 ```bash
 npm test          # tests unitarios
 npm run datos     # descarga los datos reales de Eurostat a data/
+npm run lupa      # descarga los datos de la Lupa a data/lupa/ (LUPA_PAGINAS=3 para ir rápido)
 npm run ejemplo   # o, sin conexión, datos de EJEMPLO (la web lo avisa con una banda)
 npm run dev       # sirve la web en local
 ```
 
-Para tenerlo todo, como en la Action (imágenes, tests de navegador, Lighthouse y capturas):
+Para tenerlo todo como en la Action (imágenes, tests de navegador, Lighthouse y capturas):
 
 ```bash
 npm run herramientas && npx playwright install chromium
 node scripts/vendor.mjs && npm run imagenes
-# copia la web a _site/ como hace la Action y luego:
+mkdir -p _site && cp -r index.html 404.html a-donde-va quien-gasta lupa fuentes assets data vendor \
+  manifest.webmanifest sw.js sitemap.xml robots.txt .nojekyll _site/
 npm run e2e && npm run lighthouse && npm run capturas
 ```
 
 ---
 
-## Mantenimiento
+## Mantenimiento: qué tocar cuando cambia algo
 
 | Si cambia… | Dónde se toca |
 |---|---|
-| El IRPF, las cotizaciones o el salario mínimo (cada enero) | `REGLAS` en `assets/js/impuestos.js` y sus tests |
-| Cómo se agrupan las partidas | `PARTIDAS` en `assets/js/cofog.js` (la tabla de la página de fuentes sale de ahí) |
+| El IRPF, las cotizaciones o el salario mínimo (cada enero) | `REGLAS` en `assets/js/impuestos.js`, sus tests y el texto de `fuentes/` |
+| Cómo se agrupan las partidas | `PARTIDAS` en `assets/js/cofog.js` (la tabla de fuentes sale de ahí) y su icono en `ICONO_PARTIDA` |
+| Un tema de la Lupa | `TEMAS` en `assets/js/lupa-datos.js`, su botón en `lupa/index.html` y su icono en `ICONO_TEMA` (los tests avisan si no cuadran) |
+| Un icono | `assets/js/iconos.js`; si sale en el HTML, el mismo SVG en la página |
+| El umbral de contratos o subvenciones | `UMBRAL_CONTRATOS` y `UMBRAL_SUBVENCIONES` en `lupa-datos.js` |
+| Cuánto histórico de contratos se guarda | `ANTIGUEDAD_MAX` en `scripts/fetch-lupa.mjs` |
 | Los mínimos de Lighthouse | `CATEGORIAS` en `scripts/lighthouse.mjs` |
+| Una página nueva | Su HTML, el menú de todas las páginas, `sitemap.xml`, `sw.js`, `PAGINAS` en `lighthouse.mjs`, y los tests de navegador |
+| Cualquier cosa de la web | Subir `VERSION` en `sw.js` |
 | Una fuente deja de responder | Llega un issue `datos`; la web sigue con los últimos datos buenos |
+
+---
+
+## Lo que no aparece (todavía)
+
+- **El presupuesto**: hucha enseña gasto realmente hecho. Lo presupuestado y su ejecución llegarán con el bloque de desviaciones.
+- **El año en curso**: Eurostat va con más de un año de retraso.
+- **Contratos menores y de menos de 1 M€**, y lo que una plataforma autonómica o local no haya enviado a la estatal. Lo que se paga al final puede cambiar por modificados o revisiones de precio.
+- **Subvenciones de menos de 1 M€** y las concedidas a personas físicas. Una subvención concedida no siempre se paga entera.
+- **Ayuda a organismos internacionales** (ONU, Banco Mundial, UE) y a regiones sin un país concreto.
+- **Impuestos indirectos** en el ticket (IVA, especiales) y las diferencias entre comunidades.
+
+---
+
+## Hoja de ruta
+
+- [x] Tu ticket, A dónde va, Quién gasta y Fuentes
+- [x] Detalle de cada partida: en qué se va, cómo se gasta y frente a Europa
+- [x] La Lupa: contratos, subvenciones y ayuda a otros países
+- [x] Acuerdos marco aparte
+- [ ] Dos años de contratos desde el primer día, con los ficheros mensuales de la Plataforma
+- [ ] **Europa**: fondos recibidos (Next Generation, FEDER, FSE+, PAC) y para qué, aportación de España, saldo neto y deuda con la UE (préstamos del Plan de Recuperación y SURE)
+- [ ] **Desviaciones**: presupuestado frente a pagado por ministerio y programa (ejecución mensual de la IGAE), fondos europeos asignados, recibidos y ejecutados, licitado frente a adjudicado
+- [ ] Presupuesto del Estado por programas (por ejemplo, infraestructuras ferroviarias)
+- [ ] «Lo que no aparece» en todas las secciones
+- [ ] Ficha por empresa y por administración, con enlace para compartir
+- [ ] Datos descargables en CSV
+
+---
+
+## Cómo se trabaja en el repositorio
+
+- Todo se hace en la rama **`development`** y llega a **`main`** con una PR. Nunca se escribe directamente en `main`.
+- Cada PR pasa la Action completa con datos reales (menos publicar). Si el check está en verde, se puede fusionar.
+- Al fusionar, la Action publica la web.
 
 ---
 

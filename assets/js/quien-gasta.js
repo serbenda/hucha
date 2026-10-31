@@ -1,6 +1,7 @@
 // «Quién gasta»: el reparto entre Estado, comunidades, ayuntamientos y Seguridad Social.
 
 import { cargarDatos } from './datos.js';
+import { icono, ICONO_FUNCION, ICONO_ADMINISTRACION } from './iconos.js';
 import { reparto, gastoPorAdministracion, ultimoAño, esProvisional } from './cofog.js';
 import { millones, porcentaje } from './formato.js';
 
@@ -31,7 +32,7 @@ try {
     ...gastoPorAdministracion(datos, año).map((a) => {
       const div = document.createElement('div');
       div.className = `cifra c-${a.id}`;
-      div.innerHTML = `<dt>${a.nombre}</dt><dd>${millones(a.valor)}<small>${a.largo}</small></dd>`;
+      div.innerHTML = `<dt>${icono(ICONO_ADMINISTRACION[a.id])}${a.nombre}</dt><dd>${millones(a.valor)}<small>${a.largo}</small></dd>`;
       return div;
     })
   );
@@ -45,7 +46,7 @@ try {
         .map((p) => `<span class="c-${p.id}" style="--ancho: ${(p.cuota * 100).toFixed(2)}%">${p.cuota >= 0.1 ? Math.round(p.cuota * 100) : ''}</span>`)
         .join('');
       const texto = visibles.map((p) => `${p.nombre} ${porcentaje(p.cuota)}`).join(' · ');
-      li.innerHTML = `<h3>${f.nombre}<small>${f.total !== null ? millones(f.total) : ''}</small></h3>
+      li.innerHTML = `<h3><span class="funcion-nombre"><span class="insignia">${icono(ICONO_FUNCION[f.id])}</span>${f.nombre}</span><small>${f.total !== null ? millones(f.total) : ''}</small></h3>
         <div class="apilada" role="img" aria-label="${f.nombre}: ${texto}">${tramos}</div>
         <p class="desglose">${texto}</p>`;
       return li;

@@ -3,6 +3,7 @@
 import { cargarDatos } from './datos.js';
 import { partidas, ultimoAño, esProvisional, gastoPorPersona, valor } from './cofog.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
+import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, millones, delPib, leerImporte } from './formato.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,11 +18,12 @@ if (params.get('empresa') === '1') conEmpresa.checked = true;
 let lista = [];
 let año = null;
 
-function linea(nombre, importe, { clase = '', titulo = '', extra = '' } = {}) {
+function linea(nombre, importe, { clase = '', titulo = '', extra = '', id = '' } = {}) {
   const div = document.createElement('div');
   div.className = `linea-ticket ${clase}`.trim();
   const dt = document.createElement('dt');
   dt.textContent = nombre;
+  if (ICONO_PARTIDA[id]) dt.insertAdjacentHTML('afterbegin', icono(ICONO_PARTIDA[id]));
   if (titulo) dt.title = titulo;
   const dd = document.createElement('dd');
   if (extra) {
@@ -64,7 +66,7 @@ function pintarTicket() {
 
   if (!lista.length) return;
   const repartidas = repartir(total, lista);
-  reparto.replaceChildren(...repartidas.map((p) => linea(p.nombre, euros(p.euros), { titulo: p.que, extra: porcentaje(p.cuota) })));
+  reparto.replaceChildren(...repartidas.map((p) => linea(p.nombre, euros(p.euros), { titulo: p.que, extra: porcentaje(p.cuota), id: p.id })));
 
   $('ticket-pie').textContent =
     `Si ganas ${euros(bruto)} brutos, te quedan unos ${euros(a.neto)} netos al año. ` +
