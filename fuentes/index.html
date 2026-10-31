@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fuentes y condiciones · hucha</title>
+  <meta name="description" content="De dónde salen los datos de hucha, cómo se calcula tu ticket y qué no entra en la cuenta.">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://hucha.bendi.dev/fuentes/">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12161e" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="hucha">
+  <meta property="og:title" content="Fuentes y condiciones">
+  <meta property="og:description" content="De dónde salen los datos de hucha, cómo se calcula tu ticket y qué no entra en la cuenta.">
+  <meta property="og:url" content="https://hucha.bendi.dev/fuentes/">
+  <link rel="stylesheet" href="../vendor/fuentes/archivo.css">
+  <link rel="stylesheet" href="../assets/css/estilos.css">
+</head>
+<body>
+  <header class="envoltorio cabecera">
+    <a class="marca" href="../" aria-label="hucha, inicio">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="moneda" cx="30" cy="9" r="7"/>
+        <path class="cuerpo" d="M29 20c-12.7 0-23 7.4-23 17 0 4.6 2.4 8.8 6.3 11.8V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-4.6c2.5.7 5.1 1 7.7 1s5.2-.3 7.7-1V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.3c2-1.6 3.6-3.4 4.6-5.5H57a2 2 0 0 0 2-2v-7.4a2 2 0 0 0-2-2h-2.9c-1.1-2.2-2.7-4.2-4.7-5.9l1.8-6.3a1.4 1.4 0 0 0-1.8-1.7l-7.2 2.4C38.4 20.8 33.8 20 29 20Z"/>
+        <rect class="hueco" x="22" y="23.5" width="15" height="3.4" rx="1.7"/>
+        <circle class="hueco" cx="45.5" cy="31.5" r="2.1"/>
+      </svg>
+      <span>hucha</span>
+    </a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="../">Tu ticket</a>
+      <a href="../a-donde-va/">A dónde va</a>
+      <a href="../quien-gasta/">Quién gasta</a>
+      <a href="../fuentes/" aria-current="page">Fuentes</a>
+    </nav>
+  </header>
+
+  <main class="envoltorio texto">
+    <h1 class="titular">Fuentes y condiciones</h1>
+    <p class="entradilla">Todo sale de datos públicos y oficiales. Aquí está de dónde viene cada cifra, cómo se calcula y lo que no entra en la cuenta.</p>
+
+    <section aria-labelledby="t-gasto">
+      <h2 id="t-gasto">El gasto público</h2>
+      <p>Viene de <a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table">Eurostat, tabla <code>gov_10a_exp</code></a>: el gasto de las Administraciones Públicas por funciones según la clasificación COFOG de Naciones Unidas. Para España lo elabora la <a href="https://www.hacienda.gob.es/es-ES/CDI/Paginas/ContabilidadNacional/COFOG/Clasificacion-funcional-del-gasto-de-las-Administraciones-Publicas.aspx">Intervención General de la Administración del Estado (IGAE)</a> y lo envía a Eurostat, que lo publica con el mismo criterio para todos los países de la Unión.</p>
+      <p>Es gasto <strong>realmente hecho</strong> (contabilidad nacional), no lo presupuestado. Llega con retraso: los datos de un año se publican a principios del año siguiente al siguiente, y el último año sale como provisional. La web se actualiza sola cada semana.</p>
+      <p>La población es la media anual de España, de la tabla <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table"><code>demo_gind</code></a> de Eurostat.</p>
+    </section>
+
+    <section aria-labelledby="t-partidas">
+      <h2 id="t-partidas">Cómo se agrupan las partidas</h2>
+      <p>Cada partida junta funciones COFOG. Entre todas cubren el 100 % del gasto, sin contar nada dos veces.</p>
+      <table>
+        <thead><tr><th scope="col">Partida</th><th scope="col">Funciones COFOG</th></tr></thead>
+        <tbody id="tabla-partidas"></tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="t-ticket">
+      <h2 id="t-ticket">Cómo se calcula tu ticket</h2>
+      <p>Se estima lo que pagas al año como asalariado con contrato indefinido, sin hijos ni situaciones especiales:</p>
+      <ul>
+        <li><strong>IRPF</strong>: con el <a href="https://www3.agenciatributaria.gob.es/static_files/Sede/Programas_ayuda/Retenciones/2026/ALGORITMO_2026.pdf">algoritmo de retenciones de la Agencia Tributaria para 2026</a>: reducción por rendimientos del trabajo, 2.000 € de otros gastos, mínimo personal de 5.550 € y la escala general. Hasta el salario mínimo no se paga. Tu declaración real puede salir distinta por deducciones de tu comunidad, hijos, alquiler o planes de pensiones.</li>
+        <li><strong>Seguridad Social</strong>: el 6,50 % del sueldo hasta la base máxima (contingencias comunes, desempleo, formación profesional y MEI), más la cotización de solidaridad por encima de ella, según la <a href="https://www.asepeyo.es/wp-content/uploads/Bases-tipos-cotizacion-2026-ES.pdf">orden de cotización de 2026</a>.</li>
+        <li><strong>Tu empresa</strong>, si activas la opción: un 30,65 % más hasta la base máxima. No incluye accidentes de trabajo, que dependen de la actividad.</li>
+      </ul>
+      <p>Lo que pagas se reparte entre las partidas en la misma proporción que el gasto público de ese año. Es una forma de verlo: el dinero de la hucha es común y no se puede seguir euro a euro.</p>
+      <p><strong>No entran</strong> el IVA ni los impuestos especiales (gasolina, tabaco, alcohol, luz), que pagas al comprar; tampoco el IBI ni otros impuestos locales. Y como las administraciones gastan más de lo que ingresan, una parte del gasto se paga con deuda.</p>
+    </section>
+
+    <section aria-labelledby="t-privacidad">
+      <h2 id="t-privacidad">Privacidad</h2>
+      <p>Sin cookies, sin anuncios y sin cuentas. Tu sueldo no sale de tu navegador: el cálculo se hace en tu dispositivo. Las visitas se cuentan con <a href="https://www.goatcounter.com/">GoatCounter</a>, que no guarda datos personales.</p>
+    </section>
+
+    <section aria-labelledby="t-condiciones">
+      <h2 id="t-condiciones">Condiciones</h2>
+      <p>Los datos son de Eurostat y se reutilizan según su <a href="https://ec.europa.eu/eurostat/about-us/policies/copyright">política de reutilización</a>. hucha no está vinculada a Eurostat, a la IGAE ni a ningún organismo público, partido o empresa. Las cifras son informativas: para decisiones, consulta las fuentes oficiales.</p>
+      <p id="actualizado"></p>
+    </section>
+  </main>
+
+  <footer class="envoltorio pie">
+    <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+  </footer>
+
+  <script type="module" src="../assets/js/fuentes.js"></script>
+  <script type="module" src="../assets/js/comun.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hucha.bendi.dev/sitemap.xml

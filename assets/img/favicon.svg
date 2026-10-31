@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .cuerpo { fill: #1c2230; } .hueco { fill: #f3f1ec; } .moneda { fill: #9a5418; }
+    @media (prefers-color-scheme: dark) { .cuerpo { fill: #e8e6e1; } .hueco { fill: #12161e; } .moneda { fill: #e3a061; } }
+  </style>
+  <circle class="moneda" cx="30" cy="9" r="7"/>
+  <path class="cuerpo" d="M29 20c-12.7 0-23 7.4-23 17 0 4.6 2.4 8.8 6.3 11.8V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-4.6c2.5.7 5.1 1 7.7 1s5.2-.3 7.7-1V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.3c2-1.6 3.6-3.4 4.6-5.5H57a2 2 0 0 0 2-2v-7.4a2 2 0 0 0-2-2h-2.9c-1.1-2.2-2.7-4.2-4.7-5.9l1.8-6.3a1.4 1.4 0 0 0-1.8-1.7l-7.2 2.4C38.4 20.8 33.8 20 29 20Z"/>
+  <rect class="hueco" x="22" y="23.5" width="15" height="3.4" rx="1.7"/>
+  <circle class="hueco" cx="45.5" cy="31.5" r="2.1"/>
+</svg>

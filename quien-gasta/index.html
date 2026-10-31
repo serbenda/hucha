@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¿Quién gasta cada euro? · hucha</title>
+  <meta name="description" content="Qué parte de la sanidad, la educación o las pensiones pagan el Estado, las comunidades, los ayuntamientos y la Seguridad Social.">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://hucha.bendi.dev/quien-gasta/">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12161e" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="hucha">
+  <meta property="og:title" content="¿Quién gasta cada euro?">
+  <meta property="og:description" content="Qué parte de la sanidad, la educación o las pensiones pagan el Estado, las comunidades, los ayuntamientos y la Seguridad Social.">
+  <meta property="og:url" content="https://hucha.bendi.dev/quien-gasta/">
+  <link rel="stylesheet" href="../vendor/fuentes/archivo.css">
+  <link rel="stylesheet" href="../assets/css/estilos.css">
+</head>
+<body>
+  <header class="envoltorio cabecera">
+    <a class="marca" href="../" aria-label="hucha, inicio">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="moneda" cx="30" cy="9" r="7"/>
+        <path class="cuerpo" d="M29 20c-12.7 0-23 7.4-23 17 0 4.6 2.4 8.8 6.3 11.8V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-4.6c2.5.7 5.1 1 7.7 1s5.2-.3 7.7-1V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.3c2-1.6 3.6-3.4 4.6-5.5H57a2 2 0 0 0 2-2v-7.4a2 2 0 0 0-2-2h-2.9c-1.1-2.2-2.7-4.2-4.7-5.9l1.8-6.3a1.4 1.4 0 0 0-1.8-1.7l-7.2 2.4C38.4 20.8 33.8 20 29 20Z"/>
+        <rect class="hueco" x="22" y="23.5" width="15" height="3.4" rx="1.7"/>
+        <circle class="hueco" cx="45.5" cy="31.5" r="2.1"/>
+      </svg>
+      <span>hucha</span>
+    </a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="../">Tu ticket</a>
+      <a href="../a-donde-va/">A dónde va</a>
+      <a href="../quien-gasta/" aria-current="page">Quién gasta</a>
+      <a href="../fuentes/">Fuentes</a>
+    </nav>
+  </header>
+
+  <main class="envoltorio">
+    <h1 class="titular">¿Quién gasta cada euro?</h1>
+    <p class="entradilla" id="entradilla">En España el gasto está muy repartido: el Estado, las comunidades, los ayuntamientos y la Seguridad Social se encargan de cosas distintas.</p>
+
+    <section aria-labelledby="t-cuanto">
+      <div class="seccion-titulo">
+        <h2 id="t-cuanto">Cuánto gasta cada administración</h2>
+        <p id="cuanto-texto">Sin contar el dinero que el Estado pasa a comunidades y ayuntamientos para que lo gasten ellos.</p>
+      </div>
+      <dl class="administraciones" id="administraciones">
+        <div class="cifra"><dt>Cargando datos…</dt><dd></dd></div>
+      </dl>
+    </section>
+
+    <section aria-labelledby="t-funciones">
+      <div class="seccion-titulo">
+        <h2 id="t-funciones">Quién paga cada cosa</h2>
+        <p>De cada 100 euros que se gastan en cada función, cuántos pone cada administración.</p>
+      </div>
+      <ul class="leyenda" aria-label="Administraciones">
+        <li><i class="c-S1311"></i>Estado</li>
+        <li><i class="c-S1312"></i>Comunidades</li>
+        <li><i class="c-S1313"></i>Ayuntamientos</li>
+        <li><i class="c-S1314"></i>Seguridad Social</li>
+      </ul>
+      <ul class="funciones" id="funciones"></ul>
+    </section>
+
+    <section aria-labelledby="t-ojo">
+      <div class="seccion-titulo">
+        <h2 id="t-ojo">Ojo al leerlo</h2>
+      </div>
+      <div class="aviso">
+        <p>Cuando una administración da dinero a otra para algo concreto (por ejemplo, el Estado a la Seguridad Social para pagar pensiones), cuenta en las dos. Por eso aquí se comparan porcentajes dentro de cada función, y las cifras de cada administración no se pueden sumar para obtener el total de España.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="envoltorio pie">
+    <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+  </footer>
+
+  <script type="module" src="../assets/js/quien-gasta.js"></script>
+  <script type="module" src="../assets/js/comun.js"></script>
+</body>
+</html>
