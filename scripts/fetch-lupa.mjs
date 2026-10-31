@@ -288,7 +288,10 @@ async function ayuda() {
 
 // ---------------------------------------------------------------------------
 
+// Uso: node scripts/fetch-lupa.mjs [contratos] [subvenciones] [ayuda]   (sin nada, las tres)
+const pedidas = process.argv.slice(2);
 for (const [nombre, parte] of [['contratos', contratos], ['subvenciones', subvenciones], ['ayuda', ayuda]]) {
+  if (pedidas.length && !pedidas.includes(nombre)) continue;
   try {
     const resumen = await parte();
     console.log(`Lupa ${nombre}: ${resumen}`);

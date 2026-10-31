@@ -349,46 +349,67 @@ export function lectorCsv(alFila) {
   let campo = '';
   let fila = [];
   let comillas = false;
-  let previa = '';
+  let pendiente = false; // una comilla al final del trozo anterior, dentro de un campo entre comillas
+  const cerrar = () => {
+    fila.push(campo);
+    campo = '';
+  };
   return {
     trozo(texto) {
-      for (let i = 0; i < texto.length; i++) {
-        const c = texto[i];
+      let i = 0;
+      const n = texto.length;
+      if (pendiente) {
+        pendiente = false;
+        if (texto[0] === '"') {
+          campo += '"';
+          i = 1;
+        } else comillas = false;
+      }
+      while (i < n) {
         if (comillas) {
-          if (c === '"') {
-            if (texto[i + 1] === '"') {
-              campo += '"';
-              i++;
-            } else if (i + 1 === texto.length) previa = '"';
-            else comillas = false;
-          } else campo += c;
+          const j = texto.indexOf('"', i);
+          if (j === -1) {
+            campo += texto.slice(i);
+            return;
+          }
+          campo += texto.slice(i, j);
+          if (j + 1 === n) {
+            pendiente = true;
+            return;
+          }
+          if (texto[j + 1] === '"') {
+            campo += '"';
+            i = j + 2;
+          } else {
+            comillas = false;
+            i = j + 1;
+          }
           continue;
         }
-        if (previa === '"') {
-          previa = '';
-          if (c === '"') {
-            campo += '"';
-            comillas = true;
-            continue;
-          }
-          comillas = false;
+        // Fuera de comillas: hasta la siguiente coma, salto de línea o comilla
+        let j = i;
+        while (j < n) {
+          const c = texto.charCodeAt(j);
+          if (c === 44 || c === 10 || c === 34) break; // , \n "
+          j++;
         }
+        if (j > i) campo += texto.slice(i, j);
+        if (j === n) return;
+        const c = texto[j];
         if (c === '"') comillas = true;
-        else if (c === ',') {
-          fila.push(campo);
-          campo = '';
-        } else if (c === '\n') {
-          fila.push(campo.endsWith('\r') ? campo.slice(0, -1) : campo);
+        else if (c === ',') cerrar();
+        else {
+          if (campo.endsWith('\r')) campo = campo.slice(0, -1);
+          cerrar();
           alFila(fila);
           fila = [];
-          campo = '';
-        } else campo += c;
+        }
+        i = j + 1;
       }
     },
     fin() {
-      if (previa === '"') comillas = false;
       if (campo || fila.length) {
-        fila.push(campo);
+        cerrar();
         alFila(fila);
       }
     },
@@ -431,6 +452,9 @@ export function acumuladorCrs() {
   };
 }
 
+// Copia independiente de un texto, para no retener en memoria el trozo grande del que salió
+const copia = (t) => (!t ? '' : globalThis.Buffer ? globalThis.Buffer.from(String(t).trim()).toString() : String(t).trim());
+
 /** Acumula los proyectos del CRS: los mayores de cada país. */
 export function acumuladorProyectos(porPais = 25) {
   let cab = null;
@@ -448,8 +472,8 @@ export function acumuladorProyectos(porPais = 25) {
       const lista = (paises[pais] ??= []);
       lista.push({
         v: Math.round(((v * 10 ** Number(campos[cab.UNIT_MULT] || 6)) / 1e6) * 1000) / 1000,
-        t: (campos[cab.PROJECT_TITLE] || campos[cab.SHORT_DESCRIPTION] || '').trim(),
-        d: (campos[cab.SHORT_DESCRIPTION] || '').trim(),
+        t: copia(campos[cab.PROJECT_TITLE] || campos[cab.SHORT_DESCRIPTION]).slice(0, 200),
+        d: copia(campos[cab.SHORT_DESCRIPTION]).slice(0, 400),
         s: grupoSector(campos[cab.SECTOR]),
         a: agencia(campos[cab.DONOR_AGENCY]),
         c: canal(campos[cab.CHANNEL]),

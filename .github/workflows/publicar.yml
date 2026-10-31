@@ -67,7 +67,12 @@ jobs:
           LUPA_PAGINAS: ${{ github.event_name == 'pull_request' && '3' || '40' }}
           # Un fichero mensual del histórico por feed y ejecución, también en las PR para probarlo
           LUPA_MESES: '1'
-        run: npm run lupa
+          NODE_OPTIONS: --max-old-space-size=6144
+        # Cada parte en su propio proceso: si una se queda sin memoria o falla, las demás siguen
+        run: |
+          for parte in contratos subvenciones ayuda; do
+            node scripts/fetch-lupa.mjs $parte || echo "::warning title=Lupa $parte::el proceso terminó con error ($?); se mantiene la versión anterior"
+          done
 
       - name: Escaparate (lo que descarga la web, ya calculado)
         run: npm run escaparate
