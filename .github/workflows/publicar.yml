@@ -65,7 +65,7 @@ jobs:
 
       - name: Lupa (contratos, subvenciones y ayuda a otros países)
         # Cada fuente es independiente; si una falla, se queda su versión anterior
-        timeout-minutes: 30
+        timeout-minutes: 45
         env:
           # En las PR basta con un poco de cada fuente para comprobar que todo funciona (unos minutos);
           # la publicación diaria hace lo completo: 40 páginas del feed, un mes del histórico por feed,

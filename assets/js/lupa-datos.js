@@ -269,7 +269,9 @@ const CSV = 'format=csvfilewithlabels&dimensionAtObservation=AllDimensions';
  * Año a año: pedir varios años de golpe hace que el servidor responda con error. */
 export const urlCrs = (año) => `${CRS}/ESP...100._T._T.D.V._T..?${CSV}&startPeriod=${año}&endPeriod=${año}`;
 /** Proyectos de España de un año (microdatos, DD). */
-export const urlCrsProyectos = (año) => `${CRS}/ESP...100...D.V.DD..?${CSV}&startPeriod=${año}&endPeriod=${año}`;
+// La clave con el nivel de proyecto (DD) devuelve «sin datos»; sin filtros sí llegan (unos 380 MB por año), así que se
+// pide todo lo de España de ese año y se filtran los proyectos al leer: ayuda oficial (100), desembolsos, dólares corrientes.
+export const urlCrsProyectos = (año) => `${CRS}/ESP...........?${CSV}&startPeriod=${año}&endPeriod=${año}`;
 
 /** Sectores de la ayuda, agrupados para que se entiendan. No se solapan entre sí: su suma es el total. */
 export const SECTORES_AYUDA = {
@@ -468,6 +470,9 @@ export function acumuladorProyectos(porPais = 25) {
       }
       const pais = campos[cab.RECIPIENT];
       if (!/^[A-Z]{3}$/.test(pais)) return;
+      // Solo proyectos (DD), de ayuda oficial (100), desembolsados (D) y en dólares corrientes (V), si vienen esas columnas
+      const es = (col, valor) => cab[col] === undefined || campos[cab[col]] === valor;
+      if (!es('MD_DIM', 'DD') || !es('MEASURE', '100') || !es('FLOW_TYPE', 'D') || !es('PRICE_BASE', 'V')) return;
       const v = numero(campos[cab.OBS_VALUE]);
       if (!(v > 0)) return;
       const lista = (paises[pais] ??= []);
