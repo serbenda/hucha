@@ -37,17 +37,18 @@ jobs:
     steps:
       - name: OCDE CRS (ayuda por país y sector)
         run: |
+          B="https://sdmx.oecd.org/dcd-public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,1.7"
+          Q="format=csvfilewithlabels&dimensionAtObservation=AllDimensions&startPeriod=2023&endPeriod=2023"
           i=0
-          for k in "ESP...100._T._T.D.V._T.." "ESP.MAR..100._T._T.D.V._T.." "ESP..1000.100._T._T.D.V._T.."; do
+          for k in "ESP.MAR.........." "ESP....._T._T....." "ESP..........."; do
             i=$((i+1))
-            code=$(curl -s --max-time 900 "https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,/$k?startPeriod=2023&endPeriod=2023" -o d$i.xml -w "%{http_code} %{size_download}")
+            code=$(curl -s --max-time 900 -A "hucha (github.com/serbenda/hucha)" "$B/$k?$Q" -o d$i.csv -w "%{http_code} %{size_download}")
             node -e "
-              const x=require('fs').readFileSync('d$i.xml','utf8');
-              const series=x.split('<generic:Series>').slice(1);
-              const vals={};
-              for (const s of series) for (const m of s.split('</generic:SeriesKey>')[0].matchAll(/id=\"([^\"]+)\" value=\"([^\"]*)\"/g)) (vals[m[1]] ??= new Set()).add(m[2]);
-              const dims=Object.entries(vals).map(([k,v])=>k+'('+v.size+'):'+[...v].slice(0,25).join(' ')).join(' || ');
-              const ej=series.slice(0,2).map(s=>s.replace(/<[^>]*id=\"([^\"]+)\" value=\"([^\"]*)\"[^>]*>/g,'\$1=\$2 ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,500)).join(' ## ');
-              console.log('::notice title=CRS $k::http $code; series '+series.length+'; '+(series.length?dims.slice(0,2500)+' ### '+ej:x.slice(0,300)));
+              const t=require('fs').readFileSync('d$i.csv','utf8').split(/\r?\n/).filter(Boolean);
+              const split=(l)=>{const r=[];let c='',q=false;for(const ch of l){if(ch==='\"'){q=!q;continue}if(ch===','&&!q){r.push(c);c='';continue}c+=ch}r.push(c);return r};
+              const h=split(t[0]||'');
+              const filas=t.slice(1).map(split);
+              const res=h.map((c,j)=>{const v=new Set(filas.map(f=>f[j]));return c+'('+v.size+'):'+[...v].slice(0,12).join('|')}).join(' ;; ');
+              console.log('::notice title=CRS $k::http $code; filas '+filas.length+'; '+(filas.length?res.slice(0,3500):t.slice(0,3).join(' ').slice(0,400)));
             "
           done
