@@ -38,7 +38,11 @@ jobs:
       - name: OCDE CRS (ayuda por país y sector)
         run: |
           curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/dataflow/OECD.DCD.FSD/DSD_CRS@DF_CRS/latest?references=datastructure" -o crs.xml
-          echo "::notice::estructura $(wc -c < crs.xml) bytes: $(head -c 400 crs.xml | tr '\n' ' ')"
+          echo "::notice::etiquetas $(grep -o '<[A-Za-z]*:[A-Za-z]*' crs.xml | sort | uniq -c | sort -rn | head -25 | tr '\n' ' ')"
+          curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/datastructure/OECD.DCD.FSD/DSD_CRS/latest" -o dsd.xml -w "::notice::dsd http %{http_code} bytes %{size_download}\n"
+          echo "::notice::dsd etiquetas $(grep -o '<[A-Za-z]*:[A-Za-z]*' dsd.xml | sort | uniq -c | sort -rn | head -25 | tr '\n' ' ')"
+          grep -o '<[A-Za-z]*:Dimension[^>]*>' dsd.xml | head -20 | tr '\n' ' ' | sed 's/^/::notice::dims /'; echo
+          cat dsd.xml >> crs.xml
           grep -o '<[A-Za-z]*:Dimension [^>]*>' crs.xml | head -20 | sed 's/^/::notice::dim /'
           node -e "
             const x=require('fs').readFileSync('crs.xml','utf8');
