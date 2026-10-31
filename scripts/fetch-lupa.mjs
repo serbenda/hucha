@@ -18,8 +18,6 @@ import { anotar } from './estado.mjs';
 const carpeta = new URL('../data/lupa/', import.meta.url);
 await mkdir(carpeta, { recursive: true });
 const cabeceras = { 'User-Agent': 'hucha (github.com/serbenda/hucha)' };
-const inicio = Date.now();
-const minutos = () => (Date.now() - inicio) / 60000;
 
 async function leer(nombre) {
   try {
@@ -57,7 +55,8 @@ const FEEDS = {
   perfiles: 'https://contrataciondelestado.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom',
   agregadas: 'https://contrataciondelestado.es/sindicacion/sindicacion_1044/PlataformasAgregadasSinMenores.atom',
 };
-const PAGINAS_MAX = Number(process.env.LUPA_PAGINAS ?? 60); // por feed y ejecución
+const PAGINAS_MAX = Number(process.env.LUPA_PAGINAS ?? 40); // por feed y ejecución
+const MINUTOS_FEED = 9; // tiempo máximo por feed y ejecución
 const ANTIGUEDAD_MAX = 2 * 365; // días por fecha de adjudicación
 
 async function contratos() {
@@ -70,6 +69,8 @@ async function contratos() {
   for (const [clave, portada] of Object.entries(FEEDS)) {
     const cursor = previo.cursores[clave] ?? {};
     let paginas = 0;
+    const inicioFeed = Date.now();
+    const quedaTiempo = () => (Date.now() - inicioFeed) / 60000 < MINUTOS_FEED;
     const procesar = (pagina) => {
       for (const e of pagina.entradas) {
         if (!esContratoUtil(e)) continue;
@@ -85,7 +86,7 @@ async function contratos() {
       // 1. Lo nuevo: desde la portada del feed hasta lo que ya se había leído
       let url = portada;
       let primero = null;
-      while (url && paginas < PAGINAS_MAX && minutos() < 20) {
+      while (url && paginas < PAGINAS_MAX && quedaTiempo()) {
         const p = parsearAtom(await descargar(url));
         paginas++;
         primero ??= p.entradas[0]?.actualizado ?? null;
@@ -103,7 +104,7 @@ async function contratos() {
       if (primero) cursor.masNuevo = primero;
 
       // 2. Relleno hacia atrás con las páginas que queden
-      while (cursor.siguiente && paginas < PAGINAS_MAX && minutos() < 20) {
+      while (cursor.siguiente && paginas < PAGINAS_MAX && quedaTiempo()) {
         const p = parsearAtom(await descargar(cursor.siguiente));
         paginas++;
         procesar(p);
@@ -144,6 +145,8 @@ async function subvenciones() {
     const desde = isoDia(ini);
     for (let pagina = 0; pagina < 10; pagina++) {
       const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json' });
+      const importes = (json?.content ?? []).map((c) => c.importe ?? 0);
+      if (importes.some((v, k) => k > 0 && v > importes[k - 1] + 0.01)) throw new Error('la API no devuelve las concesiones ordenadas por importe');
       const lote = parsearConcesiones(json);
       for (const c of lote) if (c.i >= UMBRAL_SUBVENCIONES) todas.set(c.id, c);
       const ultimo = json?.content?.at(-1)?.importe ?? 0;
