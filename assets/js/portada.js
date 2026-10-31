@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const entrada = $('bruto');
 const conEmpresa = $('empresa');
 
-// El sueldo puede venir en el enlace (?sueldo=30000&empresa=1) para compartir el ticket
+// El sueldo puede venir en el enlace (?sueldo=30000&empresa=1): no lo generamos al compartir, pero se acepta
 const params = new URLSearchParams(location.search);
 if (leerImporte(params.get('sueldo')) > 0) entrada.value = new Intl.NumberFormat('es-ES').format(leerImporte(params.get('sueldo')));
 if (params.get('empresa') === '1') conEmpresa.checked = true;
@@ -43,6 +43,7 @@ function pintarTicket() {
   if (!a) {
     aporte.replaceChildren(linea('Escribe tu sueldo bruto anual', ''));
     reparto.replaceChildren();
+    $('resumen').replaceChildren();
     return;
   }
 
@@ -54,6 +55,12 @@ function pintarTicket() {
   const total = conEmpresa.checked ? a.conEmpresa : a.tuyo;
   filas.push(linea('Total', euros(total), { clase: 'total' }));
   aporte.replaceChildren(...filas);
+
+  // En el móvil el ticket queda debajo: un resumen junto al campo para que se vea que algo ha cambiado
+  const resumen = $('resumen');
+  resumen.replaceChildren('Pones ', Object.assign(document.createElement('strong'), { textContent: euros(total) }), ' al año · ');
+  const ir = Object.assign(document.createElement('a'), { href: '#ticket', textContent: 'ver a dónde va ↓' });
+  resumen.append(ir);
 
   if (!lista.length) return;
   const repartidas = repartir(total, lista);
@@ -102,18 +109,19 @@ document.querySelectorAll('[data-sueldo]').forEach((b) =>
 );
 
 $('compartir').addEventListener('click', async () => {
-  const bruto = leerImporte(entrada.value);
-  const url = new URL(location.href);
-  url.search = '';
-  if (bruto) url.searchParams.set('sueldo', String(Math.round(bruto)));
-  if (conEmpresa.checked) url.searchParams.set('empresa', '1');
-  const texto = 'Mira a dónde van mis impuestos';
+  // Se comparte el reparto en porcentajes, nunca el sueldo
+  const url = new URL('./', location.href).href;
+  const principales = lista.slice(0, 3).map((p) => `${Math.round(p.cuota * 100)} € a ${p.nombre.toLowerCase()}`);
+  const texto = lista.length
+    ? `De cada 100 € de gasto público en España, ${principales.join(', ')}. Mira a dónde van tus impuestos:`
+    : 'Mira a dónde van tus impuestos:';
+  const boton = $('compartir');
   try {
-    if (navigator.share) await navigator.share({ title: 'Mi ticket de hucha', text: texto, url: url.href });
+    if (navigator.share) await navigator.share({ title: 'hucha: a dónde va el dinero público', text: texto, url });
     else {
-      await navigator.clipboard.writeText(url.href);
-      $('compartir').textContent = 'Enlace copiado';
-      setTimeout(() => ($('compartir').textContent = 'Compartir mi ticket'), 2500);
+      await navigator.clipboard.writeText(`${texto} ${url}`);
+      boton.textContent = 'Copiado';
+      setTimeout(() => (boton.textContent = 'Compartir el reparto'), 2500);
     }
   } catch {}
 });
