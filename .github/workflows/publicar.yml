@@ -7,9 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    # Eurostat publica los datos por funciones una vez al año (en febrero) y los revisa
-    # en abril y octubre: basta con mirar cada lunes. Hora en UTC.
-    - cron: '17 6 * * 1'
+    # Cada día: la Lupa reúne los contratos y subvenciones nuevos. Eurostat (gasto por funciones)
+    # solo cambia unas pocas veces al año, pero mirarlo a diario no cuesta nada. Hora en UTC.
+    - cron: '17 5 * * *'
 
 permissions:
   contents: read
@@ -43,15 +43,25 @@ jobs:
         run: |
           mkdir -p data
           curl -fsSL --max-time 60 "$BASE/data/cofog.json" -o data/cofog.json || rm -f data/cofog.json
-          ls -la data
+          mkdir -p data/lupa
+          for f in contratos subvenciones ayuda; do
+            curl -fsSL --max-time 120 "$BASE/data/lupa/$f.json" -o "data/lupa/$f.json" || rm -f "data/lupa/$f.json"
+          done
+          ls -la data data/lupa
 
       - name: Descargar datos (Eurostat)
         run: npm run datos
+
+      - name: Lupa (contratos, subvenciones y ayuda a otros países)
+        # Cada fuente es independiente; si una falla, se queda su versión anterior
+        timeout-minutes: 30
+        run: npm run lupa
 
       - name: Comprobar que hay datos
         run: |
           test -s data/cofog.json || { echo "::error::No hay datos: ni Eurostat ni la última publicación"; exit 1; }
           node -e "const d=require('./data/cofog.json'); if (d.ejemplo) { console.log('::error::Son datos de ejemplo'); process.exit(1) } console.log('Años:', d.años.join(', '), '| provisionales:', d.provisionales.join(', ') || 'ninguno')"
+          for f in data/lupa/*.json; do [ -e "$f" ] || continue; node -e "if (require('./$f').ejemplo) { console.log('::error::$f son datos de ejemplo'); process.exit(1) }"; done
 
       - name: Resumen de las partidas (para revisarlas en la PR)
         run: |
@@ -71,6 +81,13 @@ jobs:
             const at = ultimoAñoTipos(d);
             const t = at ? tiposDeGasto(d, 'TOTAL', at).map((x) => x.nombre + ' ' + (x.cuota * 100).toFixed(1) + ' %') : [];
             console.log('::notice title=Cómo se gasta ' + (at ?? '') + '::' + (t.join(' | ') || 'sin desglose por tipo'));
+            const leer = (f) => { try { return JSON.parse(readFileSync('data/lupa/' + f + '.json', 'utf8')); } catch { return null; } };
+            const c = leer('contratos'), s = leer('subvenciones'), y = leer('ayuda');
+            const m = (n) => Math.round(n / 1e6) + ' M€';
+            if (c) console.log('::notice title=Lupa contratos (' + c.contratos.length + ', desde ' + (c.desde ?? '?').slice(0, 10) + ')::' + c.contratos.slice(0, 8).map((x) => m(x.a) + ' ' + x.o + ' → ' + (x.g ?? []).join(', ') + ': ' + (x.t ?? '').slice(0, 70) + ' [' + (x.te ?? []).join(',') + ']').join(' | '));
+            if (c) { const tren = c.contratos.filter((x) => x.te?.includes('tren')); console.log('::notice title=Lupa tren (' + tren.length + ')::' + tren.slice(0, 6).map((x) => m(x.a) + ' ' + x.o + ' (' + x.fi + '): ' + (x.t ?? '').slice(0, 70)).join(' | ')); }
+            if (s) console.log('::notice title=Lupa subvenciones (' + s.subvenciones.length + ')::' + s.subvenciones.slice(0, 8).map((x) => m(x.i) + ' ' + x.o + ' → ' + x.b + ': ' + (x.c ?? '').slice(0, 60)).join(' | '));
+            if (y) { const ult = y.años.at(-1); console.log('::notice title=Lupa ayuda ' + ult + '::' + Object.entries(y.paises).sort((a, b) => (b[1][ult] ?? 0) - (a[1][ult] ?? 0)).slice(0, 10).map(([p, v]) => p + ' ' + (v[ult] ?? 0)).join(' | ')); }
           "
 
       - name: Instalar herramientas (navegador de pruebas, axe y Lighthouse)
@@ -89,7 +106,7 @@ jobs:
       - name: Preparar la web
         run: |
           mkdir -p _site vendor
-          cp -r index.html 404.html a-donde-va quien-gasta fuentes assets data vendor \
+          cp -r index.html 404.html a-donde-va quien-gasta lupa fuentes assets data vendor \
             manifest.webmanifest sw.js sitemap.xml robots.txt .nojekyll _site/
           # Versión en los estilos y scripts de cada página, y en los módulos que importan entre sí:
           # al publicar, nadie mezcla HTML nuevo con CSS o JS viejos
