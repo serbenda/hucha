@@ -7,29 +7,51 @@ import { euros, porcentaje, delPib } from './formato.js';
 const $ = (id) => document.getElementById(id);
 const unDecimal = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-/** Gráfico de línea pequeño: España frente a la UE, en % del PIB. */
-function grafico(serie, nombre) {
-  const W = 600, H = 150, izq = 34, der = 52, arriba = 12, abajo = 22;
-  const valores = serie.flatMap((x) => [x.es, x.ue]).filter((v) => v !== null);
-  const max = Math.max(...valores) * 1.15 || 1;
-  const n = serie.length;
-  const X = (i) => izq + (n === 1 ? 0 : (i / (n - 1)) * (W - izq - der));
-  const Y = (v) => arriba + (1 - v / max) * (H - arriba - abajo);
-  const trazo = (clave) =>
-    serie.map((p, i) => (p[clave] === null ? null : `${X(i).toFixed(1)},${Y(p[clave]).toFixed(1)}`)).filter(Boolean).join(' ');
+/** Paso «redondo» para el eje: 0,5, 1, 2, 5… */
+function paso(max) {
+  const bruto = max / 3;
+  const base = 10 ** Math.floor(Math.log10(bruto));
+  return [1, 2, 2.5, 5, 10].map((m) => m * base).find((p) => p >= bruto);
+}
 
-  const marcas = [0, max / 2, max].map((v) => `<line class="rejilla" x1="${izq}" x2="${W - der}" y1="${Y(v)}" y2="${Y(v)}"/><text class="eje" x="${izq - 6}" y="${Y(v) + 4}" text-anchor="end">${unDecimal.format(v)}</text>`).join('');
+/**
+ * Gráfico de línea pequeño: España frente a la UE, en % del PIB.
+ * Las líneas van en SVG y los textos en HTML encima, para que se lean igual en el móvil y en el ordenador.
+ */
+function grafico(serie, nombre) {
+  const valores = serie.flatMap((x) => [x.es, x.ue]).filter((v) => v !== null);
+  const p = paso(Math.max(...valores) * 1.05);
+  const max = Math.ceil((Math.max(...valores) * 1.05) / p) * p;
+  const n = serie.length;
+  const X = (i) => (n === 1 ? 0 : (i / (n - 1)) * 100); // en %
+  const Y = (v) => (1 - v / max) * 100; // en %
+  const trazo = (clave) => serie.map((q, i) => (q[clave] === null ? null : `${X(i).toFixed(2)},${Y(q[clave]).toFixed(2)}`)).filter(Boolean).join(' ');
+
+  const ticks = [];
+  for (let v = 0; v <= max + 1e-9; v += p) ticks.push(v);
+  const formato = new Intl.NumberFormat('es-ES', { maximumFractionDigits: p < 1 ? 1 : 0 });
+  const rejilla = ticks.map((v) => `<line class="rejilla" x1="0" x2="100" y1="${Y(v)}" y2="${Y(v)}"/>`).join('');
+  const etiquetasY = ticks.map((v) => `<span class="eje eje-y" style="top: ${Y(v)}%">${formato.format(v)}</span>`).join('');
+
+  // Años: el primero, el último y algunos en medio (cada 4 o 5)
+  const cada = n > 12 ? 5 : 4;
+  const años = serie.map((q, i) => ({ q, i })).filter(({ i }) => i === 0 || i === n - 1 || (i % cada === 0 && n - 1 - i >= 3));
+  const etiquetasX = años.map(({ q, i }) => `<span class="eje eje-x${i === 0 ? ' inicio' : i === n - 1 ? ' fin' : ''}" style="left: ${X(i)}%">${q.año}</span>`).join('');
+  const marcasX = años.map(({ i }) => `<line class="marca-año" x1="${X(i)}" x2="${X(i)}" y1="100" y2="103"/>`).join('');
+
+  // La pandemia explica el salto de 2020 en casi todas las partidas
+  const iCovid = serie.findIndex((q) => q.año === '2020');
+  const covid = iCovid > 0 ? `<line class="covid" x1="${X(iCovid)}" x2="${X(iCovid)}" y1="0" y2="100"/>` : '';
+  const notaCovid = iCovid > 0 ? `<span class="nota-grafico" style="left: ${X(iCovid)}%">COVID</span>` : '';
+
   const ultimo = serie.at(-1);
-  const ue = serie.some((p) => p.ue !== null) ? `<polyline class="ue" points="${trazo('ue')}"/>` : '';
-  return `<div class="evolucion">
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${nombre}: ${unDecimal.format(ultimo.es)} % del PIB en ${ultimo.año}, frente a ${unDecimal.format(serie[0].es)} % en ${serie[0].año}">
-      ${marcas}
-      ${ue}
-      <polyline class="es" points="${trazo('es')}"/>
-      <text class="eje" x="${X(0)}" y="${H - 4}" text-anchor="start">${serie[0].año}</text>
-      <text class="eje" x="${X(n - 1)}" y="${H - 4}" text-anchor="end">${ultimo.año}</text>
-      <text class="etiqueta-es" x="${X(n - 1) + 6}" y="${Y(ultimo.es) + 4}">${unDecimal.format(ultimo.es)} %</text>
-    </svg>
+  const ue = serie.some((q) => q.ue !== null) ? `<polyline class="ue" points="${trazo('ue')}"/>` : '';
+  return `<div class="evolucion" role="img" aria-label="${nombre}: ${unDecimal.format(ultimo.es)} % del PIB en ${ultimo.año}, frente a ${unDecimal.format(serie[0].es)} % en ${serie[0].año}">
+    <div class="lienzo" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none">${rejilla}${covid}${marcasX}${ue}<polyline class="es" points="${trazo('es')}"/></svg>
+      ${etiquetasY}${etiquetasX}${notaCovid}
+      <span class="etiqueta-es" style="top: ${Y(ultimo.es)}%">${unDecimal.format(ultimo.es)} %</span>
+    </div>
   </div>`;
 }
 
@@ -49,7 +71,7 @@ try {
 
   $('entradilla').innerHTML =
     `En ${año}, las administraciones gastaron <strong>${euros(porPersona)} por habitante</strong>. ` +
-    `La partida más grande, ${primera.nombre.toLowerCase()}, se llevó ${porcentaje(primera.cuota)} del total.`;
+    `La partida más grande, ${primera.nombre.toLowerCase()}, se llevó el ${porcentaje(primera.cuota)} del total.`;
   $('partidas-texto').textContent =
     `Euros por habitante en ${año}${esProvisional(datos, año) ? ' (datos provisionales)' : ''}. Pulsa una partida para ver qué incluye y cómo ha cambiado desde ${datos.años[0]}.`;
 
@@ -81,7 +103,7 @@ try {
   const pib = valor(datos, 'TOTAL', año, { unidad: 'PC_GDP' });
   const pibUe = valor(datos, 'TOTAL', año, { geo: 'ue', unidad: 'PC_GDP' });
   if (pib !== null && pibUe !== null) {
-    $('entradilla').insertAdjacentHTML('beforeend', ` En total, el ${delPib(pib)}; la media europea es el ${delPib(pibUe)}.`);
+    $('entradilla').insertAdjacentHTML('beforeend', ` Todo el gasto público supone el ${delPib(pib)}, frente al ${delPib(pibUe).replace(' del PIB', '')} de media en la Unión Europea.`);
   }
 } catch {
   $('partidas').replaceChildren();
