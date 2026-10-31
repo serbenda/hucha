@@ -53,6 +53,19 @@ jobs:
           test -s data/cofog.json || { echo "::error::No hay datos: ni Eurostat ni la última publicación"; exit 1; }
           node -e "const d=require('./data/cofog.json'); if (d.ejemplo) { console.log('::error::Son datos de ejemplo'); process.exit(1) } console.log('Años:', d.años.join(', '), '| provisionales:', d.provisionales.join(', ') || 'ninguno')"
 
+      - name: Resumen de las partidas (para revisarlas en la PR)
+        run: |
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            import { partidas, ultimoAño, gastoPorPersona, reparto } from './assets/js/cofog.js';
+            const d = JSON.parse(readFileSync('data/cofog.json', 'utf8'));
+            const a = ultimoAño(d), pp = gastoPorPersona(d, a);
+            const filas = partidas(d, a).map((p) => p.nombre + ': ' + (p.cuota * 100).toFixed(1) + ' %, ' + Math.round(p.cuota * pp) + ' €/hab');
+            console.log('::notice title=Partidas ' + a + '::' + filas.join(' | '));
+            const r = reparto(d, a).map((f) => f.nombre + ': ' + f.partes.map((p) => p.nombre + ' ' + Math.round(p.cuota * 100)).join('/'));
+            console.log('::notice title=Quién gasta ' + a + '::' + r.join(' | '));
+          "
+
       - name: Fuente servida desde la web
         # Si falla, la web sigue funcionando con la fuente del sistema
         continue-on-error: true
