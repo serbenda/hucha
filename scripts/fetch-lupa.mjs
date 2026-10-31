@@ -11,7 +11,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import {
   parsearAtom, esContratoUtil, compactarContrato, urlConcesiones, parsearConcesiones, UMBRAL_SUBVENCIONES,
-  urlAyuda, parsearAyuda, UMBRAL_CONTRATOS, portadaDe,
+  urlAyuda, parsearAyuda, UMBRAL_CONTRATOS, portadaDe, esMarcoPorTitulo,
 } from '../assets/js/lupa-datos.js';
 import { esPais } from '../assets/js/paises.js';
 import { anotar } from './estado.mjs';
@@ -66,6 +66,7 @@ async function contratos() {
   const porId = new Map(previo.contratos.map((c) => [c.id, c]));
   const resumen = [];
   let nuevos = 0;
+  let porCodigo = 0;
 
   for (const [clave, portada] of Object.entries(FEEDS)) {
     const cursor = previo.cursores[clave] ?? {};
@@ -79,6 +80,7 @@ async function contratos() {
         const anterior = porId.get(id);
         if (anterior && anterior.up >= e.actualizado) continue;
         if (!anterior) nuevos++;
+        if (e.sistema === 1 || e.sistema === 2) porCodigo++;
         porId.set(id, { ...compactarContrato(e), id });
       }
     };
@@ -119,6 +121,8 @@ async function contratos() {
     previo.cursores[clave] = cursor;
   }
 
+  // Los guardados antes de marcar los acuerdos marco se miran por el título
+  for (const c of porId.values()) c.m ??= esMarcoPorTitulo(c.t) ? 1 : 0;
   const limite = isoDia(new Date(hoy - ANTIGUEDAD_MAX * 864e5));
   const lista = [...porId.values()].filter((c) => !c.f || c.f >= limite).sort((a, b) => (b.a ?? 0) - (a.a ?? 0));
   if (!lista.length) throw new Error(`sin contratos (${resumen.join('; ')})`);
@@ -131,7 +135,7 @@ async function contratos() {
     cursores: previo.cursores,
     contratos: lista,
   });
-  return `${lista.length} contratos (${nuevos} nuevos). ${resumen.join('; ')}`;
+  return `${lista.length} contratos (${nuevos} nuevos; ${lista.filter((c) => c.m).length} acuerdos marco, ${porCodigo} reconocidos por su código). ${resumen.join('; ')}`;
 }
 
 // ---------------------------------------------------------------------------

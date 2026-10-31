@@ -118,6 +118,20 @@ export function parsearAtom(xml) {
   return { actualizado, siguiente: siguiente ? texto(siguiente) : null, entradas };
 }
 
+// Acuerdos marco y sistemas dinámicos de adquisición: su importe es un techo de lo que se podrá gastar
+// después con contratos basados en ellos, no dinero ya comprometido. Por eso no suman en los totales.
+// La Plataforma lo dice con ContractingSystemCode (1 acuerdo marco, 2 sistema dinámico; 3 y 4 son los
+// contratos basados en ellos, que sí son gasto). Si no viene el código, se mira el título.
+export const esMarcoPorTitulo = (t) => {
+  const n = normalizar(t);
+  return /\bacuerdos? marco\b|\bsistemas? dinamicos? de adquisicion/.test(n) && !/\bbasad|\bderivad|\bal amparo/.test(n);
+};
+export function esMarco(sistema, titulo) {
+  if (sistema === 1 || sistema === 2) return true;
+  if (sistema === 3 || sistema === 4) return false;
+  return esMarcoPorTitulo(titulo);
+}
+
 export function parsearEntrada(e) {
   const id = etiqueta(e, 'id');
   if (!id) return null;
@@ -155,9 +169,13 @@ export function parsearEntrada(e) {
     }
   }
 
+  const sistema = numero(etiqueta(e.match(/<cac:TenderingProcess>([\s\S]*?)<\/cac:TenderingProcess>/)?.[1] ?? '', 'cbc:ContractingSystemCode'));
+
   return {
     id: id.split('/').at(-1),
     estado,
+    sistema,
+    marco: esMarco(sistema, titulo),
     titulo,
     organo,
     nivel: nivelAdministracion([organo ?? '', ...jerarquia]),
@@ -182,7 +200,7 @@ export const esContratoUtil = (c) => ['ADJ', 'RES'].includes(c?.estado) && c.adj
 /** Forma compacta para la web (claves cortas para que pese menos). */
 export const compactarContrato = (c) => ({
   id: c.id, t: c.titulo, o: c.organo, n: c.nivel, l: c.lugar, ti: c.tipo, fi: c.finalidad, te: c.temas,
-  li: c.licitado, a: c.adjudicado, f: c.fecha, g: [...new Set(c.ganadores)], u: c.enlace, up: c.actualizado,
+  li: c.licitado, a: c.adjudicado, f: c.fecha, g: [...new Set(c.ganadores)], u: c.enlace, up: c.actualizado, m: c.marco ? 1 : 0,
 });
 
 // ---------------------------------------------------------------------------
@@ -266,10 +284,15 @@ export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0)
 
 export const EN_PORTADA = 40;
 
+/** Número de resultados y su suma, con los acuerdos marco aparte (su importe es un máximo, no gasto). */
+export function totales(lista, importe) {
+  const marcos = lista.filter((x) => x.m);
+  return { n: lista.length, suma: suma(lista, importe) - suma(marcos, importe), marcos: { n: marcos.length, suma: suma(marcos, importe) } };
+}
+
 /** Del fichero completo de contratos o subvenciones, el de portada: los mayores y el total. */
 export function portadaDe(datos, clave, importe) {
   const { cursores, [clave]: lista = [], ...resto } = datos;
   const orden = [...lista].sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
-  return { ...resto, total: { n: lista.length, suma: suma(lista, importe) }, [clave]: orden.slice(0, EN_PORTADA) };
+  return { ...resto, total: totales(lista, importe), [clave]: orden.slice(0, EN_PORTADA) };
 }
-

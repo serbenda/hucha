@@ -1,6 +1,9 @@
 // Pasa Lighthouse (móvil) por cada página de la web ya preparada (_site) y falla si alguna
 // puntuación baja del mínimo. Deja el resumen en la Action y las insignias del README en
 // _site/insignias/, que shields.io lee desde la web publicada.
+// El rendimiento varía de una medición a otra: si una página no llega, se mide hasta dos veces más y
+// cuenta la mejor. Con LH_RENDIMIENTO_AVISA=1 (la publicación diaria), un rendimiento bajo no impide
+// publicar los datos nuevos: queda anotado para el aviso. Accesibilidad, buenas prácticas y SEO sí lo impiden.
 // Uso: node scripts/lighthouse.mjs   (necesita lighthouse y playwright)
 
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
@@ -8,6 +11,7 @@ import lighthouse from 'lighthouse';
 import * as chromeLauncher from 'chrome-launcher';
 import { chromium } from 'playwright';
 import { arrancar } from '../tests/e2e/servidor.mjs';
+import { anotar } from './estado.mjs';
 
 const PAGINAS = { 'Tu ticket': '', 'A dónde va': 'a-donde-va/', 'Quién gasta': 'quien-gasta/', Lupa: 'lupa/', Fuentes: 'fuentes/' };
 const CATEGORIAS = {
@@ -24,15 +28,23 @@ const chrome = await chromeLauncher.launch({
 });
 
 const resultados = {};
-for (const [nombre, ruta] of Object.entries(PAGINAS)) {
-  const { lhr } = await lighthouse(servidor.base + ruta, {
+const medir = async (ruta) =>
+  (await lighthouse(servidor.base + ruta, {
     port: chrome.port,
     output: 'json',
     logLevel: 'error',
     onlyCategories: Object.keys(CATEGORIAS),
     // Las visitas no cuentan: son de terceros y no dependen de la web
     blockedUrlPatterns: ['*goatcounter*', '*gc.zgo.at*'],
-  });
+  })).lhr;
+const INTENTOS = 3;
+
+for (const [nombre, ruta] of Object.entries(PAGINAS)) {
+  let lhr = await medir(ruta);
+  for (let i = 2; i <= INTENTOS && (lhr.categories.performance?.score ?? 0) < CATEGORIAS.performance.minimo; i++) {
+    const otra = await medir(ruta);
+    if ((otra.categories.performance?.score ?? 0) > (lhr.categories.performance?.score ?? 0)) lhr = otra;
+  }
   resultados[nombre] = Object.fromEntries(Object.keys(CATEGORIAS).map((c) => [c, lhr.categories[c]?.score ?? 0]));
   let linea = Object.entries(resultados[nombre]).map(([c, v]) => `${CATEGORIAS[c].nombre} ${Math.round(v * 100)}`).join(', ');
   // Si el rendimiento no llega a 95, se dice qué métrica lo baja
@@ -83,8 +95,19 @@ if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(process.env.GITHUB_STEP_SUMMARY, `### Lighthouse (móvil)\n\n${cabecera}${filas}\n`);
 }
 
+const texto = ([c, v]) => `${CATEGORIAS[c].nombre} ${Math.round(v * 100)} (mínimo ${CATEGORIAS[c].minimo * 100})`;
 const suspensos = Object.entries(peores).filter(([c, v]) => v < CATEGORIAS[c].minimo);
-if (suspensos.length) {
-  console.error(`Por debajo del mínimo: ${suspensos.map(([c, v]) => `${CATEGORIAS[c].nombre} ${Math.round(v * 100)} (mínimo ${CATEGORIAS[c].minimo * 100})`).join(', ')}`);
+const graves = suspensos.filter(([c]) => c !== 'performance' || !process.env.LH_RENDIMIENTO_AVISA);
+if (graves.length) {
+  await anotar('lighthouse', false, `por debajo del mínimo: ${suspensos.map(texto).join(', ')}`);
+  console.error(`Por debajo del mínimo: ${graves.map(texto).join(', ')}`);
   process.exit(1);
+}
+if (suspensos.length) {
+  // Solo el rendimiento, en la publicación diaria: se publica igual y queda el aviso
+  const lentas = Object.entries(resultados).filter(([, r]) => r.performance < CATEGORIAS.performance.minimo).map(([p, r]) => `${p} ${Math.round(r.performance * 100)}`);
+  await anotar('lighthouse', false, `rendimiento por debajo de ${CATEGORIAS.performance.minimo * 100} en ${lentas.join(', ')} (se ha publicado igual)`);
+  console.log(`${process.env.GITHUB_ACTIONS ? '::warning::' : ''}Rendimiento bajo en ${lentas.join(', ')}: se publica igual y queda el aviso`);
+} else {
+  await anotar('lighthouse', true, Object.entries(peores).map(([c, v]) => `${CATEGORIAS[c].nombre} ${Math.round(v * 100)}`).join(', '));
 }

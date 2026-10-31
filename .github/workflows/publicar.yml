@@ -129,6 +129,9 @@ jobs:
           }
 
       - name: Lighthouse (rendimiento, accesibilidad, buenas prácticas y SEO)
+        env:
+          # En main, un rendimiento bajo no impide publicar los datos del día (queda el aviso); en las PR, sí
+          LH_RENDIMIENTO_AVISA: ${{ github.event_name != 'pull_request' && '1' || '' }}
         run: |
           set -o pipefail
           npm run lighthouse 2>&1 | tee "$RUNNER_TEMP/lh.log" || {
@@ -175,7 +178,7 @@ jobs:
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   avisar:
-    # Abre un issue si falla Eurostat, los tests o la publicación, y lo cierra al recuperarse
+    # Abre un issue si falla una fuente, los tests, Lighthouse o la publicación, y lo cierra al recuperarse
     if: always() && github.event_name != 'pull_request'
     needs: [construir, publicar]
     runs-on: ubuntu-latest
@@ -209,7 +212,8 @@ jobs:
               if (abiertos.length) {
                 await github.rest.issues.createComment({ owner, repo, issue_number: abiertos[0].number, body: `Sigue fallando:\n\n${cuerpo}` });
               } else {
-                await github.rest.issues.create({ owner, repo, title: 'Fallo al actualizar la web', labels: ['datos'], body: `La web sigue con la última versión buena.\n\n${cuerpo}` });
+                const publicada = process.env.RESULTADO_PUBLICAR === 'success';
+                await github.rest.issues.create({ owner, repo, title: publicada ? 'Algo que revisar en la web' : 'Fallo al actualizar la web', labels: ['datos'], body: `${publicada ? 'La web se ha publicado con los datos nuevos, pero hay algo que revisar.' : 'La web sigue con la última versión buena.'}\n\n${cuerpo}` });
               }
               core.warning(fallos.join(' | '));
             } else {

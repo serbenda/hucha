@@ -38,11 +38,11 @@
       <span>hucha</span>
     </a>
     <nav class="nav" aria-label="Secciones">
-      <a href="../">Tu ticket</a>
-      <a href="../a-donde-va/">A dónde va</a>
-      <a href="../quien-gasta/">Quién gasta</a>
-      <a href="../lupa/">Lupa</a>
-      <a href="../fuentes/" aria-current="page">Fuentes</a>
+      <a href="../"><svg class="icono" data-icono="ticket" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z M9 8h6 M9 12h6 M9 16h3"/></svg><span>Tu ticket</span></a>
+      <a href="../a-donde-va/"><svg class="icono" data-icono="a-donde-va" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 9 9h-9Z M15 3.5A9 9 0 0 1 20.5 9H15Z"/></svg><span>A dónde va</span></a>
+      <a href="../quien-gasta/"><svg class="icono" data-icono="quien-gasta" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 21h18 M4 10h16 M12 3l8 4.5H4Z M6 10v8 M10 10v8 M14 10v8 M18 10v8"/></svg><span>Quién gasta</span></a>
+      <a href="../lupa/"><svg class="icono" data-icono="lupa" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z M20.5 20.5l-5.4-5.4"/></svg><span>Lupa</span></a>
+      <a href="../fuentes/" aria-current="page"><svg class="icono" data-icono="fuentes" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2Z M4 20a2 2 0 0 0 2 2h13v-4"/></svg><span>Fuentes</span></a>
     </nav>
   </header>
 
@@ -51,15 +51,15 @@
     <p class="entradilla">Todo sale de datos públicos y oficiales. Aquí está de dónde viene cada cifra, cómo se calcula y lo que no entra en la cuenta.</p>
 
     <section aria-labelledby="t-gasto">
-      <h2 id="t-gasto">El gasto público</h2>
+      <h2 id="t-gasto" class="con-icono"><span class="insignia"><svg class="icono" data-icono="a-donde-va" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 9 9h-9Z M15 3.5A9 9 0 0 1 20.5 9H15Z"/></svg></span>El gasto público</h2>
       <p>Viene de <a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table">Eurostat, tabla <code>gov_10a_exp</code></a>: el gasto de las Administraciones Públicas por funciones según la clasificación COFOG de Naciones Unidas. Para España lo elabora la <a href="https://www.hacienda.gob.es/es-ES/CDI/Paginas/ContabilidadNacional/COFOG/Clasificacion-funcional-del-gasto-de-las-Administraciones-Publicas.aspx">Intervención General de la Administración del Estado (IGAE)</a> y lo envía a Eurostat, que lo publica con el mismo criterio para todos los países de la Unión.</p>
-      <p>Es gasto <strong>realmente hecho</strong> (contabilidad nacional), no lo presupuestado. Llega con retraso: los datos de un año se publican a principios del año siguiente al siguiente, y el último año sale como provisional. La web se actualiza sola cada semana.</p>
+      <p>Es gasto <strong>realmente hecho</strong> (contabilidad nacional), no lo presupuestado. Llega con retraso: los datos de un año se publican a principios del año siguiente al siguiente, y el último año sale como provisional. La web se revisa sola cada día y recoge los datos nuevos en cuanto salen.</p>
       <p>Dentro de cada partida, «En qué se va» usa el segundo nivel de la misma clasificación (hospitales, medicamentos, universidad, ayuda al desarrollo…), y «Cómo se gasta» las operaciones de contabilidad nacional de la misma tabla: sueldos (D1), compras (P2), pagos a personas (D62), servicios pagados a empresas para los ciudadanos (D632), inversión (P5), subvenciones (D3), intereses (D4), transferencias (D7) y ayudas para inversiones (D9). Lo que no encaja en ninguna va a «Otros».</p>
       <p>La población es la media anual de España, de la tabla <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table"><code>demo_gind</code></a> de Eurostat.</p>
     </section>
 
     <section aria-labelledby="t-partidas">
-      <h2 id="t-partidas">Cómo se agrupan las partidas</h2>
+      <h2 id="t-partidas" class="con-icono"><span class="insignia"><svg class="icono" data-icono="todo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h6v6H4Z M14 4h6v6h-6Z M4 14h6v6H4Z M14 14h6v6h-6Z"/></svg></span>Cómo se agrupan las partidas</h2>
       <p>Cada partida junta funciones COFOG. Entre todas cubren el 100 % del gasto, sin contar nada dos veces.</p>
       <table>
         <thead><tr><th scope="col">Partida</th><th scope="col">Funciones COFOG</th></tr></thead>
@@ -83,7 +83,7 @@
     </section>
 
     <section aria-labelledby="t-lupa">
-      <h2 id="t-lupa">La Lupa</h2>
+      <h2 id="t-lupa" class="con-icono"><span class="insignia"><svg class="icono" data-icono="lupa" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 10.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z M20.5 20.5l-5.4-5.4"/></svg></span>La Lupa</h2>
       <ul>
         <li><strong>Contratos</strong>: los adjudicados desde un millón de euros (sin IVA) en la <a href="https://contrataciondelestado.es/">Plataforma de Contratación del Sector Público</a>, incluidos los de las plataformas autonómicas y locales que se agregan a ella. Se leen sus datos abiertos cada día y se van reuniendo. El tema (tren, sanidad…) y si es obra, mantenimiento o compra salen del código oficial del contrato (CPV) y de su título.</li>
         <li><strong>Subvenciones</strong>: las concedidas desde un millón de euros en los últimos 12 meses, de la <a href="https://www.infosubvenciones.es/">Base de Datos Nacional de Subvenciones</a>.</li>
@@ -93,7 +93,7 @@
     </section>
 
     <section aria-labelledby="t-ticket">
-      <h2 id="t-ticket">Cómo se calcula tu ticket</h2>
+      <h2 id="t-ticket" class="con-icono"><span class="insignia"><svg class="icono" data-icono="ticket" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z M9 8h6 M9 12h6 M9 16h3"/></svg></span>Cómo se calcula tu ticket</h2>
       <p>Se estima lo que pagas al año como asalariado con contrato indefinido, sin hijos ni situaciones especiales:</p>
       <ul>
         <li><strong>IRPF</strong>: con el <a href="https://www3.agenciatributaria.gob.es/static_files/Sede/Programas_ayuda/Retenciones/2026/ALGORITMO_2026.pdf">algoritmo de retenciones de la Agencia Tributaria para 2026</a>: reducción por rendimientos del trabajo, 2.000 € de otros gastos, mínimo personal de 5.550 € y la escala general. Hasta el salario mínimo no se paga. Tu declaración real puede salir distinta por deducciones de tu comunidad, hijos, alquiler o planes de pensiones.</li>
@@ -105,20 +105,26 @@
     </section>
 
     <section aria-labelledby="t-privacidad">
-      <h2 id="t-privacidad">Privacidad</h2>
+      <h2 id="t-privacidad" class="con-icono"><span class="insignia"><svg class="icono" data-icono="candado" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 11h12v10H6Z M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span>Privacidad</h2>
       <p>Sin cookies, sin anuncios y sin cuentas. Tu sueldo no sale de tu navegador: el cálculo se hace en tu dispositivo. Las visitas se cuentan con <a href="https://www.goatcounter.com/">GoatCounter</a>, que no guarda datos personales.</p>
+      <p>En la Lupa, cuando quien gana un contrato o recibe una subvención es una persona física (un autónomo, un particular), no aparece su nombre: sale como «Persona física» o no se incluye.</p>
+    </section>
+
+    <section aria-labelledby="t-error">
+      <h2 id="t-error" class="con-icono"><span class="insignia"><svg class="icono" data-icono="error" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20Z M12 10v4 M12 17h.01"/></svg></span>¿Ves un error?</h2>
+      <p>Si una cifra no cuadra, un contrato está mal clasificado o falta algo, <a href="https://github.com/serbenda/hucha/issues/new">avísalo en GitHub</a>, mejor con el enlace a la fuente oficial. Se revisa y, si hay que corregirlo, se corrige para todos. Los avisos son públicos: no pongas datos personales.</p>
     </section>
 
     <section aria-labelledby="t-condiciones">
-      <h2 id="t-condiciones">Condiciones</h2>
-      <p>Los datos son de Eurostat y se reutilizan según su <a href="https://ec.europa.eu/eurostat/about-us/policies/copyright">política de reutilización</a>. hucha no está vinculada a Eurostat, a la IGAE ni a ningún organismo público, partido o empresa. Las cifras son informativas: para decisiones, consulta las fuentes oficiales.</p>
+      <h2 id="t-condiciones" class="con-icono"><span class="insignia"><svg class="icono" data-icono="sello" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.8 1 2.8-2.4 1.8-.9 2.9-3-.2L12 21l-2.4-1.8-3 .2-.9-2.9-2.4-1.8 1-2.8-1-2.8 2.4-1.8.9-2.9 3 .2Z M9 12l2 2 4-4"/></svg></span>Condiciones</h2>
+      <p>Los datos son de Eurostat, la Plataforma de Contratación del Sector Público, la Base de Datos Nacional de Subvenciones y la OCDE, y se reutilizan según sus condiciones: la <a href="https://ec.europa.eu/eurostat/about-us/policies/copyright">política de reutilización de Eurostat</a>, la <a href="https://www.boe.es/buscar/act.php?id=BOE-A-2007-20555">ley de reutilización de la información del sector público</a> para las fuentes españolas y los <a href="https://www.oecd.org/en/about/terms-conditions.html">términos de la OCDE</a>. hucha no está vinculada a ninguno de ellos ni a ningún organismo público, partido o empresa. Las cifras son informativas: para decisiones, consulta las fuentes oficiales.</p>
       <p id="actualizado"></p>
     </section>
   </main>
 
   <footer class="envoltorio pie">
     <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
-    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. <a href="../fuentes/#t-error">¿Ves un error?</a> Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
   </footer>
 
   <script type="module" src="../assets/js/fuentes.js"></script>
