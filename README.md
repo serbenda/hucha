@@ -134,7 +134,7 @@ Buscador (todas las palabras, sin importar tildes ni mayúsculas), filtros por *
 
 ### 📖 Fuentes · [`/fuentes/`](https://hucha.bendi.dev/fuentes/)
 
-De dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), cómo se calcula el ticket, privacidad, cómo avisar de un error y condiciones de uso.
+Primero, **en pocas palabras** y con un **glosario** de las palabras que salen en la web (PIB, créditos, obligaciones, acuerdo marco…), para quien no sabe de economía. Después, el detalle: de dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), el presupuesto, la Lupa, cómo se calcula el ticket, privacidad y cómo avisar de un error. Al final, el **aviso legal**: quién está detrás, qué es y qué no es, reutilización de datos públicos (Ley 37/2007), exactitud y responsabilidad, datos personales (minimización de personas físicas, cómo pedir que se retire algo), propiedad intelectual, enlaces y ley aplicable.
 
 ---
 

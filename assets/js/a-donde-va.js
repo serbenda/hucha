@@ -2,6 +2,7 @@
 
 import { cargarVista } from './datos.js';
 import { bloques } from './graficos.js';
+import { colorPartida } from './colores.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, delPib } from './formato.js';
 
@@ -70,6 +71,20 @@ function desglose(items, porHabitante, deQue) {
     .join('')}</ul>`;
 }
 
+/**
+ * En qué se va cada partida, a la vista sin abrirla: una barra tan larga como la partida (frente a la mayor),
+ * partida en sus grupos (tonos de su color, del más grande al más pequeño), y los tres mayores escritos debajo.
+ */
+function composicion(grupos, largo = 1) {
+  const lista = grupos.filter((g) => g.cuota > 0.005);
+  if (lista.length < 2) return '';
+  const tramos = lista
+    .map((g, k) => `<i style="--ancho: ${(g.cuota * 100).toFixed(2)}%; --tono: ${Math.max(28, 100 - k * 16)}%" title="${g.nombre}: ${porcentaje(g.cuota)}"></i>`)
+    .join('');
+  const texto = lista.slice(0, 3).map((g) => `${g.nombre} <b>${porcentaje(g.cuota)}</b>`).join(' · ');
+  return `<span class="partida-composicion" aria-hidden="true" style="--largo: ${(largo * 100).toFixed(1)}%"><span>${tramos}</span></span><span class="partida-grupos">${texto}${lista.length > 3 ? ' · …' : ''}</span>`;
+}
+
 function comparar(es, ue) {
   if (es === null || ue === null || !(ue > 0)) return '';
   const r = es / ue;
@@ -100,6 +115,7 @@ try {
       const li = document.createElement('li');
       li.className = 'partida';
       li.id = `p-${p.id}`;
+      li.style.setProperty('--c', colorPartida(p.id));
       const { serie, grupos, tipos } = p;
       const esPib = serie.at(-1)?.es ?? null;
       const uePib = serie.at(-1)?.ue ?? null;
@@ -107,7 +123,7 @@ try {
         <summary>
           <span class="partida-nombre"><span class="insignia">${icono(ICONO_PARTIDA[p.id])}</span><span>${p.nombre}</span></span>
           <span class="partida-euros">${euros(p.cuota * porPersona)}<small>${porcentaje(p.cuota)} del gasto</small></span>
-          <span class="partida-barra" aria-hidden="true"><i style="--ancho: ${((p.cuota / mayor) * 100).toFixed(1)}%"></i></span>
+          ${composicion(grupos, p.cuota / mayor) || `<span class="partida-barra" aria-hidden="true"><i style="--ancho: ${((p.cuota / mayor) * 100).toFixed(1)}%"></i></span>`}
         </summary>
         <div class="partida-detalle">
           <p>${p.que}</p>
@@ -123,10 +139,10 @@ try {
   );
 
   $('mapa').innerHTML = bloques(
-    lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${euros(p.cuota * porPersona)} · ${porcentaje(p.cuota)}`, href: `#p-${p.id}` })),
+    lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${euros(p.cuota * porPersona)} · ${porcentaje(p.cuota)}`, href: `#p-${p.id}`, color: colorPartida(p.id) })),
     {
       titulo: `Gasto público de ${año} por partidas, en euros por habitante`,
-      otros: { minimo: 0.035, nombre: (n) => `Otras ${n} partidas`, texto: (v) => `${euros(v * porPersona)} · ${porcentaje(v)}`, href: '#t-partidas' },
+      otros: { minimo: 0.035, nombre: (n) => `Otras ${n} partidas`, texto: (v) => `${euros(v * porPersona)} · ${porcentaje(v)}`, href: '#t-partidas', color: 'var(--serie-otros)' },
     }
   );
   // Un enlace a una partida (#p-sanidad) la abre

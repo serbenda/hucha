@@ -64,7 +64,7 @@ export function vistaADondeVa(d) {
 /** Quién gasta: cuánto gasta cada administración y el reparto de cada función. */
 export function vistaQuienGasta(d) {
   const b = base(d);
-  return { ...b, administraciones: gastoPorAdministracion(d, b.año), funciones: reparto(d, b.año) };
+  return { ...b, poblacion: d.poblacion?.[b.año] ?? null, administraciones: gastoPorAdministracion(d, b.año), funciones: reparto(d, b.año) };
 }
 
 export const VISTAS = { portada: vistaPortada, 'a-donde-va': vistaADondeVa, 'quien-gasta': vistaQuienGasta };

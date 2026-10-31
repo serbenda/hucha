@@ -68,7 +68,7 @@ export function bloques(items, { ancho = 100, alto = 62, titulo = '', otros = nu
     const pequeños = lista.filter((x) => x.valor / total < otros.minimo);
     if (pequeños.length > 1) {
       const valor = pequeños.reduce((t, x) => t + x.valor, 0);
-      lista = [...lista.filter((x) => !pequeños.includes(x)), { id: 'otros', nombre: otros.nombre(pequeños.length, pequeños), valor, texto: otros.texto(valor), href: otros.href }];
+      lista = [...lista.filter((x) => !pequeños.includes(x)), { id: 'otros', nombre: otros.nombre(pequeños.length, pequeños), valor, texto: otros.texto(valor), href: otros.href, color: otros.color }];
     }
   }
   const area = ancho * alto;
@@ -112,11 +112,12 @@ export function bloques(items, { ancho = 100, alto = 62, titulo = '', otros = nu
       const grande = r.w * r.h > area * 0.035;
       const etiqueta = `${r.nombre}: ${r.texto}`;
       const estilo = `left:${pct(r.x, ancho)};top:${pct(r.y, alto)};width:${pct(r.w, ancho)};height:${pct(r.h, alto)}`;
-      const clase = `g-bloque${i < 3 ? ' fuerte' : ''}${grande ? '' : ' pequeno'}`;
+      const clase = `g-bloque${r.color ? ' con-color' : i < 3 ? ' fuerte' : ''}${grande ? '' : ' pequeno'}`;
+      const color = r.color ? `;--c:${r.color}` : '';
       const dentro = grande ? `<span class="g-bloque-nombre">${esc(r.nombre)}</span><span class="g-bloque-cifra">${esc(r.texto)}</span>` : '';
       return r.href
-        ? `<a class="${clase}" href="${esc(r.href)}" style="${estilo}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</a>`
-        : `<span role="img" class="${clase}" style="${estilo}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</span>`;
+        ? `<a class="${clase}" href="${esc(r.href)}" style="${estilo}${color}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</a>`
+        : `<span role="img" class="${clase}" style="${estilo}${color}" title="${esc(etiqueta)}" aria-label="${esc(etiqueta)}">${dentro}</span>`;
     })
     .join('')}</div>`;
 }
@@ -172,4 +173,52 @@ export function lineasDelAño(series, { titulo = '', referencia = true } = {}) {
     <div class="g-eje g-eje-meses" aria-hidden="true">${meses.map((m, i) => `<span style="left: ${x(i + 1)}%">${i % 2 === 0 ? m : ''}</span>`).join('')}</div>
     <figcaption class="leyenda">${series.map((s) => `<span><i class="g-muestra ${s.clase ?? ''}"></i>${esc(s.nombre)}</span>`).join('')}${referencia ? '<span><i class="g-muestra g-referencia"></i>Al mismo ritmo todo el año</span>' : ''}</figcaption>
   </figure>`;
+}
+
+/**
+ * Cien cuadrados («de cada 100 €»): cada cuadrado es un euro de cada cien, del color de su partida.
+ * items: [{ id, nombre, valor (parte del total, 0-1), color (CSS), texto, href?, icono? }], ya en el orden en que
+ * se quieren pintar. Los cuadrados se reparten por el método del mayor resto, para que sumen siempre 100.
+ * Al lado, la leyenda con cada partida, su color, su cifra y un enlace a su detalle.
+ */
+export function cien(items, { titulo = '' } = {}) {
+  const total = items.reduce((t, x) => t + x.valor, 0);
+  if (!total) return '';
+  const exactos = items.map((x) => (x.valor / total) * 100);
+  const cuadros = exactos.map(Math.floor);
+  let faltan = 100 - cuadros.reduce((t, n) => t + n, 0);
+  exactos
+    .map((v, i) => [v - Math.floor(v), i])
+    .sort((a, b) => b[0] - a[0])
+    .forEach(([, i]) => {
+      if (faltan > 0) {
+        cuadros[i]++;
+        faltan--;
+      }
+    });
+  const celdas = items.flatMap((x, i) => Array.from({ length: cuadros[i] }, () => `<i style="--c: ${x.color}" title="${esc(`${x.nombre}: ${x.texto}`)}" data-de="${esc(x.id)}"></i>`));
+  return `<div class="g-cien">
+    <div class="g-cien-rejilla" role="img" aria-label="${esc(`${titulo}: ${items.map((x) => `${x.nombre} ${x.texto}`).join(', ')}`)}">${celdas.join('')}</div>
+    <ul class="g-cien-leyenda">${items
+      .map((x) => {
+        const dentro = `<i class="g-cien-muestra" style="--c: ${x.color}" aria-hidden="true"></i><span class="g-cien-nombre">${esc(x.nombre)}${x.nota ? `<small>${esc(x.nota)}</small>` : ''}</span><b>${esc(x.texto)}</b>`;
+        return `<li data-de="${esc(x.id)}">${x.href ? `<a href="${esc(x.href)}">${dentro}</a>` : `<span>${dentro}</span>`}</li>`;
+      })
+      .join('')}</ul>
+  </div>`;
+}
+
+/** Al pasar por una partida de la leyenda (o por un cuadrado), se resaltan sus cuadrados y su línea. */
+export function activarCien(caja) {
+  const g = caja.querySelector('.g-cien');
+  if (!g) return;
+  const marcar = (id) => {
+    if (id) g.dataset.activo = id;
+    else delete g.dataset.activo;
+    g.querySelectorAll('[data-de]').forEach((el) => el.classList.toggle('activo', el.dataset.de === id));
+  };
+  g.addEventListener('pointerover', (e) => marcar(e.target.closest('[data-de]')?.dataset.de ?? ''));
+  g.addEventListener('pointerleave', () => marcar(''));
+  g.addEventListener('focusin', (e) => marcar(e.target.closest('[data-de]')?.dataset.de ?? ''));
+  g.addEventListener('focusout', () => marcar(''));
 }
