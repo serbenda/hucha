@@ -146,7 +146,7 @@ async function subvenciones() {
     for (let pagina = 0; pagina < 10; pagina++) {
       const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json' });
       const importes = (json?.content ?? []).map((c) => c.importe ?? 0);
-      if (importes.some((v, k) => k > 0 && v > importes[k - 1] + 0.01)) throw new Error('la API no devuelve las concesiones ordenadas por importe');
+      if (importes.some((v, k) => k > 0 && v > importes[k - 1] + 0.01)) throw new Error(`la API no devuelve las concesiones ordenadas por importe (${importes.slice(0, 5).join(', ')}…)`);
       const lote = parsearConcesiones(json);
       for (const c of lote) if (c.i >= UMBRAL_SUBVENCIONES) todas.set(c.id, c);
       const ultimo = json?.content?.at(-1)?.importe ?? 0;

@@ -105,7 +105,8 @@ test('subvenciones: sin personas físicas, con convocatoria y nivel', () => {
   );
   const u = new URL(urlConcesiones('2026-10-01', '2026-10-31'));
   assert.equal(u.searchParams.get('fechaDesde'), '01/10/2026');
-  assert.equal(u.searchParams.get('sort'), 'importe,desc');
+  assert.equal(u.searchParams.get('order'), 'importe');
+  assert.equal(u.searchParams.get('direccion'), 'desc');
 });
 
 test('ayuda: SDMX genérico a millones de dólares por país', () => {

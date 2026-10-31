@@ -55,6 +55,9 @@ jobs:
       - name: Lupa (contratos, subvenciones y ayuda a otros países)
         # Cada fuente es independiente; si una falla, se queda su versión anterior
         timeout-minutes: 30
+        env:
+          # En las PR basta con unas pocas páginas de contratos para comprobar que todo funciona
+          LUPA_PAGINAS: ${{ github.event_name == 'pull_request' && '3' || '40' }}
         run: npm run lupa
 
       - name: Comprobar que hay datos
