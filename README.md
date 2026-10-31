@@ -135,7 +135,7 @@ De dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada d
 | [Eurostat `demo_gind`](https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table) | Población media anual, para los euros por habitante | Anual | Cada día |
 | [Plataforma de Contratación del Sector Público](https://contrataciondelestado.es/) | Contratos adjudicados desde 1 M€, de los órganos que publican en ella y de las plataformas autonómicas y locales que se agregan | Continuo | Cada día; el histórico crece solo |
 | [BDNS · Infosubvenciones](https://www.infosubvenciones.es/) | Subvenciones concedidas desde 1 M€ a empresas y entidades, últimos 12 meses | Continuo | Cada día |
-| [OCDE · DAC2A](https://data-explorer.oecd.org/) | Ayuda oficial al desarrollo de España por país receptor | Anual (finales del año siguiente) | Cada día |
+| [OCDE · CRS](https://data-explorer.oecd.org/) | Ayuda oficial al desarrollo de España por país, por sector y proyecto a proyecto | Anual (finales del año siguiente) | Cada día |
 | [Agencia Tributaria](https://www3.agenciatributaria.gob.es/static_files/Sede/Programas_ayuda/Retenciones/2026/ALGORITMO_2026.pdf) y orden de cotización (BOE) | Reglas del IRPF y de las cotizaciones de 2026, para el ticket | Anual | A mano, cada enero |
 
 Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto. Llega con retraso: los datos de un año salen a principios del año siguiente al siguiente, y el último año va marcado como provisional.
@@ -160,8 +160,11 @@ Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto. Llega c
   - `sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom`: los órganos que publican directamente (Estado y muchos más).
   - `sindicacion_1044/PlataformasAgregadasSinMenores.atom`: las plataformas propias de comunidades y ayuntamientos que se agregan a la estatal, sin contratos menores.
 - Cada página pesa unos 7 MB y enlaza a la anterior con `rel="next"`: se leen de lo más nuevo hacia atrás.
-- En cada ejecución, por cada feed: primero lo nuevo, desde la portada hasta lo ya leído; luego, con las páginas y el tiempo que queden, se sigue **rellenando hacia atrás**. El punto por el que va cada feed (`cursores`) se guarda en el propio `contratos.json`.
-- Límites por ejecución: `LUPA_PAGINAS` páginas por feed (40 en la publicación diaria, 3 en las PR) y 9 minutos por feed.
+- **Lo nuevo, cada día**: desde la portada del feed hasta lo ya leído. Suelen ser pocas páginas.
+- **El mes en curso**: hacia atrás con las páginas del feed, hasta el día 1.
+- **El histórico**: con los **ficheros mensuales** de la Plataforma (`…_AAAAMM.zip`, un ZIP por mes con todas las páginas de ese mes: unos 200 MB y unos 60.000 movimientos). Se baja uno por feed y ejecución (`LUPA_MESES`), del más reciente al más antiguo, y se lee página a página con `unzip`, sin descomprimirlo entero.
+- El punto por el que va cada feed (`cursores`: lo más nuevo leído, hasta dónde llegó el feed y el siguiente mes del histórico) se guarda en el propio `contratos.json` del almacén.
+- Límites por ejecución: `LUPA_PAGINAS` páginas del feed (40 en la publicación diaria, 3 en las PR), 9 minutos por feed y un mes del histórico.
 - Se guardan hasta **2 años** por fecha de adjudicación.
 </details>
 
@@ -174,11 +177,15 @@ Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto. Llega c
 </details>
 
 <details>
-<summary><strong>OCDE: ayuda oficial al desarrollo</strong></summary>
+<summary><strong>OCDE: ayuda oficial al desarrollo (CRS)</strong></summary>
 
-- SDMX: `https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,/ESP..206.USD.V?startPeriod=AAAA` (donante España, medida 206 = ayuda oficial total neta, dólares corrientes).
-- Se usa la respuesta XML genérica: con `format=csv` el servidor da error 500.
-- Solo se quedan los **países** (no regiones ni «sin especificar»), con `esPais()` de `paises.js`. Los nombres en castellano salen de `Intl.DisplayNames`.
+- El **Creditor Reporting System** recoge, proyecto a proyecto, la ayuda que declara cada país donante. Se pide al servicio de la OCDE para ayuda al desarrollo (`sdmx.oecd.org/dcd-public`), flujo `DSD_CRS@DF_CRS` versión 1.7, en CSV con etiquetas.
+- Dimensiones de la clave: donante, receptor, sector, medida, canal, modalidad, tipo de flujo, base de precios, nivel de detalle, identificador y unidad.
+- **Totales** (`urlCrs`): `ESP...100._T._T.D.V._T..`: España, todos los receptores y sectores, ayuda oficial (100), todos los canales y modalidades, desembolsos (D), dólares corrientes (V), agregados (_T). Unos 3,5 MB por año.
+- **Proyectos** (`urlCrsProyectos`): `ESP...100...D.V.DD..` del último año: los microdatos, con título, descripción, sector, agencia y canal. Se leen por trozos (`lectorCsv`) y se guardan los 25 mayores de cada país.
+- **Sectores**: los códigos de la OCDE se agrupan en 26 sectores que no se solapan (`SECTORES_AYUDA`): educación, salud, agua, gobierno y derechos, emergencias, refugiados acogidos en España… El total de España por sector sale del receptor `DPGC` (países en desarrollo, total), que incluye lo que va a regiones y sin país concreto.
+- Solo se quedan como países los receptores que lo son (`esPais()`), con su nombre en castellano por `Intl.DisplayNames`. Las agencias y los canales se traducen (AECID, ayuntamientos, ONG y sociedad civil…).
+- La OCDE limita las consultas (unas 20 por hora): la Action hace dos al día.
 </details>
 
 ---
@@ -258,11 +265,18 @@ Concesiones desde 1 millón de € de los últimos 12 meses. Para cada una: qui�
 
 ### Ayuda a otros países
 
-Desembolsos netos de ayuda oficial al desarrollo por país, en millones de dólares de cada año, de los últimos años con datos. Solo lo asignado a un país concreto: la ayuda a organismos internacionales y a regiones va aparte y no aparece.
+Desembolsos de ayuda oficial al desarrollo, en millones de dólares de cada año:
+
+- **En qué se da**: toda la ayuda de España por sector, también la que no va a un país concreto. Pulsando un sector, la lista enseña a qué países va lo de ese sector.
+- **A qué países**: los que más reciben, y la lista completa con su evolución.
+- **Año a año**: el total de cada año.
+- **Cada país**, al pulsarlo: en qué sectores se le da, su evolución y sus **mayores proyectos** del último año (título, descripción, sector, quién lo da y por qué canal). Se puede compartir: `?tab=ayuda&pais=MAR`.
 
 ### Cómo se busca
 
-- Todo en el navegador, sin servidor: al abrir solo se descarga un fichero pequeño de **portada** (los 40 mayores y los totales). El completo se descarga al buscar, filtrar o pulsar «Ver más», y empieza a bajar en cuanto tocas el buscador.
+- Todo en el navegador, sin servidor. Al abrir solo se descarga el **índice** (unos KB): los 40 mayores, los totales por tema, por administración y por mes, y la lista de meses. Con él se pinta el **panorama** (gráficos por tema, quién paga y mes a mes) y la primera página.
+- Al buscar, filtrar o pulsar «Ver más» se piden los **ficheros de cada mes**, todos a la vez, y los resultados van saliendo según llegan («Buscando en 12 de 24 meses…»). Con un solo filtro, el total sale al momento del índice. Los meses empiezan a bajar en cuanto tocas el buscador o los filtros.
+- Pulsar una barra del panorama filtra la lista por ese tema o esa administración.
 - Se buscan **todas las palabras** en título, órgano, empresas, lugar, tipo y finalidad, sin importar tildes ni mayúsculas, y se ordena por importe.
 - El estado (pestaña, búsqueda, tema y nivel) va en la dirección: `?tab=subvenciones&q=…&tema=…&nivel=…`.
 
@@ -297,9 +311,10 @@ flowchart LR
 | Paso | Qué hace | Si falla |
 |---|---|---|
 | Tests | `npm test` | No sigue |
-| Recuperar lo publicado | Descarga `data/cofog.json` y `data/lupa/*.json` de la web | Empieza de cero |
+| Recuperar el almacén | Descarga los datos acumulados de la release `almacen` (si aún no existe, de la web publicada) | Empieza de cero |
 | Eurostat | `npm run datos` | Se queda lo anterior y queda anotado |
 | Lupa | `npm run lupa` (30 minutos como mucho) | Cada parte por separado: se queda su versión anterior |
+| Escaparate | `npm run escaparate`: del almacén, lo que descarga cada página (vistas, índices y meses) | No sigue |
 | Comprobar que hay datos | Que existan y que no sean de ejemplo | No sigue |
 | Resumen | Anotaciones con las cifras clave (partidas, quién gasta, mayores contratos…) para revisarlas en la PR sin abrir la web | — |
 | Herramientas | Playwright, axe, Lighthouse y la fuente Archivo (solo para construir: la web no tiene dependencias) | No sigue |
@@ -308,6 +323,7 @@ flowchart LR
 | Tests de navegador | Playwright y axe | No sigue |
 | Lighthouse | Ver [calidad](#calidad-tests-accesibilidad-y-rendimiento) | Según la categoría |
 | Capturas | Las del README, con los datos del día | Siguen las anteriores |
+| Guardar el almacén | Sube los datos acumulados a la release `almacen` (solo desde `main`, y aunque la web no llegue a publicarse) | Aviso |
 | Publicar | GitHub Pages (solo desde `main`) | Aviso |
 | Avisar | Abre o cierra el issue `datos` | — |
 
@@ -327,7 +343,7 @@ Los módulos de `assets/js/` son los mismos en el navegador y en Node: **lo que 
 |---|---|
 | `tests/cofog.test.js` | Lectura de JSON-stat; URLs de Eurostat; que las partidas cubren el 100 % sin solaparse; «Sin detalle»; datos insuficientes; gasto por persona; serie frente a la UE; quién gasta; nombres de todos los grupos; en qué se va y cómo se gasta |
 | `tests/impuestos.test.js` | Escala por tramos; cotizaciones y base máxima; reducción por trabajo; IRPF cero hasta el salario mínimo y sin saltos; 30.000 € de ejemplo; que crece con el sueldo; formatos |
-| `tests/lupa.test.js` | Lectura del feed de contratos con lotes; personas físicas; umbral; nivel por jerarquía; temas y finalidad; subvenciones; ayuda (SDMX); búsqueda; botones de temas; fichero de portada; acuerdos marco; iconos |
+| `tests/lupa.test.js` | Lectura del feed de contratos con lotes; personas físicas; umbral; nivel por jerarquía; temas y finalidad; subvenciones; ayuda de la OCDE (lector de CSV, países, sectores y proyectos); búsqueda; botones de temas; índice y meses; acuerdos marco; iconos |
 
 ### Tests de navegador (`npm run e2e`, Playwright)
 
@@ -357,10 +373,30 @@ Cada parte anota en `data/estado.json` si ha ido bien (`eurostat`, `eurostat-tip
 
 ## Los ficheros de datos
 
-Se generan en la Action y se publican con la web, en `https://hucha.bendi.dev/data/…`.
+Los datos están separados en dos sitios:
+
+| | Qué es | Dónde vive | Quién lo usa |
+|---|---|---|---|
+| **Almacén** (`almacen/`) | Los datos completos y acumulados: todo Eurostat, todos los contratos con sus cursores, todas las subvenciones, la ayuda con sus proyectos | En la [release `almacen`](https://github.com/serbenda/hucha/releases/tag/almacen) del repositorio. No se publica en la web ni crea commits | La Action, para seguir acumulando cada día |
+| **Escaparate** (`data/`) | Lo que enseña cada página, ya calculado | En la web, `https://hucha.bendi.dev/data/…` | El navegador |
+
+Así la web descarga solo lo que enseña: unos pocos KB por página en lugar de las tablas enteras, y la Lupa pesa lo mismo al abrirse aunque el histórico crezca. Lo prepara `scripts/escaparate.mjs` con `assets/js/vistas.js` y las funciones de índice de `lupa-datos.js`.
+
+```
+data/
+├── vistas/portada.json        Tu ticket: cuotas de cada partida y cifras de todos (≈3 KB)
+├── vistas/a-donde-va.json     Cada partida con su detalle, cómo se gasta y su serie frente a la UE (≈20 KB)
+├── vistas/quien-gasta.json    Administraciones y reparto de cada función (≈4 KB)
+├── lupa/contratos.json        Índice: los 40 mayores, totales por tema, por administración y por mes
+├── lupa/contratos/AAAA-MM.json   Los contratos de cada mes
+├── lupa/subvenciones.json · lupa/subvenciones/AAAA-MM.json
+├── lupa/ayuda.json            Totales por año, por país y por sector
+├── lupa/ayuda/<país>.json     Cada país: sus sectores, su evolución y sus mayores proyectos
+└── estado.json                Si cada fuente ha ido bien
+```
 
 <details>
-<summary><strong><code>data/cofog.json</code></strong>: gasto y población</summary>
+<summary><strong><code>almacen/cofog.json</code></strong>: gasto y población</summary>
 
 | Clave | Contenido |
 |---|---|
@@ -376,9 +412,9 @@ Se generan en la Action y se publican con la web, en `https://hucha.bendi.dev/da
 </details>
 
 <details>
-<summary><strong><code>data/lupa/contratos.json</code></strong> y <code>contratos-portada.json</code></summary>
+<summary><strong><code>almacen/contratos.json</code></strong> y su índice en <code>data/lupa/contratos.json</code></summary>
 
-`{ actualizado, umbral, desde, cursores, contratos: [...] }`. La portada no lleva `cursores`, sí `total: { n, suma, marcos: { n, suma } }`, y solo los 40 mayores. Claves cortas para que pese menos:
+Almacén: `{ actualizado, umbral, desde, cursores, contratos: [...] }`. Índice: sin `cursores`, con `total`, `porTema` y `porNivel` (cada uno `{ n, suma, marcos: { n, suma } }`), `meses: [{ mes, n, suma }]` y los 40 mayores. Cada mes: `{ mes, contratos: [...] }`. Claves cortas para que pese menos:
 
 | Clave | Contenido | Clave | Contenido |
 |---|---|---|---|
@@ -393,9 +429,9 @@ Se generan en la Action y se publican con la web, en `https://hucha.bendi.dev/da
 </details>
 
 <details>
-<summary><strong><code>data/lupa/subvenciones.json</code></strong> y <code>subvenciones-portada.json</code></summary>
+<summary><strong><code>almacen/subvenciones.json</code></strong> y su índice en <code>data/lupa/subvenciones.json</code></summary>
 
-`{ actualizado, umbral, subvenciones: [...] }` (la portada, con `total`):
+`{ actualizado, umbral, subvenciones: [...] }`; el índice y los meses, como los de contratos:
 
 | Clave | Contenido | Clave | Contenido |
 |---|---|---|---|
@@ -408,9 +444,11 @@ Se generan en la Action y se publican con la web, en `https://hucha.bendi.dev/da
 </details>
 
 <details>
-<summary><strong><code>data/lupa/ayuda.json</code></strong> y <code>data/estado.json</code></summary>
+<summary><strong>Ayuda (<code>almacen/ayuda.json</code>)</strong> y <code>data/estado.json</code></summary>
 
-- `ayuda.json`: `{ actualizado, unidad: "millones de dólares", años: [...], paises: { ISO3: { año: valor } } }`
+- Almacén: `{ actualizado, unidad: "millones de dólares", años, totales: { año: total }, sectores: { año: { sector: valor } }, paises: { ISO3: { año: total } }, porPais: { ISO3: { año: { sector: valor } } }, proyectosAño, proyectos: { ISO3: [{ v, t, d, s, a, c }] } }`
+- Proyectos: `v` importe (millones de $), `t` título, `d` descripción, `s` sector, `a` quién lo da, `c` canal.
+- Índice (`data/lupa/ayuda.json`): sin `porPais` ni `proyectos`, con `sectoresPais` (los sectores de cada país del último año). Cada país (`data/lupa/ayuda/<ISO3>.json`): `{ pais, años, total, sectores, proyectosAño, proyectos }`.
 - `estado.json`: `{ fuente: { ok, detalle, fecha } }`
 </details>
 
@@ -437,13 +475,16 @@ hucha/
 │       ├── paises.js             Códigos y nombres de países
 │       ├── iconos.js             Los iconos de la web y qué icono lleva cada cosa
 │       ├── formato.js            Números, euros y fechas en castellano
-│       ├── datos.js              Carga de data/cofog.json y bandas de aviso
+│       ├── vistas.js             Lo que enseña cada página, ya calculado (lo usa la Action)
+│       ├── graficos.js           Gráficos en HTML: barras, columnas y mapa de bloques
+│       ├── datos.js              Carga la vista de cada página y las bandas de aviso
 │       ├── comun.js              Service worker y contador de visitas
 │       └── portada.js · a-donde-va.js · quien-gasta.js · lupa.js · fuentes.js
 │                                 Un script por página
 ├── scripts/
 │   ├── fetch-cofog.mjs           Descarga Eurostat (npm run datos)
 │   ├── fetch-lupa.mjs            Descarga la Lupa (npm run lupa)
+│   ├── escaparate.mjs            Del almacén, lo que descarga la web (npm run escaparate)
 │   ├── estado.mjs                Anota si cada parte ha ido bien
 │   ├── ejemplo.mjs               Datos de EJEMPLO para trabajar sin conexión
 │   ├── vendor.mjs                Copia la fuente Archivo a vendor/
@@ -466,6 +507,7 @@ hucha/
 
 - **Tipografía**: [Archivo](https://fonts.google.com/specimen/Archivo) (variable, con anchura), servida desde la propia web y precargada para que el texto no salte.
 - **Color**: papel claro, tinta azul noche y cobre como acento. Las cuatro administraciones tienen color propio, revisado para tener contraste suficiente con el texto encima. Todo con variables CSS en `:root`, redefinidas para el modo oscuro.
+- **Gráficos**: propios, en HTML y CSS, sin librerías (`assets/js/graficos.js`): barras, columnas y mapa de bloques. Todos son de una sola serie, en cobre, con la cifra escrita al lado: no hace falta distinguir colores para leerlos. Cada marca lleva su texto completo al pasar el ratón y para lectores de pantalla, y se puede pulsar para ir al detalle (una partida, un tema, una administración, un sector o un país).
 - **Iconos**: propios, de trazo, en `assets/js/iconos.js`. Cada sección del menú, partida, función, administración, pestaña y tema de la Lupa lleva el suyo. Toman el color del texto y son decorativos (`aria-hidden`): el texto de al lado ya dice lo que es. Un test comprueba que los del HTML coinciden con los de `iconos.js` y que no falta ninguno.
 - **Móvil primero**: en el móvil el menú pasa a iconos con su nombre debajo y los temas de la Lupa a una fila que se desliza.
 - **Sin saltos al cargar**: las tarjetas de cifras tienen altura fija y hay esqueletos mientras llegan los datos.
@@ -479,9 +521,10 @@ Node 20 o superior. Para la web no hace falta instalar nada.
 
 ```bash
 npm test          # tests unitarios
-npm run datos     # descarga los datos reales de Eurostat a data/
-npm run lupa      # descarga los datos de la Lupa a data/lupa/ (LUPA_PAGINAS=3 para ir rápido)
-npm run ejemplo   # o, sin conexión, datos de EJEMPLO (la web lo avisa con una banda)
+npm run datos       # descarga los datos reales de Eurostat al almacén (almacen/)
+npm run lupa        # descarga la Lupa al almacén (LUPA_PAGINAS=3 LUPA_MESES=0 para ir rápido)
+npm run escaparate  # prepara data/, lo que descarga la web
+npm run ejemplo     # o, sin conexión, almacén y escaparate de EJEMPLO (la web lo avisa con una banda)
 npm run dev       # sirve la web en local
 ```
 
@@ -531,7 +574,10 @@ npm run e2e && npm run lighthouse && npm run capturas
 - [x] Detalle de cada partida: en qué se va, cómo se gasta y frente a Europa
 - [x] La Lupa: contratos, subvenciones y ayuda a otros países
 - [x] Acuerdos marco aparte
-- [ ] Dos años de contratos desde el primer día, con los ficheros mensuales de la Plataforma
+- [x] Datos ligeros: almacén aparte y escaparate por página
+- [x] Dos años de contratos con los ficheros mensuales de la Plataforma (se completan solos, un mes por día)
+- [x] Gráficos: mapa de bloques de las partidas y panorama de la Lupa
+- [x] Ayuda a otros países por sector y proyecto a proyecto
 - [ ] **Europa**: fondos recibidos (Next Generation, FEDER, FSE+, PAC) y para qué, aportación de España, saldo neto y deuda con la UE (préstamos del Plan de Recuperación y SURE)
 - [ ] **Desviaciones**: presupuestado frente a pagado por ministerio y programa (ejecución mensual de la IGAE), fondos europeos asignados, recibidos y ejecutados, licitado frente a adjudicado
 - [ ] Presupuesto del Estado por programas (por ejemplo, infraestructuras ferroviarias)

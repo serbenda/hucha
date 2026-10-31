@@ -216,6 +216,25 @@ export function urlConcesiones(desde, hasta, pagina = 0, tamaño = 200) {
   return `https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?${p}`;
 }
 
+
+// ---------------------------------------------------------------------------
+// Búsqueda (navegador)
+
+/** Filtra por palabras (todas deben aparecer, en cualquier campo de texto) y ordena por importe. */
+export function buscar(lista, consulta, { campos, importe, tema } = {}) {
+  const palabras = normalizar(consulta).split(/\s+/).filter((p) => p.length > 1);
+  return lista
+    .filter((x) => !tema || x.te?.includes(tema))
+    .filter((x) => {
+      if (!palabras.length) return true;
+      const t = normalizar(campos.map((c) => (Array.isArray(x[c]) ? x[c].join(' ') : x[c] ?? '')).join(' '));
+      return palabras.every((p) => t.includes(p));
+    })
+    .sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+}
+
+export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0), 0);
+
 /** Concesiones de una respuesta de la API, sin personas físicas. */
 export function parsearConcesiones(json) {
   return (json?.content ?? [])
@@ -239,48 +258,249 @@ export function parsearConcesiones(json) {
 }
 
 // ---------------------------------------------------------------------------
-// Ayuda a otros países (OCDE, desembolsos de ayuda oficial al desarrollo de España)
+// Ayuda al desarrollo por país y sector (OCDE, Creditor Reporting System)
+// El CRS recoge, proyecto a proyecto, la ayuda oficial al desarrollo que declara España: a qué país, para qué
+// sector, quién la da y por qué canal. Se usa en dos consultas: los totales por país y sector (varios años) y los
+// proyectos del último año, para el detalle.
 
-export function urlAyuda(desde) {
-  return `https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_DAC2@DF_DAC2A,/ESP..206.USD.V?startPeriod=${desde}`;
-}
+const CRS = 'https://sdmx.oecd.org/dcd-public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,1.7';
+const CSV = 'format=csvfilewithlabels&dimensionAtObservation=AllDimensions';
+/** Totales de España de un año por país receptor y sector: AOD (100), desembolsos (D), dólares corrientes (V), agregados (_T).
+ * Año a año: pedir varios años de golpe hace que el servidor responda con error. */
+export const urlCrs = (año) => `${CRS}/ESP...100._T._T.D.V._T..?${CSV}&startPeriod=${año}&endPeriod=${año}`;
+/** Proyectos de España de un año (microdatos, DD). */
+export const urlCrsProyectos = (año) => `${CRS}/ESP...100...D.V.DD..?${CSV}&startPeriod=${año}&endPeriod=${año}`;
 
-/** SDMX genérico (XML) → [{ pais, año, valor }] en millones de dólares. */
-export function parsearAyuda(xml) {
-  const salida = [];
-  for (const serie of xml.split('<generic:Series>').slice(1)) {
-    const pais = serie.match(/id="RECIPIENT" value="([^"]+)"/)?.[1];
-    const mult = Number(serie.match(/id="UNIT_MULT" value="(-?\d+)"/)?.[1] ?? 6);
-    for (const obs of serie.split('<generic:Obs>').slice(1)) {
-      const año = obs.match(/<generic:ObsDimension[^>]*value="(\d{4})"/)?.[1];
-      const v = numero(obs.match(/<generic:ObsValue value="([^"]+)"/)?.[1]);
-      if (pais && año && v !== null) salida.push({ pais, año, valor: (v * 10 ** mult) / 1e6 });
-    }
+/** Sectores de la ayuda, agrupados para que se entiendan. No se solapan entre sí: su suma es el total. */
+export const SECTORES_AYUDA = {
+  110: 'Educación',
+  120: 'Salud',
+  130: 'Salud reproductiva y población',
+  140: 'Agua y saneamiento',
+  150: 'Gobierno, derechos y sociedad civil',
+  160: 'Empleo, vivienda, cultura y otros servicios sociales',
+  210: 'Transporte',
+  220: 'Comunicaciones',
+  230: 'Energía',
+  240: 'Banca y finanzas',
+  250: 'Empresas',
+  310: 'Agricultura, bosques y pesca',
+  320: 'Industria, minería y construcción',
+  330: 'Comercio y turismo',
+  410: 'Medio ambiente',
+  430: 'Desarrollo rural y urbano y otros',
+  510: 'Apoyo al presupuesto del país',
+  520: 'Ayuda alimentaria',
+  530: 'Otras ayudas en especie',
+  600: 'Deuda',
+  720: 'Emergencias',
+  730: 'Reconstrucción',
+  740: 'Prevención de desastres',
+  910: 'Gestión de la cooperación',
+  930: 'Refugiados acogidos en España',
+  998: 'Sin sector concreto',
+};
+
+/** Grupo de un código de sector del CRS (12220 → 120; 151 → 150; 72040 → 720). Los agregados (1000, 100…) no tienen. */
+export function grupoSector(codigo) {
+  const c = String(codigo ?? '');
+  if (SECTORES_AYUDA[c]) return c;
+  if (c.length === 5 || (c.length === 3 && !c.endsWith('00'))) {
+    const g = `${c.slice(0, 2)}0`;
+    return SECTORES_AYUDA[g] ? g : '998';
   }
-  return salida;
+  return null;
+}
+
+const AGENCIAS = {
+  'Spanish Agency for International Development Co-operation': 'AECID',
+  'Ministry of Foreign Affairs and Co-operation': 'Ministerio de Asuntos Exteriores',
+  'Ministry of Foreign Affairs': 'Ministerio de Asuntos Exteriores',
+  'Ministry of Industry and Energy': 'Ministerio de Industria',
+  'Ministry of Economy and Finance': 'Ministerio de Economía',
+  'Ministry of Economy': 'Ministerio de Economía',
+  'Ministry of Defense': 'Ministerio de Defensa',
+  'Ministry of Interior': 'Ministerio del Interior',
+  'Ministry of Health': 'Ministerio de Sanidad',
+  'Ministry of Education': 'Ministerio de Educación',
+  'Ministry of Agriculture': 'Ministerio de Agricultura',
+  'Others ministries': 'Otros ministerios',
+  'Other ministries': 'Otros ministerios',
+  Municipalities: 'Ayuntamientos',
+  'Public Universities': 'Universidades públicas',
+  Others: 'Otros',
+};
+const CANALES = {
+  10000: 'Sector público',
+  20000: 'ONG y sociedad civil',
+  30000: 'Alianzas público-privadas',
+  40000: 'Organismos multilaterales',
+  50000: 'Universidades y centros de investigación',
+  60000: 'Empresas privadas',
+  90000: 'Otros',
+};
+export const agencia = (nombre) => AGENCIAS[nombre] ?? nombre ?? '';
+export const canal = (codigo) => CANALES[String(codigo ?? '').slice(0, 1) + '0000'] ?? '';
+
+/**
+ * Lector de CSV por trozos (con comillas, comas y saltos de línea dentro de los campos), para leer ficheros
+ * grandes sin cargarlos enteros. Cada fila completa se entrega a alFila(campos).
+ */
+export function lectorCsv(alFila) {
+  let campo = '';
+  let fila = [];
+  let comillas = false;
+  let pendiente = false; // una comilla al final del trozo anterior, dentro de un campo entre comillas
+  const cerrar = () => {
+    fila.push(campo);
+    campo = '';
+  };
+  return {
+    trozo(texto) {
+      let i = 0;
+      const n = texto.length;
+      if (pendiente) {
+        pendiente = false;
+        if (texto[0] === '"') {
+          campo += '"';
+          i = 1;
+        } else comillas = false;
+      }
+      while (i < n) {
+        if (comillas) {
+          const j = texto.indexOf('"', i);
+          if (j === -1) {
+            campo += texto.slice(i);
+            return;
+          }
+          campo += texto.slice(i, j);
+          if (j + 1 === n) {
+            pendiente = true;
+            return;
+          }
+          if (texto[j + 1] === '"') {
+            campo += '"';
+            i = j + 2;
+          } else {
+            comillas = false;
+            i = j + 1;
+          }
+          continue;
+        }
+        // Fuera de comillas: hasta la siguiente coma, salto de línea o comilla
+        let j = i;
+        while (j < n) {
+          const c = texto.charCodeAt(j);
+          if (c === 44 || c === 10 || c === 34) break; // , \n "
+          j++;
+        }
+        if (j > i) campo += texto.slice(i, j);
+        if (j === n) return;
+        const c = texto[j];
+        if (c === '"') comillas = true;
+        else if (c === ',') cerrar();
+        else {
+          if (campo.endsWith('\r')) campo = campo.slice(0, -1);
+          cerrar();
+          alFila(fila);
+          fila = [];
+        }
+        i = j + 1;
+      }
+    },
+    fin() {
+      if (campo || fila.length) {
+        cerrar();
+        alFila(fila);
+      }
+    },
+  };
+}
+
+/** Acumula las filas del CRS (totales por país y sector) en { años, paises, sectores, porPais }. */
+export function acumuladorCrs() {
+  let cab = null;
+  const paises = {}; // ISO → año → total
+  const porPais = {}; // ISO → año → grupo → valor
+  const sectores = {}; // año → grupo → valor (todo lo que da España: países, regiones y sin especificar)
+  const totales = {}; // año → total
+  const años = new Set();
+  return {
+    fila(campos) {
+      if (!cab) {
+        cab = Object.fromEntries(campos.map((c, i) => [c, i]));
+        return;
+      }
+      const v = numero(campos[cab.OBS_VALUE]);
+      if (v === null) return;
+      const valor = (v * 10 ** Number(campos[cab.UNIT_MULT] || 6)) / 1e6;
+      const año = campos[cab.TIME_PERIOD];
+      const pais = campos[cab.RECIPIENT];
+      const sector = campos[cab.SECTOR];
+      años.add(año);
+      // DPGC: «países en desarrollo, total», la suma de todo lo que se reparte
+      if (pais === 'DPGC') {
+        if (sector === '1000') totales[año] = valor;
+        const g = SECTORES_AYUDA[sector] ? sector : null;
+        if (g) (sectores[año] ??= {})[g] = valor;
+        return;
+      }
+      if (!/^[A-Z]{3}$/.test(pais)) return;
+      if (sector === '1000') (paises[pais] ??= {})[año] = valor;
+      else if (SECTORES_AYUDA[sector]) ((porPais[pais] ??= {})[año] ??= {})[sector] = valor;
+    },
+    resultado: () => ({ años: [...años].sort(), totales, sectores, paises, porPais }),
+  };
+}
+
+// Copia independiente de un texto, para no retener en memoria el trozo grande del que salió
+const copia = (t) => (!t ? '' : globalThis.Buffer ? globalThis.Buffer.from(String(t).trim()).toString() : String(t).trim());
+
+/** Acumula los proyectos del CRS: los mayores de cada país. */
+export function acumuladorProyectos(porPais = 25) {
+  let cab = null;
+  const paises = {};
+  return {
+    fila(campos) {
+      if (!cab) {
+        cab = Object.fromEntries(campos.map((c, i) => [c, i]));
+        return;
+      }
+      const pais = campos[cab.RECIPIENT];
+      if (!/^[A-Z]{3}$/.test(pais)) return;
+      const v = numero(campos[cab.OBS_VALUE]);
+      if (!(v > 0)) return;
+      const lista = (paises[pais] ??= []);
+      lista.push({
+        v: Math.round(((v * 10 ** Number(campos[cab.UNIT_MULT] || 6)) / 1e6) * 1000) / 1000,
+        t: copia(campos[cab.PROJECT_TITLE] || campos[cab.SHORT_DESCRIPTION]).slice(0, 200),
+        d: copia(campos[cab.SHORT_DESCRIPTION]).slice(0, 400),
+        s: grupoSector(campos[cab.SECTOR]),
+        a: agencia(campos[cab.DONOR_AGENCY]),
+        c: canal(campos[cab.CHANNEL]),
+      });
+      // Se recorta de vez en cuando para no guardar en memoria todos los proyectos
+      if (lista.length > porPais * 4) {
+        lista.sort((x, y) => y.v - x.v);
+        lista.length = porPais;
+      }
+    },
+    resultado() {
+      for (const lista of Object.values(paises)) {
+        lista.sort((x, y) => y.v - x.v);
+        lista.length = Math.min(lista.length, porPais);
+        for (const p of lista) if (p.d === p.t) delete p.d;
+      }
+      return paises;
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Búsqueda (navegador)
-
-/** Filtra por palabras (todas deben aparecer, en cualquier campo de texto) y ordena por importe. */
-export function buscar(lista, consulta, { campos, importe, tema } = {}) {
-  const palabras = normalizar(consulta).split(/\s+/).filter((p) => p.length > 1);
-  return lista
-    .filter((x) => !tema || x.te?.includes(tema))
-    .filter((x) => {
-      if (!palabras.length) return true;
-      const t = normalizar(campos.map((c) => (Array.isArray(x[c]) ? x[c].join(' ') : x[c] ?? '')).join(' '));
-      return palabras.every((p) => t.includes(p));
-    })
-    .sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
-}
-
-export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0), 0);
-
-// ---------------------------------------------------------------------------
-// Portada: lo que la Lupa enseña nada más abrirse, en un fichero pequeño.
-// El fichero completo crece con el histórico; solo se pide al buscar, filtrar o ver más.
+// Escaparate de la Lupa: un índice pequeño y un fichero por mes.
+// El índice (los mayores, los totales por tema y por administración y la lista de meses) es lo que se descarga
+// al abrir la Lupa. Los meses se piden solo al buscar, filtrar o ver más, del más reciente al más antiguo,
+// así que la Lupa pesa lo mismo al abrirse aunque el histórico crezca.
 
 export const EN_PORTADA = 40;
 
@@ -290,9 +510,33 @@ export function totales(lista, importe) {
   return { n: lista.length, suma: suma(lista, importe) - suma(marcos, importe), marcos: { n: marcos.length, suma: suma(marcos, importe) } };
 }
 
-/** Del fichero completo de contratos o subvenciones, el de portada: los mayores y el total. */
-export function portadaDe(datos, clave, importe) {
+/** Mes (AAAA-MM) de un contrato o subvención: el de su fecha y, si no tiene, el de su última actualización. */
+export const mesDe = (x) => (x.f ?? x.up ?? '').slice(0, 7) || 'sin-fecha';
+
+/** Reparte una lista por meses: { 'AAAA-MM': [...] }, cada mes ordenado por importe. */
+export function porMes(lista, importe) {
+  const meses = {};
+  for (const x of lista) (meses[mesDe(x)] ??= []).push(x);
+  for (const m of Object.values(meses)) m.sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+  return meses;
+}
+
+/** El índice de la Lupa a partir de los datos completos del almacén. */
+export function indiceDe(datos, clave, importe) {
   const { cursores, [clave]: lista = [], ...resto } = datos;
   const orden = [...lista].sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
-  return { ...resto, total: totales(lista, importe), [clave]: orden.slice(0, EN_PORTADA) };
+  const agrupar = (claveDe) => {
+    const grupos = {};
+    for (const x of lista) for (const g of [claveDe(x)].flat().filter(Boolean)) (grupos[g] ??= []).push(x);
+    return Object.fromEntries(Object.entries(grupos).map(([g, xs]) => [g, totales(xs, importe)]));
+  };
+  const meses = porMes(lista, importe);
+  return {
+    ...resto,
+    total: totales(lista, importe),
+    porTema: agrupar((x) => x.te),
+    porNivel: agrupar((x) => x.n),
+    meses: Object.keys(meses).sort().reverse().map((mes) => ({ mes, n: meses[mes].length, suma: totales(meses[mes], importe).suma })),
+    [clave]: orden.slice(0, EN_PORTADA),
+  };
 }

@@ -13,7 +13,8 @@
     "lighthouse": "node scripts/lighthouse.mjs",
     "capturas": "node scripts/capturas.mjs",
     "imagenes": "node scripts/imagenes.mjs",
-    "lupa": "node scripts/fetch-lupa.mjs"
+    "lupa": "node scripts/fetch-lupa.mjs",
+    "escaparate": "node scripts/escaparate.mjs"
   },
   "engines": {
     "node": ">=20"

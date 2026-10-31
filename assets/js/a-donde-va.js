@@ -1,7 +1,7 @@
 // «A dónde va»: las partidas en euros por habitante, con su evolución frente a la UE.
 
-import { cargarDatos } from './datos.js';
-import { partidas, ultimoAño, esProvisional, gastoPorPersona, seriePartida, valor, detallePartida, tiposDeGasto, ultimoAñoTipos } from './cofog.js';
+import { cargarVista } from './datos.js';
+import { bloques } from './graficos.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, delPib } from './formato.js';
 
@@ -78,40 +78,31 @@ function comparar(es, ue) {
 }
 
 try {
-  const datos = await cargarDatos();
-  const año = ultimoAño(datos);
-  const porPersona = gastoPorPersona(datos, año);
-  const lista = partidas(datos, año);
+  const v = await cargarVista('a-donde-va');
+  const { año, porPersona, pib, pibUe, añoTipos, porHabitante, porHabitanteTipos } = v;
+  const lista = v.partidas;
   const primera = lista[0];
 
-  const pib = valor(datos, 'TOTAL', año, { unidad: 'PC_GDP' });
-  const pibUe = valor(datos, 'TOTAL', año, { geo: 'ue', unidad: 'PC_GDP' });
   const cifra = (id, dato, nota) => {
     const dd = $(id);
     const small = document.createElement('small');
     small.textContent = nota;
     dd.replaceChildren(dato, small);
   };
-  const provisional = esProvisional(datos, año) ? ', provisional' : '';
+  const provisional = v.provisional ? ', provisional' : '';
   cifra('c-habitante', euros(porPersona), `al año, en ${año}${provisional}`);
   cifra('c-mayor', porcentaje(primera.cuota), primera.nombre);
   cifra('c-pib', delPib(pib), pibUe !== null ? `Media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}` : '');
-
-  // Euros por habitante: millones de euros → euros, entre la población del año
-  const porHabitante = 1e6 / datos.poblacion[año];
-  const añoTipos = ultimoAñoTipos(datos);
-  const porHabitanteTipos = añoTipos ? 1e6 / (datos.poblacion[añoTipos] ?? datos.poblacion[año]) : 0;
 
   const mayor = lista[0].cuota;
   $('partidas').replaceChildren(
     ...lista.map((p) => {
       const li = document.createElement('li');
       li.className = 'partida';
-      const serie = seriePartida(datos, p.id);
+      li.id = `p-${p.id}`;
+      const { serie, grupos, tipos } = p;
       const esPib = serie.at(-1)?.es ?? null;
       const uePib = serie.at(-1)?.ue ?? null;
-      const grupos = detallePartida(datos, p.id, año);
-      const tipos = añoTipos ? tiposDeGasto(datos, p.id, añoTipos) : [];
       li.innerHTML = `<details>
         <summary>
           <span class="partida-nombre"><span class="insignia">${icono(ICONO_PARTIDA[p.id])}</span><span>${p.nombre}</span></span>
@@ -121,7 +112,7 @@ try {
         <div class="partida-detalle">
           <p>${p.que}</p>
           ${grupos.length ? `<h3 class="detalle-titulo">En qué se va</h3>${desglose(grupos, porHabitante, 'de la partida')}` : ''}
-          ${tipos.length ? `<h3 class="detalle-titulo">Cómo se gasta${añoTipos !== año ? ` <small>(${añoTipos})</small>` : ''}</h3>${desglose(tipos.map(({ que, ...t }) => t), porHabitanteTipos, 'de la partida')}` : ''}
+          ${tipos.length ? `<h3 class="detalle-titulo">Cómo se gasta${añoTipos !== año ? ` <small>(${añoTipos})</small>` : ''}</h3>${desglose(tipos, porHabitanteTipos, 'de la partida')}` : ''}
           <h3 class="detalle-titulo">Frente a Europa</h3>
           ${comparar(esPib, uePib)}
           ${serie.length > 1 ? grafico(serie, p.nombre) : ''}
@@ -131,8 +122,25 @@ try {
     })
   );
 
+  $('mapa').innerHTML = bloques(
+    lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${euros(p.cuota * porPersona)} · ${porcentaje(p.cuota)}`, href: `#p-${p.id}` })),
+    {
+      titulo: `Gasto público de ${año} por partidas, en euros por habitante`,
+      otros: { minimo: 0.035, nombre: (n) => `Otras ${n} partidas`, texto: (v) => `${euros(v * porPersona)} · ${porcentaje(v)}`, href: '#t-partidas' },
+    }
+  );
+  // Un enlace a una partida (#p-sanidad) la abre
+  const abrir = () => {
+    const li = location.hash.startsWith('#p-') && document.getElementById(location.hash.slice(1));
+    if (!li) return;
+    li.querySelector('details').open = true;
+    li.scrollIntoView({ block: 'start' });
+  };
+  addEventListener('hashchange', abrir);
+  abrir();
+
   // Cómo se gasta todo: sueldos, pagos a personas, compras, inversión…
-  const total = añoTipos ? tiposDeGasto(datos, 'TOTAL', añoTipos) : [];
+  const total = v.tipos;
   if (total.length) {
     $('t-tipos-texto').textContent = `Todo el gasto público de ${añoTipos} según en qué se materializa, en euros por habitante.`;
     $('tipos').innerHTML = desglose(total, porHabitanteTipos, 'del gasto');

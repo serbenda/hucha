@@ -1,6 +1,5 @@
-// Carga data/cofog.json (lo genera la Action) y avisa si son datos de ejemplo o si no hay datos.
-
-const url = new URL('../../data/cofog.json', import.meta.url);
+// Carga la vista de una página (data/vistas/<página>.json, la prepara la Action) y avisa si son datos de
+// ejemplo o si no hay datos.
 
 function banda(texto) {
   const b = document.createElement('p');
@@ -10,9 +9,9 @@ function banda(texto) {
   document.body.prepend(b);
 }
 
-export async function cargarDatos() {
+export async function cargarVista(pagina) {
   try {
-    const r = await fetch(url, { cache: 'no-cache' });
+    const r = await fetch(new URL(`../../data/vistas/${pagina}.json`, import.meta.url), { cache: 'no-cache' });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const datos = await r.json();
     if (datos.ejemplo) banda('Datos de ejemplo para desarrollo: no son cifras oficiales.');

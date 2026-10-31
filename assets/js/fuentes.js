@@ -25,9 +25,9 @@ document.getElementById('tabla-partidas').replaceChildren(
 );
 
 try {
-  const r = await fetch(new URL('../../data/cofog.json', import.meta.url), { cache: 'no-cache' });
+  // La vista de la portada, que es la más pequeña, lleva las fechas de los datos
+  const r = await fetch(new URL('../../data/vistas/portada.json', import.meta.url), { cache: 'no-cache' });
   const d = await r.json();
-  const eurostat = d.fuente?.gasto?.actualizado;
   document.getElementById('actualizado').textContent =
-    `Datos descargados el ${fecha(d.actualizado)}` + (eurostat ? `; Eurostat los actualizó por última vez el ${fecha(eurostat)}.` : '.');
+    `Datos descargados el ${fecha(d.actualizado)}` + (d.eurostat ? `; Eurostat los actualizó por última vez el ${fecha(d.eurostat)}.` : '.');
 } catch {}

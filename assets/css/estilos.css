@@ -501,3 +501,50 @@ h2.con-icono .insignia { --tam: 2.2rem; }
   .chips button { flex: none; white-space: nowrap; }
   .filtros-lupa { display: grid; }
 }
+
+/* Gráficos (graficos.js): una sola serie, en cobre, con la cifra escrita al lado */
+.g-barras { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.15rem; }
+.g-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0.15rem 1rem; width: 100%; padding: 0.45rem 0.5rem; margin: 0; border: 0; border-radius: var(--radio); background: transparent; color: inherit; font: inherit; text-align: left; }
+button.g-fila { cursor: pointer; }
+button.g-fila:hover { background: var(--cobre-suave); }
+button.g-fila[aria-pressed='true'] { background: var(--cobre-suave); box-shadow: inset 3px 0 0 var(--cobre); }
+.g-nombre { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; min-width: 0; }
+.g-nombre .icono { color: var(--cobre); }
+.g-cifra { font-weight: 700; white-space: nowrap; text-align: right; }
+.g-cifra small { display: block; font-weight: 400; font-size: 0.8rem; color: var(--tenue); }
+.g-pista { grid-column: 1 / -1; height: 0.5rem; border-radius: 999px; background: var(--linea); overflow: hidden; }
+.g-pista i { display: block; height: 100%; width: var(--ancho); background: var(--cobre); border-radius: 999px; }
+
+.g-columnas { margin: 0; }
+.g-lienzo { display: flex; align-items: flex-end; gap: 2px; height: 8rem; border-bottom: 1px solid var(--linea); padding-top: 1.4rem; }
+.g-col { position: relative; flex: 1 1 0; height: var(--alto); min-height: 2px; background: var(--cobre); border-radius: 4px 4px 0 0; opacity: 0.75; }
+.g-col.mayor, .g-col:hover { opacity: 1; }
+.g-col b { position: absolute; bottom: calc(100% + 0.2rem); left: 50%; transform: translateX(-50%); font-size: 0.75rem; white-space: nowrap; color: var(--tinta); }
+.g-eje { position: relative; height: 1.1rem; margin-top: 0.3rem; font-size: 0.72rem; color: var(--tenue); }
+.g-eje span { position: absolute; top: 0; white-space: nowrap; }
+.g-col b.fin { left: auto; right: 0; transform: none; }
+.g-col b.inicio { left: 0; transform: none; }
+
+.g-bloques { position: relative; width: 100%; }
+.g-bloque { position: absolute; box-sizing: border-box; border: 2px solid var(--papel); border-radius: 6px; background: var(--cobre-suave); color: var(--tinta); padding: 0.45rem 0.55rem; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; justify-content: flex-start; gap: 0.1rem; transition: filter 0.15s; }
+.g-bloque.fuerte { background: var(--cobre); color: var(--papel); }
+a.g-bloque:hover { filter: brightness(0.92); }
+.g-bloque-nombre { hyphens: auto; overflow-wrap: anywhere; font-weight: 700; font-size: clamp(0.72rem, 1.6vw, 0.95rem); line-height: 1.15; }
+.g-bloque-cifra { font-size: clamp(0.8rem, 2vw, 1.3rem); font-weight: 800; font-stretch: 112%; }
+@media (max-width: 40rem) { .g-bloques { aspect-ratio: 1 / 1 !important; } }
+.mapa-hueco { aspect-ratio: 100 / 62; margin-top: 1rem; }
+@media (max-width: 40rem) { .mapa-hueco { aspect-ratio: 1 / 1; } }
+.subtitulo { font-size: 1.05rem; font-stretch: 100%; margin: 2rem 0 0; }
+.partida { scroll-margin-top: 1rem; }
+
+/* Lupa: panorama */
+.panorama { margin-top: 1.5rem; }
+.panorama-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
+.panorama-bloque { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 1rem 1rem 0.75rem; min-width: 0; }
+.panorama-bloque h3 { font-size: 1rem; font-stretch: 100%; }
+.panorama-bloque > p { margin: 0.2rem 0 0.6rem; font-size: 0.85rem; }
+.panorama-bloque .g-fila { padding-inline: 0.35rem; }
+.panorama-bloque .g-nombre { font-weight: 500; font-size: 0.92rem; }
+.enlace { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.resultado h3 .enlace { font-weight: 600; }
+.volver { margin-bottom: 0.4rem; font-size: 0.95rem; color: var(--cobre); }

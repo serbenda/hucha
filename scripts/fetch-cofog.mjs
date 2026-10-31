@@ -1,12 +1,12 @@
 // Descarga de Eurostat el gasto público por funciones (COFOG) y la población de España,
-// y lo guarda en data/cofog.json. Si Eurostat falla o los datos no tienen buena pinta,
+// y lo guarda en el almacén (almacen/cofog.json). Si Eurostat falla o los datos no tienen buena pinta,
 // se mantienen los de la publicación anterior.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { urlGasto, urlPoblacion, urlTipos, prepararDatos, problema, ultimoAño, gastoPorPersona, ultimoAñoTipos } from '../assets/js/cofog.js';
 import { anotar } from './estado.mjs';
 
-const salida = new URL('../data/cofog.json', import.meta.url);
+const salida = new URL('../almacen/cofog.json', import.meta.url);
 const cabeceras = { Accept: 'application/json', 'User-Agent': 'hucha (github.com/serbenda/hucha)' };
 
 async function descargar(url) {
@@ -79,7 +79,7 @@ if (!Object.keys(datos.tipos).length) {
 }
 
 datos.actualizado = new Date().toISOString();
-await mkdir(new URL('../data/', import.meta.url), { recursive: true });
+await mkdir(new URL('../almacen/', import.meta.url), { recursive: true });
 await writeFile(salida, JSON.stringify(datos));
 
 const año = ultimoAño(datos);

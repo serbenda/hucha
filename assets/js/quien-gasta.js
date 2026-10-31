@@ -1,17 +1,15 @@
 // «Quién gasta»: el reparto entre Estado, comunidades, ayuntamientos y Seguridad Social.
 
-import { cargarDatos } from './datos.js';
+import { cargarVista } from './datos.js';
 import { icono, ICONO_FUNCION, ICONO_ADMINISTRACION } from './iconos.js';
-import { reparto, gastoPorAdministracion, ultimoAño, esProvisional } from './cofog.js';
 import { millones, porcentaje } from './formato.js';
 
 const $ = (id) => document.getElementById(id);
 const cuota = (funcion, sector) => funcion?.partes.find((p) => p.id === sector)?.cuota ?? 0;
 
 try {
-  const datos = await cargarDatos();
-  const año = ultimoAño(datos);
-  const funciones = reparto(datos, año);
+  const v = await cargarVista('quien-gasta');
+  const { año, funciones } = v;
   const sanidad = funciones.find((f) => f.id === 'GF07');
   const educacion = funciones.find((f) => f.id === 'GF09');
   const social = funciones.find((f) => f.id === 'GF10');
@@ -26,10 +24,10 @@ try {
   cifra('c-social', porcentaje(cuota(social, 'S1314')), `la Seguridad Social, en ${año}`);
 
   $('cuanto-texto').textContent =
-    `En ${año}${esProvisional(datos, año) ? ' (provisional)' : ''}, sin contar el dinero que el Estado pasa a comunidades y ayuntamientos para que lo gasten ellos.`;
+    `En ${año}${v.provisional ? ' (provisional)' : ''}, sin contar el dinero que el Estado pasa a comunidades y ayuntamientos para que lo gasten ellos.`;
 
   $('administraciones').replaceChildren(
-    ...gastoPorAdministracion(datos, año).map((a) => {
+    ...v.administraciones.map((a) => {
       const div = document.createElement('div');
       div.className = `cifra c-${a.id}`;
       div.innerHTML = `<dt>${icono(ICONO_ADMINISTRACION[a.id])}${a.nombre}</dt><dd>${millones(a.valor)}<small>${a.largo}</small></dd>`;
