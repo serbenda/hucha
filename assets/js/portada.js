@@ -136,7 +136,10 @@ try {
   pintarCifras(vista);
   $('mapa').innerHTML = bloques(
     lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${Math.round(p.cuota * 100)} €`, href: `a-donde-va/#p-${p.id}` })),
-    { titulo: 'De cada 100 € de gasto público, cuánto va a cada partida' }
+    {
+      titulo: 'De cada 100 € de gasto público, cuánto va a cada partida',
+      otros: { minimo: 0.035, nombre: (n) => `Otras ${n} partidas`, texto: (v) => `${Math.round(v * 100)} €`, href: 'a-donde-va/#t-partidas' },
+    }
   );
 } catch {
   $('reparto').replaceChildren(linea('Sin datos ahora mismo', ''));

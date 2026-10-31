@@ -529,7 +529,7 @@ button.g-fila[aria-pressed='true'] { background: var(--cobre-suave); box-shadow:
 .g-bloque { position: absolute; box-sizing: border-box; border: 2px solid var(--papel); border-radius: 6px; background: var(--cobre-suave); color: var(--tinta); padding: 0.45rem 0.55rem; overflow: hidden; text-decoration: none; display: flex; flex-direction: column; justify-content: flex-start; gap: 0.1rem; transition: filter 0.15s; }
 .g-bloque.fuerte { background: var(--cobre); color: var(--papel); }
 a.g-bloque:hover { filter: brightness(0.92); }
-.g-bloque-nombre { font-weight: 700; font-size: clamp(0.72rem, 1.6vw, 0.95rem); line-height: 1.15; }
+.g-bloque-nombre { hyphens: auto; overflow-wrap: anywhere; font-weight: 700; font-size: clamp(0.72rem, 1.6vw, 0.95rem); line-height: 1.15; }
 .g-bloque-cifra { font-size: clamp(0.8rem, 2vw, 1.3rem); font-weight: 800; font-stretch: 112%; }
 @media (max-width: 40rem) { .g-bloques { aspect-ratio: 1 / 1 !important; } }
 .mapa-hueco { aspect-ratio: 100 / 62; margin-top: 1rem; }

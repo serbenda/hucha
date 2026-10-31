@@ -124,7 +124,10 @@ try {
 
   $('mapa').innerHTML = bloques(
     lista.map((p) => ({ id: p.id, nombre: p.nombre, valor: p.cuota, texto: `${euros(p.cuota * porPersona)} · ${porcentaje(p.cuota)}`, href: `#p-${p.id}` })),
-    { titulo: `Gasto público de ${año} por partidas, en euros por habitante` }
+    {
+      titulo: `Gasto público de ${año} por partidas, en euros por habitante`,
+      otros: { minimo: 0.035, nombre: (n) => `Otras ${n} partidas`, texto: (v) => `${euros(v * porPersona)} · ${porcentaje(v)}`, href: '#t-partidas' },
+    }
   );
   // Un enlace a una partida (#p-sanidad) la abre
   const abrir = () => {

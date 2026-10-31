@@ -58,10 +58,19 @@ export function columnas(items, { titulo = '' } = {}) {
  * Mapa de bloques (treemap): el área de cada bloque es su parte del total. items: [{ id, nombre, valor, texto, href? }].
  * Algoritmo «squarified» (Bruls, Huizing y van Wijk), para que los bloques salgan lo más cuadrados posible.
  */
-export function bloques(items, { ancho = 100, alto = 62, titulo = '' } = {}) {
-  const lista = items.filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor);
+export function bloques(items, { ancho = 100, alto = 62, titulo = '', otros = null } = {}) {
+  let lista = items.filter((x) => x.valor > 0).sort((a, b) => b.valor - a.valor);
   const total = lista.reduce((t, x) => t + x.valor, 0);
   if (!total) return '';
+  // Los bloques muy pequeños no se leen ni se pueden pulsar bien en el móvil: se juntan en uno
+  // (otros: { minimo, nombre(n, lista), texto(valor), href })
+  if (otros) {
+    const pequeños = lista.filter((x) => x.valor / total < otros.minimo);
+    if (pequeños.length > 1) {
+      const valor = pequeños.reduce((t, x) => t + x.valor, 0);
+      lista = [...lista.filter((x) => !pequeños.includes(x)), { id: 'otros', nombre: otros.nombre(pequeños.length, pequeños), valor, texto: otros.texto(valor), href: otros.href }];
+    }
+  }
   const area = ancho * alto;
   const nodos = lista.map((x) => ({ ...x, a: (x.valor / total) * area }));
   const rects = [];

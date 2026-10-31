@@ -246,9 +246,14 @@ async function leerCsv(url, alFila, minutos = 15) {
   for (let intento = 1; ; intento++) {
     r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(minutos * 60000) });
     if (r.ok || r.status === 404 || intento === 3) break;
-    await new Promise((ok) => setTimeout(ok, 20000 * intento));
+    await new Promise((ok) => setTimeout(ok, 30000 * intento));
   }
-  if (r.status === 404) return false; // la OCDE responde 404 cuando no hay datos (un año aún sin publicar)
+  if (r.status === 404) {
+    // La OCDE responde 404 con «NoRecordsFound» cuando no hay datos (un año aún sin publicar)
+    const texto = await r.text();
+    if (/NoRecordsFound|NoResultsFound/i.test(texto)) return false;
+    throw new Error(`HTTP 404 (${texto.slice(0, 60)})`);
+  }
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const lector = lectorCsv(alFila);
   const dec = new TextDecoder();
@@ -258,57 +263,86 @@ async function leerCsv(url, alFila, minutos = 15) {
   return true;
 }
 
+// La OCDE permite unas 20 consultas por hora. Cada día se piden solo los dos últimos años (los que aún se
+// revisan) y, del histórico, los años que falten, unos pocos por ejecución. Los proyectos, cuando hay un año
+// nuevo o una vez a la semana.
+const AÑOS_AYUDA = 7;
+const NUEVOS_POR_EJECUCION = 3;
+
 async function ayuda() {
-  // 1. Totales por país y sector de los últimos años
-  // Año a año (de golpe el servidor falla). Cada año es un CSV con su cabecera: un acumulador por año.
-  const r = { años: [], totales: {}, sectores: {}, paises: {}, porPais: {} };
-  const fallos = [];
-  for (let año = hoy.getFullYear() - 7; año <= hoy.getFullYear() - 1; año++) {
+  const previo = await leer('ayuda.json');
+  const conSectores = previo?.sectores ? previo : null; // el formato anterior (solo países) no sirve de base
+  const r = {
+    totales: { ...(conSectores?.totales ?? {}) },
+    sectores: { ...(conSectores?.sectores ?? {}) },
+    paises: conSectores ? structuredClone(conSectores.paises) : {},
+    porPais: conSectores ? structuredClone(conSectores.porPais ?? {}) : {},
+  };
+  const tenemos = new Set(Object.keys(r.sectores));
+  const ultimoPosible = hoy.getFullYear() - 1;
+  const años = Array.from({ length: AÑOS_AYUDA }, (_, i) => String(ultimoPosible - i));
+  const recientes = años.slice(0, 2);
+  const faltan = años.slice(2).filter((a) => !tenemos.has(a)).slice(0, NUEVOS_POR_EJECUCION);
+  const estados = [];
+  for (const año of [...recientes, ...faltan]) {
     const crs = acumuladorCrs();
     try {
-      if (!(await leerCsv(urlCrs(año), crs.fila))) continue;
+      if (!(await leerCsv(urlCrs(año), crs.fila))) {
+        estados.push(`${año} sin datos`);
+        continue;
+      }
     } catch (e) {
-      fallos.push(`${año}: ${e.message}`);
+      estados.push(`${año} falló (${e.message})`);
       continue;
     }
     const x = crs.resultado();
-    if (!x.años.length) continue;
-    r.años.push(...x.años);
-    Object.assign(r.totales, x.totales);
-    Object.assign(r.sectores, x.sectores);
-    for (const [p, v] of Object.entries(x.paises)) Object.assign((r.paises[p] ??= {}), v);
-    for (const [p, v] of Object.entries(x.porPais)) Object.assign((r.porPais[p] ??= {}), v);
+    if (!x.años.includes(año)) {
+      estados.push(`${año} vacío`);
+      continue;
+    }
+    // El año entero se sustituye: así lo revisado por la OCDE reemplaza a lo anterior
+    r.totales[año] = x.totales[año];
+    r.sectores[año] = x.sectores[año] ?? {};
+    for (const p of Object.values(r.paises)) delete p[año];
+    for (const p of Object.values(r.porPais)) delete p[año];
+    for (const [p, v] of Object.entries(x.paises)) (r.paises[p] ??= {})[año] = v[año];
+    for (const [p, v] of Object.entries(x.porPais)) (r.porPais[p] ??= {})[año] = v[año];
+    estados.push(`${año} ok`);
   }
-  r.años = [...new Set(r.años)].sort();
-  if (fallos.length) console.warn(`Ayuda: años que han fallado: ${fallos.join('; ')}`);
-  const paises = Object.fromEntries(Object.entries(r.paises).filter(([p]) => esPais(p)));
-  if (Object.keys(paises).length < 50) throw new Error(`solo ${Object.keys(paises).length} países`);
-  const ultimo = r.años.at(-1);
+  const paises = Object.fromEntries(Object.entries(r.paises).filter(([p, v]) => esPais(p) && Object.keys(v).length));
+  if (Object.keys(paises).length < 50) throw new Error(`solo ${Object.keys(paises).length} países (${estados.join(', ')})`);
+  const lista = Object.keys(r.sectores).filter((a) => años.includes(a)).sort();
+  const ultimo = lista.at(-1);
 
-  // 2. Los proyectos del último año, para el detalle de cada país (si falla, se queda lo anterior)
-  let proyectos = (await leer('ayuda.json'))?.proyectos ?? {};
+  // Los proyectos del último año, para el detalle de cada país (si falla, se quedan los anteriores)
+  let proyectos = conSectores?.proyectos ?? {};
+  let proyectosAño = conSectores?.proyectosAño ?? null;
   let notaProyectos = '';
-  try {
-    const p = acumuladorProyectos();
-    await leerCsv(urlCrsProyectos(ultimo), p.fila, 25);
-    proyectos = p.resultado();
-    notaProyectos = `, proyectos de ${Object.keys(proyectos).length} países`;
-  } catch (e) {
-    notaProyectos = `, sin proyectos nuevos (${e.message})`;
+  if (proyectosAño !== ultimo || hoy.getDay() === 1 || !Object.keys(proyectos).length) {
+    try {
+      const p = acumuladorProyectos();
+      if (await leerCsv(urlCrsProyectos(ultimo), p.fila, 25)) {
+        proyectos = p.resultado();
+        proyectosAño = ultimo;
+        notaProyectos = `; proyectos de ${Object.keys(proyectos).length} países`;
+      } else notaProyectos = '; sin proyectos de ese año todavía';
+    } catch (e) {
+      notaProyectos = `; proyectos: falló (${e.message})`;
+    }
   }
 
   await guardar('ayuda.json', {
     actualizado: new Date().toISOString(),
     unidad: 'millones de dólares',
-    años: r.años,
+    años: lista,
     totales: r.totales,
     sectores: r.sectores,
     paises,
     porPais: Object.fromEntries(Object.entries(r.porPais).filter(([p]) => esPais(p))),
-    proyectosAño: ultimo,
+    proyectosAño,
     proyectos,
   });
-  return `${Object.keys(paises).length} países, ${r.años[0]}-${ultimo}; ${Object.keys(r.sectores[ultimo] ?? {}).length} sectores en ${ultimo}${notaProyectos}${fallos.length ? `; fallaron ${fallos.join(', ')}` : ''}`;
+  return `${Object.keys(paises).length} países, ${lista[0]}-${ultimo} (${estados.join(', ')})${notaProyectos}`;
 }
 
 // ---------------------------------------------------------------------------
