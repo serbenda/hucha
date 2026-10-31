@@ -280,13 +280,20 @@ section + section { margin-top: 3.5rem; }
 .comparacion { color: var(--tenue); font-size: 0.95rem; }
 .comparacion strong { color: var(--tinta); }
 
-/* Gráfico de línea pequeño */
-.evolucion svg { width: 100%; height: 150px; display: block; overflow: visible; }
+/* Gráfico de línea pequeño: líneas en SVG, textos en HTML encima */
+.evolucion { padding: 0.5rem 3.4rem 1.6rem 2.2rem; }
+.lienzo { position: relative; height: 140px; }
+.lienzo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .evolucion .rejilla { stroke: var(--linea); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .evolucion .es { fill: none; stroke: var(--cobre); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .evolucion .ue { fill: none; stroke: var(--tenue); stroke-width: 1.5; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
-.evolucion .eje { fill: var(--tenue); font-size: 12px; font-family: var(--fuente); }
-.evolucion .etiqueta-es { fill: var(--cobre); font-size: 12px; font-weight: 700; font-family: var(--fuente); }
+.lienzo .eje { position: absolute; font-size: 12px; color: var(--tenue); line-height: 1; white-space: nowrap; }
+.lienzo .eje-y { left: -0.5rem; transform: translate(-100%, -50%); }
+.lienzo .eje-x { top: calc(100% + 0.45rem); transform: translateX(-50%); }
+.lienzo .eje-x.inicio { transform: none; }
+.lienzo .eje-x.fin { transform: translateX(-100%); }
+.lienzo .etiqueta-es { position: absolute; left: calc(100% + 0.4rem); transform: translateY(-50%); font-size: 12px; font-weight: 700; color: var(--cobre); white-space: nowrap; }
+.lienzo .nota-grafico { position: absolute; top: -0.3rem; transform: translate(0.3rem, 0); font-size: 11px; color: var(--tenue); }
 .leyenda { display: flex; flex-wrap: wrap; gap: 0.35rem 1.25rem; font-size: 0.85rem; color: var(--tenue); margin: 0.5rem 0 0; padding: 0; list-style: none; }
 .leyenda i { display: inline-block; width: 1.1em; height: 0.75em; border-radius: 2px; margin-right: 0.4em; vertical-align: -0.05em; }
 .leyenda .linea-es { height: 3px; background: var(--cobre); vertical-align: 0.2em; }
@@ -333,6 +340,30 @@ section + section { margin-top: 3.5rem; }
 .pie p { margin: 0.25rem 0; max-width: var(--medida); }
 .apoyo a { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--tinta); }
 .apoyo svg { fill: #bf3989; }
+
+
+/* Resumen junto al campo: solo cuando el ticket queda debajo */
+.resumen { display: none; margin: 0; padding: 0.65rem 0.9rem; background: var(--cobre-suave); border-radius: var(--radio); font-size: 0.95rem; }
+.resumen:empty { display: none !important; }
+.resumen strong { font-stretch: 110%; }
+.resumen a { font-weight: 600; white-space: nowrap; }
+@media (max-width: 760px) { .resumen { display: block; } }
+.ticket-nota { margin: 0.5rem 0 0; text-align: center; color: var(--tenue); font-size: 0.78rem; }
+
+/* Objetivos táctiles de al menos 24 px */
+.nav a { display: inline-block; padding-block: 0.25rem; }
+.pie p:not(.apoyo) a { padding-block: 0.3rem; }
+.interruptor { min-height: 2rem; }
+.interruptor input { height: 1.5rem; width: 2.6rem; }
+.interruptor input::after { top: 0.25rem; left: 0.25rem; }
+.interruptor input:checked::after { transform: translateX(1.1rem); }
+
+/* Gráfico: marcas de años y del COVID */
+.evolucion .marca-año { stroke: var(--tenue); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.evolucion .covid { stroke: var(--tenue); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+
+/* Página 404 */
+.no-encontrada .boton { display: inline-block; text-decoration: none; margin-top: 1.5rem; }
 
 .oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 

@@ -73,14 +73,23 @@ jobs:
           npm install --no-save --no-package-lock @fontsource-variable/archivo@5
           node scripts/vendor.mjs
 
+      - name: Iconos e imagen para compartir (con los datos de ahora)
+        run: |
+          npm install --no-save --no-package-lock playwright@1
+          npx playwright install --with-deps chromium
+          node scripts/imagenes.mjs
+
       - name: Preparar la web
         run: |
           mkdir -p _site vendor
-          cp -r index.html a-donde-va quien-gasta fuentes assets data vendor \
+          cp -r index.html 404.html a-donde-va quien-gasta fuentes assets data vendor \
             manifest.webmanifest sw.js sitemap.xml robots.txt .nojekyll _site/
-          # Versión en los estilos y scripts de cada página: al publicar, nadie ve HTML nuevo con CSS viejo
+          # Versión en los estilos y scripts de cada página, y en los módulos que importan entre sí:
+          # al publicar, nadie mezcla HTML nuevo con CSS o JS viejos
           v="${GITHUB_SHA::8}"
           find _site -name '*.html' -exec sed -i -E "s#(href=\"[^\"]+\.css)\"#\1?v=$v\"#g; s#(src=\"[^\"]+\.js)\"#\1?v=$v\"#g" {} +
+          sed -i -E "s#(from '\./[a-z0-9-]+\.js)'#\1?v=$v'#g" _site/assets/js/*.js
+          grep -q "?v=$v" _site/assets/js/portada.js || { echo "::error::No se han versionado los imports"; exit 1; }
 
       - name: Estado de las fuentes
         if: always()
