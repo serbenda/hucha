@@ -26,13 +26,14 @@ Datos oficiales actualizados automáticamente. Sin cookies, sin anuncios, sin re
 
 ---
 
-## Tres preguntas
+## Cuatro preguntas
 
 | | Página | Qué responde |
 |---|---|---|
 | 🧾 | **[Tu ticket](https://hucha.bendi.dev/)** | Escribes tu sueldo bruto y ves cuánto pones al año (IRPF y Seguridad Social, y si quieres lo que paga tu empresa) y a dónde va cada euro. |
 | 📊 | **[A dónde va](https://hucha.bendi.dev/a-donde-va/)** | Todo el gasto público en 14 partidas que se entienden, en euros por habitante, con lo que incluye cada una y su evolución frente a la media europea. |
 | 🏛️ | **[Quién gasta](https://hucha.bendi.dev/quien-gasta/)** | Qué parte de cada cosa pagan el Estado, las comunidades, los ayuntamientos y la Seguridad Social. |
+| 🔍 | **[La Lupa](https://hucha.bendi.dev/lupa/)** | Contratos, subvenciones y ayuda a otros países con nombre y cifra: quién paga, a quién, para qué y cuánto. Buscador y filtros por tema (tren, sanidad, carreteras…) y por administración. |
 
 El tono es neutral a propósito: cifras, comparaciones con la misma vara y fuentes al lado. Nada de adjetivos.
 
@@ -59,6 +60,9 @@ El tono es neutral a propósito: cifras, comparaciones con la misma vara y fuent
 |---|---|---|
 | [Eurostat `gov_10a_exp`](https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table) | Gasto de las Administraciones Públicas por funciones (COFOG), de España por administración y de la media de la UE, en millones de euros y % del PIB, desde 2010. Para España lo elabora la IGAE. | Anual (febrero), con revisiones en abril y octubre |
 | [Eurostat `demo_gind`](https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table) | Población media anual, para los euros por habitante | Anual |
+| [Plataforma de Contratación](https://contrataciondelestado.es/) | Contratos adjudicados desde 1 M€, directos y agregados de plataformas autonómicas y locales | Cada día; el histórico crece solo |
+| [BDNS](https://www.infosubvenciones.es/) | Subvenciones concedidas desde 1 M€ a empresas y entidades, últimos 12 meses | Cada día |
+| [OCDE (DAC2A)](https://data-explorer.oecd.org/) | Ayuda oficial al desarrollo de España por país | Anual |
 | [Agencia Tributaria](https://www3.agenciatributaria.gob.es/static_files/Sede/Programas_ayuda/Retenciones/2026/ALGORITMO_2026.pdf) y orden de cotización | Reglas del IRPF y de las cotizaciones de 2026, para el ticket | A mano, cada año |
 
 Es gasto **realmente hecho** (contabilidad nacional), no el presupuesto: los Presupuestos Generales vigentes son los de 2023 prorrogados.
@@ -72,7 +76,7 @@ Web **estática**: HTML, CSS y JavaScript sin frameworks ni dependencias. Una Gi
 ```mermaid
 flowchart LR
     EU["📊 Eurostat"] --> DES
-    subgraph Action["GitHub Action · cada lunes, al fusionar y en cada PR"]
+    subgraph Action["GitHub Action · cada día, al fusionar y en cada PR"]
         TEST["Tests"] --> REC["Recupera los datos<br/>ya publicados"] --> DES["Descarga y comprueba<br/>los datos"] --> WEB["Prepara la web<br/>e imágenes"]
         WEB --> E2E["Tests de navegador<br/>y accesibilidad (axe)"] --> LH["Lighthouse<br/>con mínimos"] --> CAP["Capturas e<br/>insignias"]
     end
@@ -93,7 +97,7 @@ flowchart LR
 ```
 hucha/
 ├── index.html                Tu ticket
-├── a-donde-va/  quien-gasta/  fuentes/
+├── a-donde-va/  quien-gasta/  lupa/  fuentes/
 ├── assets/
 │   ├── css/estilos.css       Un solo fichero de estilos, con modo oscuro
 │   ├── img/favicon.svg       Logo
@@ -101,6 +105,7 @@ hucha/
 │       ├── jsonstat.js       Lector del formato de Eurostat
 │       ├── cofog.js          Partidas, quién gasta, por habitante (navegador y Node)
 │       ├── impuestos.js      IRPF y cotizaciones de 2026
+│       ├── lupa-datos.js     Contratos, subvenciones y ayuda: lectura de las fuentes y búsqueda
 │       ├── formato.js        Números y fechas en castellano
 │       └── …                 Un script por página, datos.js y comun.js
 ├── scripts/                  Datos, fuente, imágenes, Lighthouse y capturas

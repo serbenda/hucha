@@ -12,7 +12,8 @@
     "herramientas": "npm install --no-save --no-package-lock @fontsource-variable/archivo@5 playwright@1 @axe-core/playwright@4 lighthouse@12 chrome-launcher@1",
     "lighthouse": "node scripts/lighthouse.mjs",
     "capturas": "node scripts/capturas.mjs",
-    "imagenes": "node scripts/imagenes.mjs"
+    "imagenes": "node scripts/imagenes.mjs",
+    "lupa": "node scripts/fetch-lupa.mjs"
   },
   "engines": {
     "node": ">=20"

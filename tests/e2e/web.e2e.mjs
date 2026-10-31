@@ -69,7 +69,7 @@ const VARIANTES = [
   ['escritorio oscuro', { ...ESCRITORIO, colorScheme: 'dark' }],
 ];
 
-for (const [ruta, nombre] of [['', 'portada'], ['a-donde-va/', 'a dónde va'], ['quien-gasta/', 'quién gasta'], ['fuentes/', 'fuentes']]) {
+for (const [ruta, nombre] of [['', 'portada'], ['a-donde-va/', 'a dónde va'], ['quien-gasta/', 'quién gasta'], ['lupa/', 'lupa'], ['fuentes/', 'fuentes']]) {
   test(`${nombre}: sin errores, accesible y sin desbordar en móvil y escritorio, claro y oscuro`, async () => {
     for (const [variante, opciones] of VARIANTES) {
       const { pagina, errores, contexto } = await abrir(ruta, opciones);
@@ -188,7 +188,7 @@ test('404: página propia con su código', async () => {
 });
 
 test('SEO y compartir: cada página tiene título, descripción, canónica e imagen', async () => {
-  for (const ruta of ['', 'a-donde-va/', 'quien-gasta/', 'fuentes/']) {
+  for (const ruta of ['', 'a-donde-va/', 'quien-gasta/', 'lupa/', 'fuentes/']) {
     const { pagina, contexto } = await abrir(ruta, ESCRITORIO);
     const meta = await pagina.evaluate(() => ({
       titulo: document.title,
@@ -209,4 +209,55 @@ test('SEO y compartir: cada página tiene título, descripción, canónica e ima
   const r = await fetch(base + 'assets/img/compartir.png');
   assert.equal(r.status, 200);
   assert.equal(r.headers.get('content-type'), 'image/png');
+});
+
+async function lupa(nombre) {
+  try {
+    return JSON.parse(await readFile(new URL(`../../_site/data/lupa/${nombre}.json`, import.meta.url), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+test('lupa: contratos con buscador, temas, nivel y estado en la URL', async () => {
+  const datosContratos = await lupa('contratos');
+  const { pagina, errores, contexto } = await abrir('lupa/', ESCRITORIO);
+  assert.deepEqual(propios(errores), []);
+  if (!datosContratos?.contratos?.length) {
+    assert.match(await pagina.textContent('#resumen-lupa'), /no están disponibles/);
+    await contexto.close();
+    return;
+  }
+  assert.match(await pagina.textContent('#resumen-lupa'), /contratos? por .+millones de €/);
+  assert.ok((await pagina.locator('#resultados .resultado').count()) > 0);
+  // Ningún adjudicatario con NIF de persona aparece con nombre
+  const ganadores = datosContratos.contratos.flatMap((c) => c.g ?? []);
+  assert.ok(!ganadores.some((g) => /^[0-9XYZ]\d{7}[A-Z]$/.test(g)), 'sin NIF de personas');
+  // Un tema
+  await pagina.getByRole('button', { name: 'Sanidad', exact: true }).click();
+  await pagina.waitForTimeout(200);
+  assert.match(pagina.url(), /tema=sanidad/);
+  // Una búsqueda que no existe
+  await pagina.fill('#q', 'zzzzzzzzzz');
+  await pagina.press('#q', 'Enter');
+  await pagina.waitForTimeout(300);
+  assert.match(await pagina.textContent('#resumen-lupa'), /No hay contratos/);
+  await contexto.close();
+});
+
+test('lupa: subvenciones y ayuda a otros países', async () => {
+  const sub = await lupa('subvenciones');
+  const ayuda = await lupa('ayuda');
+  const { pagina, contexto } = await abrir('lupa/?tab=subvenciones', ESCRITORIO);
+  if (sub?.subvenciones?.length) assert.match(await pagina.textContent('#resumen-lupa'), /subvenci(ón|ones) por/);
+  await pagina.click('#tab-ayuda');
+  await pagina.waitForTimeout(300);
+  assert.match(pagina.url(), /tab=ayuda/);
+  if (ayuda?.paises && Object.keys(ayuda.paises).length) {
+    assert.match(await pagina.textContent('#resumen-lupa'), /ayuda oficial al desarrollo/);
+    assert.ok((await pagina.locator('.resultado-pais').count()) > 0);
+    assert.equal(await pagina.locator('#filtros').isVisible(), false, 'sin temas en la pestaña de países');
+  }
+  await accesible(pagina, 'lupa (ayuda)');
+  await contexto.close();
 });
