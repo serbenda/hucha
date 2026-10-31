@@ -37,35 +37,17 @@ jobs:
     steps:
       - name: OCDE CRS (ayuda por país y sector)
         run: |
-          curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/dataflow/OECD.DCD.FSD/DSD_CRS@DF_CRS/latest?references=datastructure" -o crs.xml
-          echo "::notice::etiquetas $(grep -o '<[A-Za-z]*:[A-Za-z]*' crs.xml | sort | uniq -c | sort -rn | head -25 | tr '\n' ' ')"
-          curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/datastructure/OECD.DCD.FSD/DSD_CRS/latest" -o dsd.xml -w "::notice::dsd http %{http_code} bytes %{size_download}\n"
-          echo "::notice::dsd etiquetas $(grep -o '<[A-Za-z]*:[A-Za-z]*' dsd.xml | sort | uniq -c | sort -rn | head -25 | tr '\n' ' ')"
-          grep -o '<[A-Za-z]*:Dimension[^>]*>' dsd.xml | head -20 | tr '\n' ' ' | sed 's/^/::notice::dims /'; echo
-          node -e "const x=require('fs').readFileSync('crs.xml','utf8'); for (const m of x.matchAll(/<common:Annotation\b[\s\S]*?<\/common:Annotation>/g)) { const t=m[0].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); if (t) console.log('::notice::anot '+t.slice(0,400)); }" | head -40
-          for v in 1.7 1.6 1.5; do curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/datastructure/OECD.DCD.FSD/DSD_CRS/$v" -o dsd.xml -w "::notice::dsd $v http %{http_code} bytes %{size_download}\n"; grep -q Dimension dsd.xml && break; done
-          curl -s --max-time 120 "https://sdmx.oecd.org/public/rest/dataflow/OECD.DCD.FSD/DSD_CRS@DF_CRS/1.7?references=all" -o todo.xml -w "::notice::refs all http %{http_code} bytes %{size_download}\n"
-          cat dsd.xml todo.xml >> crs.xml
-          grep -o '<[A-Za-z]*:Dimension [^>]*>' crs.xml | head -20 | tr '\n' ' ' | sed 's/^/::notice::dims /'; echo
-          grep -o '<[A-Za-z]*:Dimension [^>]*>' crs.xml | head -20 | sed 's/^/::notice::dim /'
-          node -e "
-            const x=require('fs').readFileSync('crs.xml','utf8');
-            const dims=[...x.matchAll(/<[A-Za-z]*:Dimension ([^>]*)>/g)].map(m=>({id:(m[1].match(/\bid=\"([^\"]+)\"/)||[])[1],pos:+((m[1].match(/position=\"(\\d+)\"/)||[])[1]||0)})).filter(d=>d.id);
-            dims.sort((a,b)=>a.pos-b.pos);
-            require('fs').writeFileSync('dims.txt', dims.map(d=>d.id).join(','));
-            console.log('::notice::orden '+dims.map(d=>d.pos+':'+d.id).join(' '));
-          "
-          dims=$(cat dims.txt)
-          key=$(node -e "const d='$dims'.split(',');console.log(d.map(x=>x==='DONOR'?'ESP':'').join('.'))")
-          echo "::notice::clave $key"
-          curl -s --max-time 600 "https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,/$key?startPeriod=2023&endPeriod=2023" -o d.xml -w "::notice::xml http %{http_code} bytes %{size_download}\n"
-          head -c 600 d.xml | tr '\n' ' ' | sed 's/^/::notice::inicio /'; echo
-          echo "::notice::series $(grep -c '<generic:Series>' d.xml)"
-          node -e "
-            const x=require('fs').readFileSync('d.xml','utf8');
-            const series=x.split('<generic:Series>').slice(1);
-            const vals={};
-            for (const s of series) for (const m of s.split('</generic:SeriesKey>')[0].matchAll(/id=\"([^\"]+)\" value=\"([^\"]*)\"/g)) (vals[m[1]] ??= new Set()).add(m[2]);
-            for (const [k,v] of Object.entries(vals)) console.log('::notice::'+k+' ('+v.size+'): '+[...v].slice(0,30).join(' '));
-            for (const s of series.slice(0,3)) console.log('::notice::ejemplo '+s.slice(0,900).replace(/\s+/g,' '));
-          " || true
+          i=0
+          for k in "ESP...100._T._T.D.V._T.." "ESP.MAR..100._T._T.D.V._T.." "ESP..1000.100._T._T.D.V._T.."; do
+            i=$((i+1))
+            code=$(curl -s --max-time 900 "https://sdmx.oecd.org/public/rest/data/OECD.DCD.FSD,DSD_CRS@DF_CRS,/$k?startPeriod=2023&endPeriod=2023" -o d$i.xml -w "%{http_code} %{size_download}")
+            node -e "
+              const x=require('fs').readFileSync('d$i.xml','utf8');
+              const series=x.split('<generic:Series>').slice(1);
+              const vals={};
+              for (const s of series) for (const m of s.split('</generic:SeriesKey>')[0].matchAll(/id=\"([^\"]+)\" value=\"([^\"]*)\"/g)) (vals[m[1]] ??= new Set()).add(m[2]);
+              const dims=Object.entries(vals).map(([k,v])=>k+'('+v.size+'):'+[...v].slice(0,25).join(' ')).join(' || ');
+              const ej=series.slice(0,2).map(s=>s.replace(/<[^>]*id=\"([^\"]+)\" value=\"([^\"]*)\"[^>]*>/g,'\$1=\$2 ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,500)).join(' ## ');
+              console.log('::notice title=CRS $k::http $code; series '+series.length+'; '+(series.length?dims.slice(0,2500)+' ### '+ej:x.slice(0,300)));
+            "
+          done
