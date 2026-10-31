@@ -69,7 +69,7 @@ jobs:
           LUPA_PAGINAS: ${{ github.event_name == 'pull_request' && '3' || '40' }}
           LUPA_MESES: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           LUPA_SUBV_MESES: ${{ github.event_name == 'pull_request' && '2' || '12' }}
-          LUPA_AYUDA_RECIENTES: ${{ github.event_name == 'pull_request' && '1' || '2' }}
+          LUPA_AYUDA_RECIENTES: '2'
           LUPA_AYUDA_NUEVOS: ${{ github.event_name == 'pull_request' && '0' || '3' }}
           LUPA_PROYECTOS: ${{ github.event_name == 'pull_request' && '0' || '1' }}
           NODE_OPTIONS: --max-old-space-size=6144
