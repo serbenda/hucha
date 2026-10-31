@@ -22,14 +22,24 @@ const estado = {
 };
 const cache = {};
 
-async function datos(tab) {
-  const fichero = { contratos: 'contratos', subvenciones: 'subvenciones', ayuda: 'ayuda' }[tab];
-  cache[tab] ??= fetch(new URL(`../../data/lupa/${fichero}.json`, import.meta.url), { cache: 'no-cache' }).then((r) => {
+function pedir(fichero) {
+  cache[fichero] ??= fetch(new URL(`../../data/lupa/${fichero}.json`, import.meta.url), { cache: 'no-cache' }).then((r) => {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
   });
-  return cache[tab];
+  return cache[fichero];
 }
+
+// Al abrir la Lupa basta con la portada (los mayores y el total). El fichero completo, que crece con el
+// histórico, se pide al buscar, filtrar o ver más. Si la portada no existe, se usa el completo.
+const enPortada = () => !estado.q && !estado.tema && !estado.nivel && estado.mostrados <= POR_PAGINA;
+async function datos(tab, { completo = false } = {}) {
+  if (tab === 'ayuda') return pedir('ayuda');
+  if (completo || !enPortada()) return pedir(tab);
+  return pedir(`${tab}-portada`).catch(() => pedir(tab));
+}
+// En cuanto se va a buscar o filtrar, el completo se empieza a pedir para que esté listo
+const preparar = () => estado.tab !== 'ayuda' && pedir(estado.tab).catch(() => {});
 
 function guardarUrl() {
   const p = new URLSearchParams();
@@ -43,26 +53,20 @@ function guardarUrl() {
 // ---------------------------------------------------------------------------
 // Pintar
 
+// Los botones de temas ya vienen en el HTML (así la página no se mueve al cargar); aquí solo se marcan
 function pintarTemas() {
   const visible = estado.tab !== 'ayuda';
   $('filtros').hidden = !visible;
-  if (!visible) return;
-  $('temas').replaceChildren(
-    ...[{ id: '', nombre: 'Todo' }, ...TEMAS].map((t) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = t.nombre;
-      b.setAttribute('aria-pressed', String(estado.tema === t.id));
-      b.addEventListener('click', () => {
-        estado.tema = t.id;
-        estado.mostrados = POR_PAGINA;
-        pintarTemas();
-        pintar();
-      });
-      return b;
-    })
-  );
+  $('temas').querySelectorAll('[data-tema]').forEach((b) => b.setAttribute('aria-pressed', String(estado.tema === b.dataset.tema)));
 }
+$('temas').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-tema]');
+  if (!b) return;
+  estado.tema = b.dataset.tema;
+  estado.mostrados = POR_PAGINA;
+  pintarTemas();
+  pintar();
+});
 
 function fichaContrato(c) {
   return `<li class="resultado">
@@ -96,7 +100,9 @@ function fichaSubvencion(s) {
   </li>`;
 }
 
+let turno = 0;
 async function pintar() {
+  const mio = ++turno;
   guardarUrl();
   document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === estado.tab)));
   $('panel').setAttribute('aria-labelledby', `tab-${estado.tab}`);
@@ -108,7 +114,9 @@ async function pintar() {
   let d;
   try {
     d = await datos(estado.tab);
+    if (mio !== turno) return; // ya hay otra búsqueda más nueva
   } catch {
+    if (mio !== turno) return;
     resumen.textContent = 'Estos datos no están disponibles ahora mismo. Prueba en un rato.';
     lista.replaceChildren();
     mas.hidden = true;
@@ -127,17 +135,20 @@ async function pintar() {
   let r = buscar(todos, estado.q, { campos, importe, tema: estado.tema });
   if (estado.nivel) r = r.filter((x) => x.n === estado.nivel);
 
-  const total = suma(r, importe);
-  const que = contratos ? (r.length === 1 ? 'contrato' : 'contratos') : r.length === 1 ? 'subvención' : 'subvenciones';
+  // En la portada el total viene ya hecho; con el fichero completo se cuenta lo filtrado
+  const n = d.total && enPortada() ? d.total.n : r.length;
+  const que = contratos ? (n === 1 ? 'contrato' : 'contratos') : n === 1 ? 'subvención' : 'subvenciones';
+  const total = d.total && enPortada() ? d.total.suma : suma(r, importe);
+  
   const filtro = [estado.q && `«${estado.q}»`, estado.tema && TEMAS.find((t) => t.id === estado.tema)?.nombre.toLowerCase(), estado.nivel && estado.nivel.toLowerCase()]
     .filter(Boolean)
     .join(', ');
-  resumen.innerHTML = r.length
-    ? `<strong>${new Intl.NumberFormat('es-ES').format(r.length)} ${que}</strong> por <strong>${millones(total)}</strong>${filtro ? ` con ${esc(filtro)}` : ''}.`
+  resumen.innerHTML = n
+    ? `<strong>${new Intl.NumberFormat('es-ES').format(n)} ${que}</strong> por <strong>${millones(total)}</strong>${filtro ? ` con ${esc(filtro)}` : ''}.`
     : `No hay ${contratos ? 'contratos' : 'subvenciones'}${filtro ? ` con ${esc(filtro)}` : ''} en lo que cubre la Lupa.`;
   lista.innerHTML = r.slice(0, estado.mostrados).map(contratos ? fichaContrato : fichaSubvencion).join('');
-  mas.hidden = r.length <= estado.mostrados;
-  mas.textContent = `Ver más (quedan ${new Intl.NumberFormat('es-ES').format(r.length - estado.mostrados)})`;
+  mas.hidden = n <= estado.mostrados;
+  mas.textContent = `Ver más (quedan ${new Intl.NumberFormat('es-ES').format(n - estado.mostrados)})`;
 }
 
 function pintarAyuda(d) {
@@ -229,6 +240,10 @@ $('nivel').addEventListener('change', () => {
   estado.mostrados = POR_PAGINA;
   pintar();
 });
+for (const id of ['buscador', 'filtros']) {
+  $(id).addEventListener('focusin', preparar);
+  $(id).addEventListener('pointerdown', preparar);
+}
 $('mas').addEventListener('click', () => {
   estado.mostrados += POR_PAGINA;
   pintar();
@@ -236,5 +251,9 @@ $('mas').addEventListener('click', () => {
 
 $('q').value = estado.q;
 pintarTemas();
-pintar();
-pintarCobertura();
+// Los datos son pesados: se piden cuando ya está pintada la página con su letra, para no retrasarla
+const listo = document.fonts?.ready ?? Promise.resolve();
+listo.then(() => requestAnimationFrame(() => {
+  pintar();
+  pintarCobertura();
+}));

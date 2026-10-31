@@ -3,7 +3,7 @@
 //   si no hay conexión, lo último guardado.
 // - Fuente e imágenes, que casi nunca cambian: lo guardado, y se actualiza en segundo plano.
 
-const VERSION = 'hucha-v3';
+const VERSION = 'hucha-v4';
 const BASICOS = [
   './',
   'a-donde-va/',

@@ -182,7 +182,7 @@ export const esContratoUtil = (c) => ['ADJ', 'RES'].includes(c?.estado) && c.adj
 /** Forma compacta para la web (claves cortas para que pese menos). */
 export const compactarContrato = (c) => ({
   id: c.id, t: c.titulo, o: c.organo, n: c.nivel, l: c.lugar, ti: c.tipo, fi: c.finalidad, te: c.temas,
-  li: c.licitado, a: c.adjudicado, f: c.fecha, g: c.ganadores, u: c.enlace, up: c.actualizado,
+  li: c.licitado, a: c.adjudicado, f: c.fecha, g: [...new Set(c.ganadores)], u: c.enlace, up: c.actualizado,
 });
 
 // ---------------------------------------------------------------------------
@@ -193,9 +193,9 @@ export const UMBRAL_SUBVENCIONES = 1000000;
 
 export function urlConcesiones(desde, hasta, pagina = 0, tamaño = 200) {
   const ddmmaaaa = (iso) => iso.split('-').reverse().join('/');
-  const p = new URLSearchParams({ page: String(pagina), pageSize: String(tamaño), vpd: 'GE', fechaDesde: ddmmaaaa(desde), fechaHasta: ddmmaaaa(hasta) });
-  // El orden va aparte: la API solo lo entiende con la coma tal cual, no codificada (%2C)
-  return `https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?${p}&sort=importe,desc`;
+  // La API ordena con «order» y «direccion» (no con el «sort» habitual)
+  const p = new URLSearchParams({ page: String(pagina), pageSize: String(tamaño), vpd: 'GE', fechaDesde: ddmmaaaa(desde), fechaHasta: ddmmaaaa(hasta), order: 'importe', direccion: 'desc' });
+  return `https://www.infosubvenciones.es/bdnstrans/api/concesiones/busqueda?${p}`;
 }
 
 /** Concesiones de una respuesta de la API, sin personas físicas. */
@@ -259,3 +259,17 @@ export function buscar(lista, consulta, { campos, importe, tema } = {}) {
 }
 
 export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0), 0);
+
+// ---------------------------------------------------------------------------
+// Portada: lo que la Lupa enseña nada más abrirse, en un fichero pequeño.
+// El fichero completo crece con el histórico; solo se pide al buscar, filtrar o ver más.
+
+export const EN_PORTADA = 40;
+
+/** Del fichero completo de contratos o subvenciones, el de portada: los mayores y el total. */
+export function portadaDe(datos, clave, importe) {
+  const { cursores, [clave]: lista = [], ...resto } = datos;
+  const orden = [...lista].sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+  return { ...resto, total: { n: lista.length, suma: suma(lista, importe) }, [clave]: orden.slice(0, EN_PORTADA) };
+}
+
