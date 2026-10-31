@@ -105,8 +105,9 @@ test('portada: el ticket calcula, reparte y suma el 100 %', async () => {
   // Otro sueldo
   await pagina.click('[data-sueldo="17094"]');
   assert.match(await pagina.textContent('#aporte'), /IRPF\s*0\s€/);
+  // Al escribir, el ticket se recalcula con una pequeña espera (para no hacerlo en cada tecla)
   await pagina.fill('#bruto', '');
-  assert.match(await pagina.textContent('#aporte'), /Escribe tu sueldo/);
+  await pagina.waitForFunction(() => /Escribe tu sueldo/.test(document.querySelector('#aporte').textContent), null, { timeout: 2000 });
   await contexto.close();
 });
 
