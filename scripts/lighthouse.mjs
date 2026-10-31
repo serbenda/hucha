@@ -35,8 +35,8 @@ for (const [nombre, ruta] of Object.entries(PAGINAS)) {
   });
   resultados[nombre] = Object.fromEntries(Object.keys(CATEGORIAS).map((c) => [c, lhr.categories[c]?.score ?? 0]));
   let linea = Object.entries(resultados[nombre]).map(([c, v]) => `${CATEGORIAS[c].nombre} ${Math.round(v * 100)}`).join(', ');
-  // Si el rendimiento no llega a 90, se dice qué métrica lo baja
-  if (resultados[nombre].performance < 0.9) {
+  // Si el rendimiento no llega a 95, se dice qué métrica lo baja
+  if (resultados[nombre].performance < 0.95) {
     const a = lhr.audits;
     const ms = (id) => `${Math.round(a[id]?.numericValue ?? 0)} ms (${Math.round((a[id]?.score ?? 0) * 100)})`;
     linea += `. LCP ${ms('largest-contentful-paint')}, FCP ${ms('first-contentful-paint')}, TBT ${ms('total-blocking-time')}, SI ${ms('speed-index')}, CLS ${(a['cumulative-layout-shift']?.numericValue ?? 0).toFixed(3)}`;
