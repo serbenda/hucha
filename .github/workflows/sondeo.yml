@@ -8,39 +8,37 @@ jobs:
   igae:
     runs-on: ubuntu-latest
     steps:
-      - name: Página y ficheros de la IGAE (ejecución del presupuesto del Estado)
+      - name: Libros de agosto de 2026
         run: |
-          B="https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria"
+          B="https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadPublica/CPE/EjecucionPresupuestaria/Documents"
           UA="Mozilla/5.0 (hucha; github.com/serbenda/hucha)"
-          for a in 2026 2025; do
-            code=$(curl -sL -A "$UA" --max-time 60 "$B/Paginas/imejecucionpresupuesto$a.aspx" -o p$a.html -w "%{http_code}")
-            enlaces=$(grep -oi 'href="[^"]*\.xlsx\?"' p$a.html | sed 's/href="//;s/"$//' | sort -u | tr '\n' ' ')
-            echo "::notice title=IGAE página $a::http $code; enlaces: $(echo "$enlaces" | cut -c1-2500)"
+          cat > leer.js <<'JS'
+          const { execFileSync } = require('child_process');
+          const [fich, modo, hojaPedida] = process.argv.slice(2);
+          const x = (p) => { try { return execFileSync('unzip', ['-p', fich, p], { encoding: 'utf8', maxBuffer: 1e9 }); } catch { return ''; } };
+          const limpio = (t) => String(t ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+          const ss = [...x('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => limpio(m[1]));
+          const libro = x('xl/workbook.xml');
+          const rels = x('xl/_rels/workbook.xml.rels');
+          const hojas = [...libro.matchAll(/<sheet [^>]*name="([^"]+)"[^>]*r:id="([^"]+)"/g)].map(([, nombre, rid]) => {
+            const t = (rels.match(new RegExp('Id="' + rid + '"[^>]*Target="([^"]+)"')) || rels.match(new RegExp('Target="([^"]+)"[^>]*Id="' + rid + '"')) || [])[1];
+            return { nombre, ruta: 'xl/' + String(t).replace(/^\/?xl\//, '') };
+          });
+          const celdas = (xml) => [...xml.matchAll(/<row [^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)].map(([, r, fila]) => [...fila.matchAll(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map(([, col, attrs, dentro]) => { const v = (dentro || '').match(/<v>([\s\S]*?)<\/v>/)?.[1]; return col + '=' + (/t="s"/.test(attrs) ? ss[+v] : v ?? ''); }).filter((c) => !c.endsWith('=')).join(' ; '));
+          const nota = (t, m) => console.log('::notice title=' + t + '::' + m.replace(/[\r\n%]/g, ' ').slice(0, 3900));
+          if (modo === 'lista') {
+            const s = hojas.map((h) => { const f = celdas(x(h.ruta)); return h.nombre + ' [' + f.length + ']: ' + f.slice(0, 4).join(' / ').slice(0, 150); });
+            for (let i = 0; i < s.length; i += 10) nota(fich + ' hojas ' + (i + 1) + '-' + Math.min(i + 10, s.length) + '/' + s.length, s.slice(i, i + 10).join(' ## '));
+          } else {
+            const h = hojas.find((h) => h.nombre === hojaPedida) ?? hojas[0];
+            const f = celdas(x(h.ruta));
+            for (let i = 0; i < Math.min(f.length, 60); i += 12) nota(fich + ' ' + h.nombre + ' filas ' + (i + 1), f.slice(i, i + 12).join(' || '));
+          }
+          JS
+          for f in "MENSUAL AGOSTO 2026.xlsx" "MENSUAL AGOSTO 2026 ANEXO I.xlsx" "MENSUAL AGOSTO 2026 ANEXO II.xlsx"; do
+            n=$(echo "$f" | tr ' ' '_')
+            curl -sL -A "$UA" --max-time 120 "$B/$(echo "$f" | sed 's/ /%20/g')" -o "$n" -w "::notice title=$n::%{http_code} %{size_download}\n"
+            node leer.js "$n" lista
           done
-          echo "::notice title=Páginas enlazadas::$(grep -oi 'href="[^"]*\.aspx[^"]*"' p2025.html | grep -i ejecuc | sort -u | tr '\n' ' ' | cut -c1-2500)"
-          for p in imejecucionpresupuesto.aspx imejecucionpresupuestoactual.aspx imavancecomentado.aspx; do
-            code=$(curl -sL -A "$UA" --max-time 60 "$B/Paginas/$p" -o q.html -w "%{http_code}")
-            echo "::notice title=Página $p::http $code; xlsx: $(grep -oi 'href="[^"]*\.\(xlsx\|xls\|pdf\)"' q.html | grep -i 2026 | head -8 | tr '\n' ' ' | cut -c1-1500)"
-          done
-          for f in "MENSUAL%20DICIEMBRE%202025.xlsx" "MENSUAL%20DICIEMBRE%202025%20ANEXO%20I.xlsx" "MENSUAL%20DICIEMBRE%202025%20ANEXO%20II.xlsx"; do
-          u="$B/Documents/$f"
-          code=$(curl -sL -A "$UA" --max-time 120 "$u" -o m.xlsx -w "%{http_code} %{size_download}")
-          echo "::notice title=Libro $f::$code"
-          node -e "
-            const { execFileSync } = require('child_process');
-            const x = (p) => { try { return execFileSync('unzip', ['-p', 'm.xlsx', p], { encoding: 'utf8', maxBuffer: 1e9 }); } catch { return ''; } };
-            const libro = x('xl/workbook.xml');
-            const rels = x('xl/_rels/workbook.xml.rels');
-            const ss = [...x('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').trim());
-            const hojas = [...libro.matchAll(/<sheet [^>]*name=\"([^\"]+)\"[^>]*r:id=\"([^\"]+)\"/g)];
-            const salida = [];
-            for (const [, nombre, rid] of hojas) {
-              const destino = (rels.match(new RegExp('Id=\"' + rid + '\"[^>]*Target=\"([^\"]+)\"')) || rels.match(new RegExp('Target=\"([^\"]+)\"[^>]*Id=\"' + rid + '\"')) || [])[1];
-              const xml = x('xl/' + String(destino).replace(/^\/?xl\//, ''));
-              const filas = (xml.match(/<row /g) || []).length;
-              const textos = [...xml.matchAll(/<c [^>]*t=\"s\"[^>]*>\s*<v>(\d+)<\/v>/g)].slice(0, 5).map((m) => ss[+m[1]]).join(' | ');
-              salida.push(nombre + ' [' + filas + ' filas]: ' + textos.slice(0, 130));
-            }
-            console.log('::notice title=Hojas de $f (' + salida.length + ')::' + salida.join(' ## ').slice(0, 3800));
-          "
-          done
+          node leer.js "MENSUAL_AGOSTO_2026_ANEXO_I.xlsx" filas
+          node leer.js "MENSUAL_AGOSTO_2026_ANEXO_II.xlsx" filas
