@@ -1,0 +1,161 @@
+name: Actualizar datos y publicar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Eurostat publica los datos por funciones una vez al año (en febrero) y los revisa
+    # en abril y octubre: basta con mirar cada lunes. Hora en UTC.
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      # Actions fijadas por commit (v4, v5…) para que no cambien sin que lo sepamos
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Tests
+        run: npm test
+
+      - id: pages
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Recuperar los datos publicados (por si Eurostat falla ahora)
+        env:
+          BASE: ${{ steps.pages.outputs.base_url || 'https://hucha.bendi.dev' }}
+        run: |
+          mkdir -p data
+          curl -fsSL --max-time 60 "$BASE/data/cofog.json" -o data/cofog.json || rm -f data/cofog.json
+          ls -la data
+
+      - name: Descargar datos (Eurostat)
+        run: npm run datos
+
+      - name: Comprobar que hay datos
+        run: |
+          test -s data/cofog.json || { echo "::error::No hay datos: ni Eurostat ni la última publicación"; exit 1; }
+          node -e "const d=require('./data/cofog.json'); if (d.ejemplo) { console.log('::error::Son datos de ejemplo'); process.exit(1) } console.log('Años:', d.años.join(', '), '| provisionales:', d.provisionales.join(', ') || 'ninguno')"
+
+      - name: Resumen de las partidas (para revisarlas en la PR)
+        run: |
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            import { partidas, ultimoAño, gastoPorPersona, reparto } from './assets/js/cofog.js';
+            const d = JSON.parse(readFileSync('data/cofog.json', 'utf8'));
+            const a = ultimoAño(d), pp = gastoPorPersona(d, a);
+            const filas = partidas(d, a).map((p) => p.nombre + ': ' + (p.cuota * 100).toFixed(1) + ' %, ' + Math.round(p.cuota * pp) + ' €/hab');
+            console.log('::notice title=Partidas ' + a + '::' + filas.join(' | '));
+            const r = reparto(d, a).map((f) => f.nombre + ': ' + f.partes.map((p) => p.nombre + ' ' + Math.round(p.cuota * 100)).join('/'));
+            console.log('::notice title=Quién gasta ' + a + '::' + r.join(' | '));
+          "
+
+      - name: Fuente servida desde la web
+        # Si falla, la web sigue funcionando con la fuente del sistema
+        continue-on-error: true
+        run: |
+          npm install --no-save --no-package-lock @fontsource-variable/archivo@5
+          node scripts/vendor.mjs
+
+      - name: Preparar la web
+        run: |
+          mkdir -p _site vendor
+          cp -r index.html a-donde-va quien-gasta fuentes assets data vendor \
+            manifest.webmanifest sw.js sitemap.xml robots.txt .nojekyll _site/
+          # Versión en los estilos y scripts de cada página: al publicar, nadie ve HTML nuevo con CSS viejo
+          v="${GITHUB_SHA::8}"
+          find _site -name '*.html' -exec sed -i -E "s#(href=\"[^\"]+\.css)\"#\1?v=$v\"#g; s#(src=\"[^\"]+\.js)\"#\1?v=$v\"#g" {} +
+
+      - name: Estado de las fuentes
+        if: always()
+        run: |
+          node -e "const e=require('./data/estado.json');for(const[k,v]of Object.entries(e))console.log((v.ok?'::notice::':'::warning::')+k+': '+v.detalle)" || true
+
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+        with:
+          path: _site
+
+      - name: Subir el estado de las fuentes para el aviso
+        if: always() && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: estado
+          path: data/estado.json
+          if-no-files-found: ignore
+
+  publicar:
+    # En las PR solo se construye y se prueba; se publica desde main
+    if: github.event_name != 'pull_request'
+    needs: construir
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+  avisar:
+    # Abre un issue si falla Eurostat, los tests o la publicación, y lo cierra al recuperarse
+    if: always() && github.event_name != 'pull_request'
+    needs: [construir, publicar]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        continue-on-error: true
+        with:
+          name: estado
+
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          RESULTADO_CONSTRUIR: ${{ needs.construir.result }}
+          RESULTADO_PUBLICAR: ${{ needs.publicar.result }}
+        with:
+          script: |
+            const fs = require('fs');
+            let estado = {};
+            try { estado = JSON.parse(fs.readFileSync('estado.json', 'utf8')); } catch {}
+            const fallos = Object.entries(estado).filter(([, e]) => !e.ok).map(([f, e]) => `- **${f}**: ${e.detalle}`);
+            if (process.env.RESULTADO_CONSTRUIR !== 'success') fallos.push('- **construcción o tests**: la web no se ha podido preparar o no ha pasado los tests');
+            else if (process.env.RESULTADO_PUBLICAR !== 'success') fallos.push('- **publicación**: GitHub Pages no ha aceptado la nueva versión');
+
+            const { owner, repo } = context.repo;
+            const abiertos = (await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: 'datos' })).data;
+            const ejecucion = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            if (fallos.length) {
+              const cuerpo = `${fallos.join('\n')}\n\n[Ver ejecución](${ejecucion})`;
+              if (abiertos.length) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: abiertos[0].number, body: `Sigue fallando:\n\n${cuerpo}` });
+              } else {
+                await github.rest.issues.create({ owner, repo, title: 'Fallo al actualizar la web', labels: ['datos'], body: `La web sigue con la última versión buena.\n\n${cuerpo}` });
+              }
+              core.warning(fallos.join(' | '));
+            } else {
+              for (const i of abiertos) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: i.number, body: `Resuelto: todo vuelve a funcionar. [Ver ejecución](${ejecucion})` });
+                await github.rest.issues.update({ owner, repo, issue_number: i.number, state: 'closed' });
+              }
+            }

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>hucha · a dónde va el dinero público en España</title>
+  <meta name="description" content="La hucha de todos: cuánto pones con tus impuestos y en qué se gasta, con datos oficiales.">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="canonical" href="https://hucha.bendi.dev/">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#12161e" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="hucha">
+  <meta property="og:title" content="hucha: a dónde va el dinero público en España">
+  <meta property="og:description" content="Escribe tu sueldo y mira a dónde va cada euro de tus impuestos, con datos oficiales.">
+  <meta property="og:url" content="https://hucha.bendi.dev/">
+  <link rel="stylesheet" href="vendor/fuentes/archivo.css">
+  <link rel="stylesheet" href="assets/css/estilos.css">
+</head>
+<body>
+  <header class="envoltorio cabecera">
+    <a class="marca" href="./" aria-label="hucha, inicio">
+      <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="moneda" cx="30" cy="9" r="7"/>
+        <path class="cuerpo" d="M29 20c-12.7 0-23 7.4-23 17 0 4.6 2.4 8.8 6.3 11.8V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-4.6c2.5.7 5.1 1 7.7 1s5.2-.3 7.7-1V57a2 2 0 0 0 2 2h5a2 2 0 0 0 2-2v-8.3c2-1.6 3.6-3.4 4.6-5.5H57a2 2 0 0 0 2-2v-7.4a2 2 0 0 0-2-2h-2.9c-1.1-2.2-2.7-4.2-4.7-5.9l1.8-6.3a1.4 1.4 0 0 0-1.8-1.7l-7.2 2.4C38.4 20.8 33.8 20 29 20Z"/>
+        <rect class="hueco" x="22" y="23.5" width="15" height="3.4" rx="1.7"/>
+        <circle class="hueco" cx="45.5" cy="31.5" r="2.1"/>
+      </svg>
+      <span>hucha</span>
+    </a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="./" aria-current="page">Tu ticket</a>
+      <a href="a-donde-va/">A dónde va</a>
+      <a href="quien-gasta/">Quién gasta</a>
+      <a href="fuentes/">Fuentes</a>
+    </nav>
+  </header>
+
+  <main class="envoltorio">
+    <section class="portada" aria-labelledby="titular">
+      <div>
+        <h1 class="titular" id="titular">La hucha de todos.</h1>
+        <p class="entradilla">Con tus impuestos y cotizaciones pones dinero en una hucha común. Escribe tu sueldo y mira a dónde va cada euro, según cómo gastan de verdad las administraciones.</p>
+
+        <form class="sueldo" id="formulario" action="./" method="get">
+          <label class="campo" for="bruto">
+            Tu sueldo bruto al año
+            <span class="con-unidad">
+              <input id="bruto" name="sueldo" type="text" inputmode="decimal" autocomplete="off" value="30.000" aria-describedby="bruto-ayuda">
+              <b aria-hidden="true">€</b>
+            </span>
+            <small id="bruto-ayuda">El que pone tu contrato, antes de impuestos. No sale de tu navegador.</small>
+          </label>
+          <div class="rapidos" role="group" aria-label="Sueldos de ejemplo">
+            <button type="button" data-sueldo="17094">Salario mínimo</button>
+            <button type="button" data-sueldo="23000">23.000 €</button>
+            <button type="button" data-sueldo="30000">30.000 €</button>
+            <button type="button" data-sueldo="45000">45.000 €</button>
+            <button type="button" data-sueldo="70000">70.000 €</button>
+          </div>
+          <label class="interruptor">
+            <input type="checkbox" id="empresa" role="switch">
+            Sumar lo que tu empresa paga por ti a la Seguridad Social
+          </label>
+        </form>
+      </div>
+
+      <figure class="ticket" id="ticket" aria-labelledby="ticket-titulo" aria-live="polite">
+        <figcaption class="ticket-cabecera">
+          <strong id="ticket-titulo">Tu ticket</strong>
+          <span id="ticket-año">Gasto público de España</span>
+        </figcaption>
+
+        <h2>Lo que pones al año</h2>
+        <dl id="aporte">
+          <div class="linea-ticket"><dt>IRPF</dt><dd>—</dd></div>
+          <div class="linea-ticket"><dt>Seguridad Social</dt><dd>—</dd></div>
+          <div class="linea-ticket total"><dt>Total</dt><dd>—</dd></div>
+        </dl>
+
+        <h2>A dónde va</h2>
+        <dl class="reparto" id="reparto">
+          <div class="linea-ticket"><dt>Cargando datos…</dt><dd></dd></div>
+        </dl>
+
+        <p class="ticket-pie" id="ticket-pie">Estimación orientativa · datos de Eurostat</p>
+        <div class="ticket-acciones">
+          <button class="boton secundario" type="button" id="compartir">Compartir mi ticket</button>
+        </div>
+      </figure>
+    </section>
+
+    <section aria-labelledby="t-todos">
+      <div class="seccion-titulo">
+        <h2 id="t-todos">Entre todos</h2>
+        <p id="todos-texto">Lo que gastan juntas todas las administraciones: Estado, comunidades, ayuntamientos y Seguridad Social.</p>
+      </div>
+      <dl class="cifras" id="cifras">
+        <div class="cifra"><dt>Gasto público total</dt><dd>—</dd></div>
+        <div class="cifra"><dt>Por habitante</dt><dd>—</dd></div>
+        <div class="cifra"><dt>Sobre lo que produce España</dt><dd>—</dd></div>
+      </dl>
+    </section>
+
+    <section aria-labelledby="t-mas">
+      <h2 id="t-mas" class="oculto">Más</h2>
+      <ul class="secciones">
+        <li>
+          <a href="a-donde-va/">
+            <h3>¿A dónde va el dinero?</h3>
+            <p>Cada partida en euros por habitante, qué incluye y cómo ha cambiado, comparada con la media europea.</p>
+          </a>
+        </li>
+        <li>
+          <a href="quien-gasta/">
+            <h3>¿Quién lo gasta?</h3>
+            <p>Qué parte de la sanidad, la educación o las pensiones pagan el Estado, tu comunidad, tu ayuntamiento y la Seguridad Social.</p>
+          </a>
+        </li>
+        <li>
+          <a href="fuentes/">
+            <h3>¿De dónde salen los datos?</h3>
+            <p>Fuentes oficiales, cómo se calcula el ticket y lo que no entra en la cuenta.</p>
+          </a>
+        </li>
+      </ul>
+      <p class="nota">El ticket cuenta el IRPF y las cotizaciones de un asalariado con contrato indefinido, sin hijos ni deducciones. Además pagas IVA e impuestos especiales cada vez que compras: no entran porque dependen de lo que gastes. Y como las administraciones gastan más de lo que ingresan, una parte se paga con deuda.</p>
+    </section>
+  </main>
+
+  <footer class="envoltorio pie">
+    <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+  </footer>
+
+  <script type="module" src="assets/js/portada.js"></script>
+  <script type="module" src="assets/js/comun.js"></script>
+</body>
+</html>
