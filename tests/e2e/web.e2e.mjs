@@ -147,7 +147,8 @@ test('a dónde va: todas las partidas, con su detalle y su gráfico', async () =
   const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
   const n = partidas(datos, ultimoAño(datos)).length;
   assert.equal(await pagina.locator('.partida').count(), n);
-  assert.match(await pagina.textContent('#entradilla'), /por habitante/);
+  assert.match(await pagina.textContent('#c-habitante'), /€/);
+  assert.match(await pagina.textContent('#c-pib'), /del PIB/);
   await pagina.locator('.partida summary').nth(1).click();
   const detalle = pagina.locator('.partida').nth(1);
   assert.ok(await detalle.locator('.evolucion polyline.es').count(), 'línea de España');
@@ -159,7 +160,7 @@ test('quién gasta: las cuatro administraciones y las funciones', async () => {
   const { pagina, contexto } = await abrir('quien-gasta/', ESCRITORIO);
   assert.equal(await pagina.locator('#administraciones .cifra').count(), 4);
   assert.ok((await pagina.locator('.funcion').count()) >= 9);
-  assert.match(await pagina.textContent('#entradilla'), /comunidades gestionaron/);
+  assert.match(await pagina.textContent('#c-sanidad'), /%/);
   await contexto.close();
 });
 
