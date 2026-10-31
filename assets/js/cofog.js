@@ -124,6 +124,95 @@ export const PARTIDAS = [
   },
 ];
 
+/** Grupos COFOG (segundo nivel) con nombre de calle: «en qué se va» dentro de cada partida. */
+export const GRUPOS = {
+  GF0101: 'Gobierno, parlamentos, Hacienda y asuntos exteriores',
+  GF0102: 'Ayuda al desarrollo de otros países',
+  GF0103: 'Servicios generales: personal, estadística, compras centrales',
+  GF0104: 'Investigación básica',
+  GF0105: 'Investigación sobre la administración',
+  GF0106: 'Otros servicios generales',
+  GF0107: 'Intereses de la deuda',
+  GF0108: 'Transferencias entre administraciones',
+  GF0201: 'Fuerzas Armadas',
+  GF0202: 'Protección civil',
+  GF0203: 'Ayuda militar a otros países',
+  GF0204: 'Investigación militar',
+  GF0205: 'Otros gastos de defensa',
+  GF0301: 'Policía y Guardia Civil',
+  GF0302: 'Bomberos',
+  GF0303: 'Juzgados y tribunales',
+  GF0304: 'Prisiones',
+  GF0305: 'Investigación sobre seguridad',
+  GF0306: 'Otros gastos de seguridad',
+  GF0401: 'Empleo, comercio y asuntos económicos generales',
+  GF0402: 'Agricultura, montes y pesca',
+  GF0403: 'Energía',
+  GF0404: 'Industria, minería y construcción',
+  GF0405: 'Transporte: carreteras, tren, puertos y aeropuertos',
+  GF0406: 'Telecomunicaciones',
+  GF0407: 'Turismo y otros sectores',
+  GF0408: 'Investigación económica',
+  GF0409: 'Otros asuntos económicos',
+  GF0501: 'Recogida y tratamiento de basuras',
+  GF0502: 'Aguas residuales',
+  GF0503: 'Contaminación',
+  GF0504: 'Naturaleza y paisaje',
+  GF0505: 'Investigación ambiental',
+  GF0506: 'Otros gastos de medio ambiente',
+  GF0601: 'Vivienda',
+  GF0602: 'Urbanismo y desarrollo de barrios',
+  GF0603: 'Agua potable',
+  GF0604: 'Alumbrado público',
+  GF0605: 'Investigación sobre vivienda',
+  GF0606: 'Otros gastos de vivienda y urbanismo',
+  GF0701: 'Medicamentos y material sanitario',
+  GF0702: 'Centros de salud y consultas',
+  GF0703: 'Hospitales',
+  GF0704: 'Salud pública y vacunas',
+  GF0705: 'Investigación sanitaria',
+  GF0706: 'Gestión y otros gastos de sanidad',
+  GF0801: 'Deporte y ocio',
+  GF0802: 'Cultura: museos, bibliotecas, patrimonio',
+  GF0803: 'Radio, televisión y publicaciones',
+  GF0804: 'Religión y asociaciones',
+  GF0805: 'Investigación cultural',
+  GF0806: 'Otros gastos de cultura y deporte',
+  GF0901: 'Infantil y primaria',
+  GF0902: 'Secundaria: ESO, Bachillerato y FP',
+  GF0903: 'Postsecundaria no universitaria',
+  GF0904: 'Universidad',
+  GF0905: 'Educación sin nivel concreto (adultos, idiomas…)',
+  GF0906: 'Comedores, transporte escolar y otros servicios',
+  GF0907: 'Investigación educativa',
+  GF0908: 'Gestión y otros gastos de educación',
+  GF1001: 'Bajas por enfermedad e incapacidad',
+  GF1002: 'Pensiones de jubilación',
+  GF1003: 'Pensiones de viudedad y orfandad',
+  GF1004: 'Familia e hijos',
+  GF1005: 'Paro',
+  GF1006: 'Ayudas a la vivienda',
+  GF1007: 'Exclusión social: ingreso mínimo y otras ayudas',
+  GF1008: 'Investigación sobre protección social',
+  GF1009: 'Dependencia y otros gastos sociales',
+};
+
+/**
+ * Tipos de gasto (operaciones de contabilidad nacional): «cómo se gasta» cada euro.
+ * Lo que no encaja en ninguno (algunos impuestos, compra de terrenos…) va a «Otros».
+ */
+export const TIPOS = [
+  { id: 'D1', nombre: 'Sueldos del personal público', que: 'Sueldos y cotizaciones de funcionarios y empleados públicos: médicos, docentes, policías…' },
+  { id: 'D62', nombre: 'Pagos directos a personas', que: 'Pensiones, paro, bajas, ayudas por hijos o ingreso mínimo: dinero que llega a los hogares.' },
+  { id: 'P2', nombre: 'Compras de bienes y servicios', que: 'Material, suministros, mantenimiento, alquileres y servicios contratados a empresas.' },
+  { id: 'D632', nombre: 'Servicios pagados a empresas para los ciudadanos', que: 'Lo que la administración paga a otros para que te atiendan: medicamentos con receta, conciertos sanitarios y educativos.' },
+  { id: 'P5', nombre: 'Inversión: obras y equipos', que: 'Carreteras, vías, edificios, ordenadores, material militar…' },
+  { id: 'D3', nombre: 'Subvenciones a empresas', que: 'Ayudas a empresas para que bajen precios o mantengan actividad: transporte, energía, agricultura…' },
+  { id: 'D4', nombre: 'Intereses y rentas', que: 'Sobre todo, los intereses de la deuda.' },
+  { id: 'D7', nombre: 'Transferencias a otros', que: 'Dinero a asociaciones, a la Unión Europea, a otros países y entre administraciones.' },
+  { id: 'D9', nombre: 'Ayudas para inversiones', que: 'Dinero para que otros inviertan: obras de empresas públicas, fondos europeos…' },
+];
+
 // ---------------------------------------------------------------------------
 // Descarga (lo usa la Action)
 
@@ -138,6 +227,14 @@ export function urlGasto() {
   return `${API}/gov_10a_exp?${p}`;
 }
 
+/** Desglose por tipo de gasto (sueldos, compras, inversión…) de España, todas las administraciones. */
+export const AÑO_TIPOS = 2015;
+export function urlTipos() {
+  const p = new URLSearchParams({ lang: 'EN', geo: 'ES', sector: 'S13', unit: 'MIO_EUR', sinceTimePeriod: String(AÑO_TIPOS) });
+  for (const t of TIPOS) p.append('na_item', t.id);
+  return `${API}/gov_10a_exp?${p}`;
+}
+
 /** Población media anual de España. */
 export function urlPoblacion() {
   const p = new URLSearchParams({ lang: 'EN', geo: 'ES', indic_de: 'AVG', sinceTimePeriod: String(PRIMER_AÑO) });
@@ -149,8 +246,8 @@ export function urlPoblacion() {
  * { años, provisionales, poblacion, es: { S13: { MIO_EUR: { GF07: { '2024': 98000 } } } }, ue: {...}, fuente }
  * Solo se guarda lo que se usa: España en todas las unidades y sectores, y la UE en % del PIB.
  */
-export function prepararDatos(jsonGasto, jsonPoblacion) {
-  const datos = { es: {}, ue: {}, poblacion: {}, años: [], provisionales: [], fuente: {} };
+export function prepararDatos(jsonGasto, jsonPoblacion, jsonTipos = null) {
+  const datos = { es: {}, ue: {}, poblacion: {}, tipos: {}, años: [], provisionales: [], fuente: {} };
   const años = new Set();
   const provisionales = new Set();
 
@@ -171,11 +268,21 @@ export function prepararDatos(jsonGasto, jsonPoblacion) {
     if (o.geo === 'ES' && (!o.indic_de || o.indic_de === 'AVG')) datos.poblacion[o.time] = o.valor;
   }
 
+  // tipos[cofog][na_item][año]
+  if (jsonTipos) {
+    const validos = new Set(TIPOS.map((t) => t.id));
+    for (const o of aplanar(jsonTipos)) {
+      if (o.geo !== 'ES' || o.sector !== 'S13' || o.unit !== 'MIO_EUR' || !validos.has(o.na_item) || !o.cofog99) continue;
+      ((datos.tipos[o.cofog99] ??= {})[o.na_item] ??= {})[o.time] = o.valor;
+    }
+  }
+
   datos.años = [...años].sort();
   datos.provisionales = [...provisionales].sort();
   datos.fuente = {
     gasto: { dataset: 'gov_10a_exp', actualizado: jsonGasto?.updated ?? null },
     poblacion: { dataset: 'demo_gind', actualizado: jsonPoblacion?.updated ?? null },
+    tipos: jsonTipos ? { dataset: 'gov_10a_exp', actualizado: jsonTipos?.updated ?? null } : null,
   };
   return datos;
 }
@@ -301,4 +408,82 @@ export function gastoPorAdministracion(datos, año) {
     ...s,
     valor: combinar(datos, ['TOTAL'], ['GF0108'], año, { sector: s.id }) ?? valor(datos, 'TOTAL', año, { sector: s.id }),
   })).filter((s) => s.valor !== null);
+}
+
+// ---------------------------------------------------------------------------
+// Detalle de cada partida
+
+const division = (codigo) => codigo.slice(0, 4);
+const hijos = (datos, div, año) =>
+  Object.keys(datos?.es?.S13?.MIO_EUR ?? {}).filter((c) => c.length === 6 && division(c) === div && valor(datos, c, año) !== null).sort();
+
+/** Los grupos COFOG que forman una partida: los de sus divisiones (menos los que se restan) o ella misma. */
+export function gruposDePartida(datos, partida, año) {
+  const lista = [];
+  for (const c of partida.codigos) {
+    if (c.length === 4) {
+      const h = hijos(datos, c, año).filter((x) => !(partida.menos ?? []).includes(x));
+      lista.push(...h);
+    } else lista.push(c);
+  }
+  return lista;
+}
+
+/**
+ * En qué se va una partida: [{ codigo, nombre, valor, cuota }] de mayor a menor (cuota sobre la partida).
+ * Si los grupos no suman la partida (falta detalle), la diferencia va a «Sin detalle».
+ */
+export function detallePartida(datos, id, año) {
+  const partida = PARTIDAS.find((p) => p.id === id);
+  if (!partida) return [];
+  const total = combinar(datos, partida.codigos, partida.menos, año);
+  if (!(total > 0)) return [];
+  const grupos = gruposDePartida(datos, partida, año);
+  // Una partida de un solo grupo (como el transporte) no tiene más detalle en esta fuente
+  if (grupos.length <= 1) return [];
+  const lista = grupos
+    .map((c) => ({ codigo: c, nombre: GRUPOS[c] ?? c, valor: valor(datos, c, año) ?? 0 }))
+    .filter((g) => g.valor > 0);
+  const resto = total - lista.reduce((t, g) => t + g.valor, 0);
+  if (resto > total * 0.01) lista.push({ codigo: 'resto', nombre: 'Sin detalle', valor: resto });
+  return lista.map((g) => ({ ...g, cuota: g.valor / total })).sort((a, b) => b.valor - a.valor);
+}
+
+/** Último año con desglose por tipo de gasto (puede ir un año por detrás del total). */
+export function ultimoAñoTipos(datos) {
+  const años = new Set();
+  for (const t of Object.values(datos?.tipos?.TOTAL ?? {})) for (const a of Object.keys(t)) años.add(a);
+  return [...años].sort().at(-1) ?? null;
+}
+
+/**
+ * Cómo se gasta: reparto por tipo de gasto de una partida (o del total con id 'TOTAL').
+ * [{ id, nombre, que, valor, cuota }] de mayor a menor, con «Otros» para lo que no encaja.
+ */
+export function tiposDeGasto(datos, id, año) {
+  const partida = id === 'TOTAL' ? { codigos: ['TOTAL'], menos: [] } : PARTIDAS.find((p) => p.id === id);
+  if (!partida || !datos?.tipos) return [];
+  const total = combinar(datos, partida.codigos, partida.menos, año);
+  if (!(total > 0)) return [];
+  const de = (codigo, tipo) => datos.tipos?.[codigo]?.[tipo]?.[año];
+  const lista = [];
+  for (const t of TIPOS) {
+    let v = 0;
+    let completo = true;
+    for (const c of partida.codigos) {
+      const x = de(c, t.id);
+      if (typeof x !== 'number') completo = false;
+      else v += x;
+    }
+    for (const c of partida.menos ?? []) {
+      const x = de(c, t.id);
+      if (typeof x !== 'number') completo = false;
+      else v -= x;
+    }
+    if (completo && v > total * 0.002) lista.push({ id: t.id, nombre: t.nombre, que: t.que, valor: v });
+  }
+  if (!lista.length) return [];
+  const resto = total - lista.reduce((s, x) => s + x.valor, 0);
+  if (resto > total * 0.005) lista.push({ id: 'otros', nombre: 'Otros', que: 'Impuestos que pagan las propias administraciones, compra de terrenos y otros ajustes.', valor: resto });
+  return lista.map((x) => ({ ...x, cuota: x.valor / total })).sort((a, b) => b.valor - a.valor);
 }

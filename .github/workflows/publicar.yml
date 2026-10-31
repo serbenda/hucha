@@ -57,13 +57,20 @@ jobs:
         run: |
           node --input-type=module -e "
             import { readFileSync } from 'node:fs';
-            import { partidas, ultimoAño, gastoPorPersona, reparto } from './assets/js/cofog.js';
+            import { partidas, ultimoAño, gastoPorPersona, reparto, detallePartida, tiposDeGasto, ultimoAñoTipos } from './assets/js/cofog.js';
             const d = JSON.parse(readFileSync('data/cofog.json', 'utf8'));
             const a = ultimoAño(d), pp = gastoPorPersona(d, a);
             const filas = partidas(d, a).map((p) => p.nombre + ': ' + (p.cuota * 100).toFixed(1) + ' %, ' + Math.round(p.cuota * pp) + ' €/hab');
             console.log('::notice title=Partidas ' + a + '::' + filas.join(' | '));
             const r = reparto(d, a).map((f) => f.nombre + ': ' + f.partes.map((p) => p.nombre + ' ' + Math.round(p.cuota * 100)).join('/'));
             console.log('::notice title=Quién gasta ' + a + '::' + r.join(' | '));
+            for (const id of ['sanidad', 'educacion', 'administracion', 'economia', 'otras-sociales']) {
+              const g = detallePartida(d, id, a).map((x) => x.nombre + ' ' + (x.cuota * 100).toFixed(0) + ' %');
+              console.log('::notice title=En qué se va: ' + id + '::' + (g.join(' | ') || 'sin detalle'));
+            }
+            const at = ultimoAñoTipos(d);
+            const t = at ? tiposDeGasto(d, 'TOTAL', at).map((x) => x.nombre + ' ' + (x.cuota * 100).toFixed(1) + ' %') : [];
+            console.log('::notice title=Cómo se gasta ' + (at ?? '') + '::' + (t.join(' | ') || 'sin desglose por tipo'));
           "
 
       - name: Instalar herramientas (navegador de pruebas, axe y Lighthouse)

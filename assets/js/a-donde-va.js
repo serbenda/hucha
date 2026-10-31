@@ -1,7 +1,7 @@
 // «A dónde va»: las partidas en euros por habitante, con su evolución frente a la UE.
 
 import { cargarDatos } from './datos.js';
-import { partidas, ultimoAño, esProvisional, gastoPorPersona, seriePartida, valor } from './cofog.js';
+import { partidas, ultimoAño, esProvisional, gastoPorPersona, seriePartida, valor, detallePartida, tiposDeGasto, ultimoAñoTipos } from './cofog.js';
 import { euros, porcentaje, delPib } from './formato.js';
 
 const $ = (id) => document.getElementById(id);
@@ -55,6 +55,20 @@ function grafico(serie, nombre) {
   </div>`;
 }
 
+/** Lista con barras: nombre, euros por habitante y porcentaje. `que` (opcional) va como aclaración. */
+function desglose(items, porHabitante, deQue) {
+  const mayor = Math.max(...items.map((x) => x.cuota));
+  return `<ul class="desglose">${items
+    .map(
+      (x) => `<li>
+        <span class="desglose-nombre">${x.nombre}${x.que ? `<small>${x.que}</small>` : ''}</span>
+        <span class="desglose-cifra">${euros(x.valor * porHabitante)}<small>${porcentaje(x.cuota)} ${deQue}</small></span>
+        <span class="partida-barra" aria-hidden="true"><i style="--ancho: ${((x.cuota / mayor) * 100).toFixed(1)}%"></i></span>
+      </li>`
+    )
+    .join('')}</ul>`;
+}
+
 function comparar(es, ue) {
   if (es === null || ue === null || !(ue > 0)) return '';
   const r = es / ue;
@@ -82,6 +96,11 @@ try {
   cifra('c-mayor', porcentaje(primera.cuota), primera.nombre);
   cifra('c-pib', delPib(pib), pibUe !== null ? `Media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}` : '');
 
+  // Euros por habitante: millones de euros → euros, entre la población del año
+  const porHabitante = 1e6 / datos.poblacion[año];
+  const añoTipos = ultimoAñoTipos(datos);
+  const porHabitanteTipos = añoTipos ? 1e6 / (datos.poblacion[añoTipos] ?? datos.poblacion[año]) : 0;
+
   const mayor = lista[0].cuota;
   $('partidas').replaceChildren(
     ...lista.map((p) => {
@@ -90,6 +109,8 @@ try {
       const serie = seriePartida(datos, p.id);
       const esPib = serie.at(-1)?.es ?? null;
       const uePib = serie.at(-1)?.ue ?? null;
+      const grupos = detallePartida(datos, p.id, año);
+      const tipos = añoTipos ? tiposDeGasto(datos, p.id, añoTipos) : [];
       li.innerHTML = `<details>
         <summary>
           <span class="partida-nombre">${p.nombre}</span>
@@ -98,6 +119,9 @@ try {
         </summary>
         <div class="partida-detalle">
           <p>${p.que}</p>
+          ${grupos.length ? `<h3 class="detalle-titulo">En qué se va</h3>${desglose(grupos, porHabitante, 'de la partida')}` : ''}
+          ${tipos.length ? `<h3 class="detalle-titulo">Cómo se gasta${añoTipos !== año ? ` <small>(${añoTipos})</small>` : ''}</h3>${desglose(tipos.map(({ que, ...t }) => t), porHabitanteTipos, 'de la partida')}` : ''}
+          <h3 class="detalle-titulo">Frente a Europa</h3>
           ${comparar(esPib, uePib)}
           ${serie.length > 1 ? grafico(serie, p.nombre) : ''}
         </div>
@@ -105,6 +129,14 @@ try {
       return li;
     })
   );
+
+  // Cómo se gasta todo: sueldos, pagos a personas, compras, inversión…
+  const total = añoTipos ? tiposDeGasto(datos, 'TOTAL', añoTipos) : [];
+  if (total.length) {
+    $('t-tipos-texto').textContent = `Todo el gasto público de ${añoTipos} según en qué se materializa, en euros por habitante.`;
+    $('tipos').innerHTML = desglose(total, porHabitanteTipos, 'del gasto');
+    $('bloque-tipos').hidden = false;
+  }
 
 } catch {
   $('partidas').replaceChildren();

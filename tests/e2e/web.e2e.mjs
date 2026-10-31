@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { arrancar } from './servidor.mjs';
-import { partidas, ultimoAño, PARTIDAS } from '../../assets/js/cofog.js';
+import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos } from '../../assets/js/cofog.js';
 
 let servidor, navegador, base, datos;
 
@@ -153,6 +153,14 @@ test('a dónde va: todas las partidas, con su detalle y su gráfico', async () =
   const detalle = pagina.locator('.partida').nth(1);
   assert.ok(await detalle.locator('.evolucion polyline.es').count(), 'línea de España');
   assert.match(await detalle.textContent(), /del PIB/);
+  // En qué se va y cómo se gasta (si Eurostat da el detalle)
+  const id = partidas(datos, ultimoAño(datos))[1].id;
+  if (detallePartida(datos, id, ultimoAño(datos)).length) assert.match(await detalle.textContent(), /En qué se va/);
+  if (ultimoAñoTipos(datos)) {
+    assert.match(await detalle.textContent(), /Cómo se gasta/);
+    assert.ok(await pagina.locator('#bloque-tipos').isVisible(), 'cómo se gasta cada euro');
+    assert.ok((await pagina.locator('#tipos li').count()) >= 5);
+  }
   await contexto.close();
 });
 

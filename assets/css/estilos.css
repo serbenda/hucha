@@ -396,3 +396,15 @@ section + section { margin-top: 3.5rem; }
 
 .funcion.esqueleto { height: 5.6rem; border-radius: 4px; background: linear-gradient(var(--linea), var(--linea)) 0 1.9rem / 100% 2rem no-repeat; opacity: 0.6; }
 .linea-ticket.esqueleto::after { opacity: 0.25; }
+
+/* Detalle de cada partida: en qué se va y cómo se gasta */
+.detalle-titulo { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue); font-stretch: 100%; margin-top: 0.75rem; }
+.detalle-titulo small { text-transform: none; letter-spacing: 0; }
+.desglose { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
+.desglose li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.25rem 1rem; }
+.desglose-nombre { font-weight: 600; font-size: 0.98rem; }
+.desglose-nombre small { display: block; font-weight: 400; color: var(--tenue); font-size: 0.85rem; }
+.desglose-cifra { text-align: right; font-weight: 700; white-space: nowrap; }
+.desglose-cifra small { display: block; font-weight: 400; font-size: 0.78rem; color: var(--tenue); }
+.desglose .partida-barra { height: 0.4rem; }
+#tipos .desglose { gap: 1rem; }

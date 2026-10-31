@@ -6,8 +6,8 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { prepararDatos } from '../assets/js/cofog.js';
 import { respuestasEjemplo } from '../tests/ayuda.js';
 
-const { gasto, poblacion } = respuestasEjemplo();
-const datos = { ...prepararDatos(gasto, poblacion), ejemplo: true, actualizado: new Date().toISOString() };
+const { gasto, poblacion, tipos } = respuestasEjemplo();
+const datos = { ...prepararDatos(gasto, poblacion, tipos), ejemplo: true, actualizado: new Date().toISOString() };
 await mkdir(new URL('../data/', import.meta.url), { recursive: true });
 await writeFile(new URL('../data/cofog.json', import.meta.url), JSON.stringify(datos));
 console.log('data/cofog.json de EJEMPLO creado (no son datos oficiales)');
