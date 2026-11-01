@@ -87,7 +87,8 @@ try {
     const nq = normalizar(q);
     const coincide = (t) => normalizar(t).includes(nq);
     const filas = secciones
-      .map((s) => ({ s, programas: nq ? s.programas.filter((p) => coincide(p.nombre)) : s.programas }))
+      // Si coincide el ministerio (p. ej. «igualdad»), salen todos sus programas; si no, solo los que coinciden
+      .map((s) => ({ s, programas: nq && !coincide(nombreSeccion(s.nombre)) ? s.programas.filter((p) => coincide(p.nombre)) : s.programas }))
       .filter(({ s, programas }) => !nq || programas.length || coincide(nombreSeccion(s.nombre)));
     $('resumen-programas').textContent = nq
       ? filas.length
@@ -107,6 +108,23 @@ try {
       .join('')}</ul>`;
   };
   pintarMinisterios();
+  // Temas que se buscan a menudo (igualdad, cooperación…): rellenan la búsqueda; pulsar otra vez la quita
+  const temas = $('temas-presupuesto');
+  const marcarTema = () => temas.querySelectorAll('[data-q]').forEach((b) => b.setAttribute('aria-pressed', String(normalizar(b.dataset.q) === normalizar($('q').value.trim()))));
+  const buscarTexto = (q) => {
+    $('q').value = q;
+    pintarMinisterios(q);
+    marcarTema();
+    const u = new URL(location.href);
+    if (q) u.searchParams.set('q', q);
+    else u.searchParams.delete('q');
+    history.replaceState(null, '', u);
+  };
+  temas.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-q]');
+    if (b) buscarTexto(b.getAttribute('aria-pressed') === 'true' ? '' : b.dataset.q);
+  });
+  $('q').addEventListener('input', marcarTema);
   let espera;
   $('q').addEventListener('input', () => {
     clearTimeout(espera);
@@ -120,6 +138,7 @@ try {
   if (inicial) {
     $('q').value = inicial;
     pintarMinisterios(inicial);
+    marcarTema();
   }
 
   const enlace = esc(v.url ?? 'https://www.igae.pap.hacienda.gob.es/');

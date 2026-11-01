@@ -173,6 +173,7 @@ section + section { margin-top: 3.5rem; }
   font-variant-numeric: tabular-nums;
 }
 .con-unidad b { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--tenue); font-size: 1.3rem; }
+.calcular { justify-self: start; min-height: 44px; }
 .rapidos { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .rapidos button {
   font: inherit;

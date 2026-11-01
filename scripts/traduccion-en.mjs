@@ -398,4 +398,33 @@ export const EN = {
   '. Cambian cada día con los datos nuevos.': '. They change every day with new data.',
   'Los datos son de sus fuentes, no de hucha: si los usas, cita la fuente original (Eurostat, IGAE, Plataforma de Contratación, BDNS u OCDE) y la fecha. En la Lupa, los títulos, organismos y empresas salen tal cual se publican.':
     'The data belongs to its sources, not to hucha: if you use it, cite the original source (Eurostat, IGAE, the Procurement Platform, BDNS or the OECD) and the date. In the Lens, titles, bodies and companies are shown as published.',
+  // Ticket en el móvil y temas que no son una partida
+  'Ver mi ticket': 'See my receipt',
+  'Temas que no son una partida': 'Topics that are not an item',
+  'Algunos temas no tienen partida propia en las cuentas oficiales: están repartidos entre varias o se ven mejor en otro sitio de hucha.':
+    'Some topics have no item of their own in the official accounts: they are spread across several, or are better seen elsewhere on hucha.',
+  'Cooperación exterior.': 'Development cooperation.',
+  'La ayuda al desarrollo de todas las administraciones está dentro de «Funcionamiento de las administraciones» (ábrela para ver cuánto es). País por país y sector por sector, en la':
+    'Development aid from all administrations is inside “Running the administrations” (open it to see how much). Country by country and sector by sector, in the',
+  '; lo que presupuesta el Estado, en': '; what central government budgets for it, in',
+  'Igualdad y violencia de género.': 'Equality and gender-based violence.',
+  'Las cuentas europeas no la separan: va dentro de servicios sociales, empleo, justicia o seguridad. Lo que presupuesta el Estado para ello (el Ministerio de Igualdad y sus programas), en Presupuesto:':
+    'The European accounts do not separate it: it is inside social services, employment, justice or security. What central government budgets for it (the Ministry of Equality and its programmes), in Budget:',
+  'igualdad': 'equality',
+  'violencia de género': 'gender-based violence',
+  'Dependencia.': 'Long-term care.',
+  'Va dentro de «Bajas, incapacidad, familia y otras ayudas». Lo del Estado, en': 'It is inside “Sick leave, disability, family and other benefits”. Central government’s share, in',
+  'Becas e investigación.': 'Grants for students and research.',
+  'Las becas van dentro de Educación y la investigación, repartida en cada partida (y la básica, en «Funcionamiento de las administraciones»). Lo del Estado, en Presupuesto:':
+    'Student grants are inside Education, and research is spread across each item (basic research is in “Running the administrations”). Central government’s share, in Budget:',
+  'becas': 'student grants',
+  'e': 'and',
+  'investigación': 'research',
+  'Igualdad': 'Equality',
+  'Violencia de género': 'Gender-based violence',
+  'Cooperación exterior': 'Development cooperation',
+  'Dependencia': 'Long-term care',
+  'Becas': 'Student grants',
+  'Investigación': 'Research',
+  'Temas que se buscan a menudo': 'Frequently searched topics',
 };

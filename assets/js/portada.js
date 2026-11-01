@@ -112,9 +112,14 @@ entrada.addEventListener('input', () => {
   espera = setTimeout(pintarTicket, 120);
 });
 conEmpresa.addEventListener('change', pintarTicket);
+// «Ver mi ticket» (o Intro): en el móvil, el teclado numérico no tiene tecla para cerrarse y el ticket queda
+// debajo; el botón cierra el teclado y lleva al ticket
 $('formulario').addEventListener('submit', (e) => {
   e.preventDefault();
+  clearTimeout(espera);
   pintarTicket();
+  entrada.blur();
+  if (matchMedia('(max-width: 760px)').matches) $('ticket').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 });
 document.querySelectorAll('[data-sueldo]').forEach((b) =>
   b.addEventListener('click', () => {
