@@ -61,11 +61,12 @@
           <label class="campo" for="bruto">
             Tu sueldo bruto al año
             <span class="con-unidad">
-              <input id="bruto" name="sueldo" type="text" inputmode="decimal" autocomplete="off" value="30.000" aria-describedby="bruto-ayuda">
+              <input id="bruto" name="sueldo" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="30.000" aria-describedby="bruto-ayuda">
               <b aria-hidden="true">€</b>
             </span>
             <small id="bruto-ayuda">El que pone tu contrato, antes de impuestos. No sale de tu navegador.</small>
           </label>
+          <button class="boton calcular" type="submit">Ver mi ticket</button>
           <p class="resumen" id="resumen"></p>
           <div class="rapidos" role="group" aria-label="Sueldos de ejemplo">
             <button type="button" data-sueldo="17094">Salario mínimo</button>

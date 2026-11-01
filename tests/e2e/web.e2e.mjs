@@ -254,6 +254,28 @@ test('descargas: cada página baja sus datos en CSV, y el JSON existe', async ()
   }
 });
 
+test('portada en el móvil: «Ver mi ticket» calcula, cierra el teclado y lleva al ticket', async () => {
+  const { pagina, contexto } = await abrir('', MOVIL);
+  await pagina.fill('#bruto', '45000');
+  await pagina.tap('.calcular');
+  await pagina.waitForFunction(() => document.activeElement?.id !== 'bruto');
+  assert.match(await pagina.textContent('#aporte'), /Total/);
+  const arriba = await pagina.evaluate(() => document.getElementById('ticket').getBoundingClientRect().top);
+  assert.ok(arriba < 300, `el ticket queda a la vista (${Math.round(arriba)} px)`);
+  await contexto.close();
+});
+
+test('presupuesto: los temas rellenan la búsqueda', async () => {
+  const { pagina, contexto } = await abrir('presupuesto/', ESCRITORIO);
+  await pagina.click('[data-q="igualdad"]');
+  assert.equal(await pagina.inputValue('#q'), 'igualdad');
+  assert.equal(await pagina.getAttribute('[data-q="igualdad"]', 'aria-pressed'), 'true');
+  assert.match(pagina.url(), /q=igualdad/);
+  await pagina.click('[data-q="igualdad"]');
+  assert.equal(await pagina.inputValue('#q'), '');
+  await contexto.close();
+});
+
 test('404: página propia con su código', async () => {
   const { pagina, respuesta, contexto } = await abrir('no-existe/', ESCRITORIO);
   assert.equal(respuesta.status(), 404);
