@@ -260,8 +260,8 @@ test('portada en el móvil: «Ver mi ticket» calcula, cierra el teclado y lleva
   await pagina.tap('.calcular');
   await pagina.waitForFunction(() => document.activeElement?.id !== 'bruto');
   assert.match(await pagina.textContent('#aporte'), /Total/);
-  const arriba = await pagina.evaluate(() => document.getElementById('ticket').getBoundingClientRect().top);
-  assert.ok(arriba < 300, `el ticket queda a la vista (${Math.round(arriba)} px)`);
+  // El desplazamiento es suave: se espera a que acabe
+  await pagina.waitForFunction(() => Math.abs(document.getElementById('ticket').getBoundingClientRect().top) < 300, null, { timeout: 5000 });
   await contexto.close();
 });
 
