@@ -1,6 +1,7 @@
 // «A dónde va»: las partidas en euros por habitante, con su evolución frente a la UE.
 
 import { cargarVista } from './datos.js';
+import { botones, fichero, jsonVista } from './descargas.js';
 import { bloques } from './graficos.js';
 import { t, LOCALE } from './idioma.js';
 import { PARTIDAS, GRUPOS, TIPOS, en, enQue } from './en.js';
@@ -175,6 +176,46 @@ try {
     $('tipos').innerHTML = desglose(total.map((x) => ({ ...x, nombre: en(TIPOS, x.id, x.nombre), que: enQue(TIPOS, x.id, x.que) })), porHabitanteTipos, t('del gasto', 'of spending'));
     $('bloque-tipos').hidden = false;
   }
+
+  // Descargas: lo mismo que se ve, en tablas
+  const colMillones = t('Millones de €', 'EUR million');
+  botones($('descargas'), [
+    {
+      texto: t('Partidas', 'Items'),
+      fichero: fichero(`partidas-${año}`),
+      tabla: () => [
+        [t('Partida', 'Item'), t('Qué incluye', 'What it includes'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person'), t('Parte del gasto', 'Share of spending')],
+        lista.map((p) => [p.nombre, p.que, año, p.cuota * v.total, Math.round(p.cuota * porPersona), p.cuota]),
+      ],
+    },
+    {
+      texto: t('En qué se va cada partida', 'What each item is spent on'),
+      fichero: fichero(`partidas-detalle-${año}`),
+      tabla: () => [
+        [t('Partida', 'Item'), t('Código COFOG', 'COFOG code'), t('Grupo', 'Group'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person'), t('Parte de la partida', 'Share of the item')],
+        lista.flatMap((p) => p.grupos.map((g) => [p.nombre, g.codigo, g.nombre, año, g.valor, Math.round(g.valor * porHabitante), g.cuota])),
+      ],
+    },
+    {
+      texto: t('España frente a Europa, año a año', 'Spain vs Europe, year by year'),
+      fichero: fichero('partidas-europa'),
+      tabla: () => [
+        [t('Partida', 'Item'), t('Año', 'Year'), t('España (% del PIB)', 'Spain (% of GDP)'), t('Unión Europea (% del PIB)', 'European Union (% of GDP)')],
+        lista.flatMap((p) => p.serie.map((x) => [p.nombre, x.año, x.es, x.ue])),
+      ],
+    },
+    ...(v.tipos.length
+      ? [{
+          texto: t('Cómo se gasta', 'How it is spent'),
+          fichero: fichero(`tipos-de-gasto-${añoTipos}`),
+          tabla: () => [
+            [t('Tipo de gasto', 'Type of spending'), t('Qué incluye', 'What it includes'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person'), t('Parte del gasto', 'Share of spending')],
+            v.tipos.map((x) => [en(TIPOS, x.id, x.nombre), enQue(TIPOS, x.id, x.que), añoTipos, x.valor, Math.round(x.valor * porHabitanteTipos), x.cuota]),
+          ],
+        }]
+      : []),
+    jsonVista('a-donde-va'),
+  ]);
 
 } catch {
   $('partidas').replaceChildren();

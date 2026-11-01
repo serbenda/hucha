@@ -238,6 +238,22 @@ test('inglés: en inglés, con los datos de la Lupa tal cual y el enlace al cast
   await contexto.close();
 });
 
+test('descargas: cada página baja sus datos en CSV, y el JSON existe', async () => {
+  for (const [ruta, cabecera] of [['a-donde-va/', /^\ufeffPartida;/], ['quien-gasta/', /^\ufeffAdministración;/], ['presupuesto/', /^\ufeffAño;Mes;/], ['lupa/', /^\ufeffContrato;Paga;/], ['en/a-donde-va/', /^\ufeffItem,/]]) {
+    const { pagina, contexto } = await abrir(ruta, { ...ESCRITORIO, acceptDownloads: true });
+    const boton = pagina.locator('#descargas [data-descarga]').first();
+    await boton.waitFor();
+    const [descarga] = await Promise.all([pagina.waitForEvent('download'), boton.click()]);
+    assert.match(descarga.suggestedFilename(), /^hucha-.+\.csv$/, `${ruta}: nombre del fichero`);
+    const texto = await readFile(await descarga.path(), 'utf8');
+    assert.match(texto, cabecera, `${ruta}: cabecera del CSV`);
+    assert.ok(texto.trim().split('\r\n').length > 1, `${ruta}: el CSV tiene filas`);
+    const json = pagina.locator('#descargas a[href$=".json"]');
+    if (await json.count()) assert.equal((await pagina.request.get(await json.getAttribute('href'))).status(), 200, `${ruta}: JSON`);
+    await contexto.close();
+  }
+});
+
 test('404: página propia con su código', async () => {
   const { pagina, respuesta, contexto } = await abrir('no-existe/', ESCRITORIO);
   assert.equal(respuesta.status(), 404);

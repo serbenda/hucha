@@ -1,6 +1,7 @@
 // «Quién gasta»: el reparto entre Estado, comunidades, ayuntamientos y Seguridad Social.
 
 import { cargarVista } from './datos.js';
+import { botones, fichero, jsonVista } from './descargas.js';
 import { icono, ICONO_FUNCION, ICONO_ADMINISTRACION } from './iconos.js';
 import { millones, porcentaje } from './formato.js';
 import { t, LOCALE } from './idioma.js';
@@ -102,6 +103,28 @@ try {
       return li;
     })
   );
+
+  // Descargas
+  const colMillones = t('Millones de €', 'EUR million');
+  botones($('descargas'), [
+    {
+      texto: t('Gasto de cada administración', 'Spending by administration'),
+      fichero: fichero(`administraciones-${año}`),
+      tabla: () => [
+        [t('Administración', 'Administration'), t('Qué es', 'What it is'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person')],
+        v.administraciones.map(admin).map((a) => [a.nombre, a.largo, año, a.valor, v.poblacion ? Math.round((a.valor * 1e6) / v.poblacion) : null]),
+      ],
+    },
+    {
+      texto: t('Quién paga cada cosa', 'Who pays for what'),
+      fichero: fichero(`quien-paga-${año}`),
+      tabla: () => [
+        [t('Función', 'Function'), t('Administración', 'Administration'), t('Año', 'Year'), colMillones, t('Parte de la función', 'Share of the function')],
+        funciones.flatMap((f) => f.partes.map((p) => [f.nombre, p.nombre, año, p.valor, p.cuota])),
+      ],
+    },
+    jsonVista('quien-gasta'),
+  ]);
 } catch {
   $('administraciones').replaceChildren();
 }

@@ -1,6 +1,7 @@
 // «Presupuesto»: lo presupuestado por el Estado este año frente a lo que lleva gastado (IGAE).
 
 import { cargarVista } from './datos.js';
+import { botones, fichero, jsonVista } from './descargas.js';
 import { avance, lineasDelAño } from './graficos.js';
 import { MESES, nombreSeccion } from './ejecucion.js';
 import { normalizar } from './lupa-datos.js';
@@ -125,6 +126,40 @@ try {
   $('fuente-igae').innerHTML = EN
     ? `<strong>Source:</strong> Intervención General de la Administración del Estado (IGAE, Spain’s public accounts office), <a href="${enlace}" hreflang="es">central government spending budget execution up to ${nombreMes} ${año}</a> (in Spanish). Data downloaded on ${fecha(v.actualizado)}.`
     : `<strong>Fuente:</strong> Intervención General de la Administración del Estado, <a href="${enlace}">ejecución del presupuesto de gastos del Estado hasta ${nombreMes} de ${año}</a>. Datos descargados el ${fecha(v.actualizado)}.`;
+
+  // Descargas: millones de euros; «gastado» son las obligaciones reconocidas
+  const cols = [t('Presupuesto (millones de €)', 'Budget (EUR million)'), t('Comprometido', 'Committed'), t('Gastado (obligaciones)', 'Spent (obligations)'), t('Pagado', 'Paid'), t('Parte gastada', 'Share spent')];
+  const cifras = (x) => [x.creditos, x.comprometidos ?? null, x.obligaciones, x.pagos ?? null, pct(x)];
+  const hasta = `${año}-${String(nMes).padStart(2, '0')}`;
+  botones($('descargas'), [
+    {
+      texto: t('Mes a mes', 'Month by month'),
+      fichero: fichero('presupuesto-mes-a-mes'),
+      tabla: () => [
+        [t('Año', 'Year'), t('Mes', 'Month'), t('Parte gastada al final del mes', 'Share spent by the end of the month')],
+        Object.entries(v.series).flatMap(([a, puntos]) => puntos.map((p) => [a, p.mes, p.ejecutado])),
+      ],
+    },
+    {
+      texto: t('Por tipo de gasto (capítulos)', 'By type of spending (chapters)'),
+      fichero: fichero(`presupuesto-capitulos-${hasta}`),
+      tabla: () => [[t('Capítulo', 'Chapter'), t('Nombre', 'Name'), ...cols], v.capitulos.map((c) => [c.id, en(CAPITULOS, Number(c.id), capitalizar(c.nombre)), ...cifras(c)])],
+    },
+    {
+      texto: t('Por política de gasto', 'By spending policy'),
+      fichero: fichero(`presupuesto-politicas-${hasta}`),
+      tabla: () => [[t('Área', 'Area'), t('Política', 'Policy'), ...cols], v.politicas.map((p) => [p.area, politica(p.nombre), ...cifras(p)])],
+    },
+    {
+      texto: t('Por ministerio y programa', 'By ministry and programme'),
+      fichero: fichero(`presupuesto-programas-${hasta}`),
+      tabla: () => [
+        [t('Sección (ministerio u órgano)', 'Section (ministry or body)'), t('Programa', 'Programme'), ...cols],
+        v.secciones.flatMap((x) => [[nombreSeccion(x.nombre), t('(toda la sección)', '(whole section)'), ...cifras(x)], ...x.programas.map((p) => [nombreSeccion(x.nombre), p.nombre, ...cifras(p)])]),
+      ],
+    },
+    jsonVista('presupuesto'),
+  ]);
 } catch {
   $('ritmo').replaceChildren();
   $('capitulos').textContent = t('Estos datos no están disponibles ahora mismo. Prueba en un rato.', 'This data is not available right now. Try again in a while.');

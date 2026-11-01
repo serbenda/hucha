@@ -4,6 +4,7 @@
 // Los textos que escriben los scripts (cifras, gráficos, resultados) se traducen en cada script con t().
 
 export const NO_SE_TRADUCE = new Set([
+  'CSV', 'JSON', 'data/vistas/', 'data/lupa/',
   'hucha', 'English', 'GitHub', 'bolsillo', 'GoatCounter', 'gov_10a_exp', 'demo_gind', 'github.com/serbenda', 'IRPF', 'Total', '&nbsp;',
   'width=device-width, initial-scale=1',
 ]);
@@ -383,4 +384,18 @@ export const EN = {
   '02 Defensa': '02 Defence',
   'Vivienda, urbanismo y agua': 'Housing, urban planning and water',
   '06 Vivienda y servicios comunitarios': '06 Housing and community amenities',
+  // Descargas
+  'Descarga los datos': 'Download the data',
+  'Los mismos datos de esta página, para tu hoja de cálculo o tu programa. Son datos públicos: si los usas, cita la fuente original y, si quieres, hucha.':
+    'The same data as on this page, for your spreadsheet or your software. It is public data: if you use it, cite the original source and, if you like, hucha.',
+  'Descargar los datos': 'Downloading the data',
+  'Cada página tiene al final un apartado «Descarga los datos», y la Lupa, un botón bajo la lista. Bajan exactamente las cifras que se ven, con la misma fecha.':
+    'Each page has a “Download the data” section at the end, and the Lens has a button below the list. You get exactly the figures shown, with the same date.',
+  ', para abrir en Excel, LibreOffice o Google Sheets. En la web en castellano va separado por punto y coma y con coma decimal; en la de inglés, por comas y con punto decimal. Los importes van en millones de euros (en euros en la Lupa, y en millones de dólares en la ayuda a otros países) y las partes, en tanto por uno: 0,25 es el 25 %.':
+    ', to open in Excel, LibreOffice or Google Sheets. On the Spanish site it uses semicolons and decimal commas; on the English site, commas and decimal points. Amounts are in millions of euros (in euros in the Lens, and in millions of US dollars for aid to other countries) and shares are fractions: 0.25 means 25%.',
+  ', para programas: los mismos ficheros que usa la web, en': ', for software: the same files the site uses, in',
+  'y': 'and',
+  '. Cambian cada día con los datos nuevos.': '. They change every day with new data.',
+  'Los datos son de sus fuentes, no de hucha: si los usas, cita la fuente original (Eurostat, IGAE, Plataforma de Contratación, BDNS u OCDE) y la fecha. En la Lupa, los títulos, organismos y empresas salen tal cual se publican.':
+    'The data belongs to its sources, not to hucha: if you use it, cite the original source (Eurostat, IGAE, the Procurement Platform, BDNS or the OECD) and the date. In the Lens, titles, bodies and companies are shown as published.',
 };
