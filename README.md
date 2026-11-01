@@ -136,6 +136,15 @@ Buscador (todas las palabras, sin importar tildes ni mayúsculas), filtros por *
 
 Primero, **en pocas palabras** y con un **glosario** de las palabras que salen en la web (PIB, créditos, obligaciones, acuerdo marco…), para quien no sabe de economía. Después, el detalle: de dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), el presupuesto, la Lupa, cómo se calcula el ticket, privacidad y cómo avisar de un error. Al final, el **aviso legal**: quién está detrás, qué es y qué no es, reutilización de datos públicos (Ley 37/2007), exactitud y responsabilidad, datos personales (minimización de personas físicas, cómo pedir que se retire algo), propiedad intelectual, enlaces y ley aplicable.
 
+### ⬇️ Descargas
+
+Cada página termina con **«Descarga los datos»**, y la Lupa tiene un botón bajo la lista: bajan exactamente las cifras que se ven.
+
+- **CSV**, generado en el navegador con lo que ya está cargado (`assets/js/descargas.js`), así que no hay ficheros extra que mantener ni que publicar. En castellano, con punto y coma y coma decimal (lo que espera Excel en español); en inglés, con comas y punto decimal. Con BOM para las tildes y hasta 4 decimales.
+- **JSON**: el mismo fichero de `data/vistas/` que usa la página.
+- En la Lupa baja la lista entera que sale con la búsqueda y los filtros (no solo lo que cabe en pantalla); en la ayuda, los países, los sectores y, en cada país, sus proyectos. Los datos de las fuentes salen tal cual.
+- En Fuentes se explica el formato y que, al usarlos, hay que citar la fuente original.
+
 ### 🇬🇧 English · [`/en/`](https://hucha.bendi.dev/en/)
 
 Las mismas seis páginas en inglés, con los mismos scripts y los mismos datos. Cada página lleva arriba el enlace al otro idioma, y las dos versiones se enlazan con `hreflang` (también en `sitemap.xml`) para que los buscadores enseñen la que toca.

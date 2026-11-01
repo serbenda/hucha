@@ -48,6 +48,8 @@ const TRAZOS = {
   comunidades: 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2Z M9 4v14 M15 6v14',
   ayuntamientos: 'M4 21V9l8-5 8 5v12Z M9 21v-5h6v5 M9 11h.01 M15 11h.01 M12 11h.01',
   'seguridad-social': 'M3 12a9 9 0 0 1 18 0Z M12 12v6a2 2 0 0 0 4 0',
+  // Descargas
+  descargar: 'M12 3v12 M7 10l5 5 5-5 M4 19h16',
 };
 
 /** Nombres de todos los iconos. */

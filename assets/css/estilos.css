@@ -670,3 +670,17 @@ button.apilada span.elegido { box-shadow: inset 0 0 0 3px var(--papel), inset 0 
 .idioma { margin-left: auto; margin-right: 1.25rem; font-size: 0.85rem; color: var(--tenue); text-decoration: none; border: 1px solid var(--linea); border-radius: 999px; padding: 0.2rem 0.7rem; }
 .idioma:hover { color: var(--tinta); border-color: var(--tenue); }
 @media (max-width: 40rem) { .idioma { margin-right: 0; } }
+
+/* Descargas */
+.descargas { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.descargas-lupa { margin-top: 1.25rem; }
+.descargas-lupa:empty { display: none; }
+.boton-descarga {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font: inherit; font-size: 0.95rem; font-weight: 600; color: var(--tinta); text-decoration: none;
+  background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio);
+  padding: 0.55rem 0.9rem; min-height: 44px; cursor: pointer;
+}
+.boton-descarga:hover { border-color: var(--tinta); }
+.boton-descarga .icono { width: 1.1em; height: 1.1em; color: var(--cobre); }
+.boton-descarga small { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--tenue); border: 1px solid var(--linea); border-radius: 4px; padding: 0.05rem 0.3rem; }

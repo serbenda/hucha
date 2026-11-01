@@ -7,6 +7,7 @@ import { nombrePais } from './paises.js';
 import { euros, fecha } from './formato.js';
 import { barras, columnas } from './graficos.js';
 import { icono, ICONO_TEMA } from './iconos.js';
+import { botones, fichero } from './descargas.js';
 import { t, LOCALE, EN } from './idioma.js';
 import { en, TEMAS as TEMAS_EN, NIVELES as NIVELES_EN, TIPOS_CONTRATO, FINALIDADES, SECTORES_AYUDA as SECTORES_EN, CANALES } from './en.js';
 
@@ -141,6 +142,7 @@ async function pintar() {
     resumen.textContent = t('Estos datos no están disponibles ahora mismo. Prueba en un rato.', 'This data is not available right now. Try again in a while.');
     lista.replaceChildren();
     mas.hidden = true;
+    pintarDescargas(null);
     return;
   }
 
@@ -255,6 +257,31 @@ $('panorama-rejilla').addEventListener('click', (e) => {
   pintar().then(() => $('resumen-lupa').scrollIntoView({ block: 'start', behavior: 'smooth' }));
 });
 
+// Descargas de la Lupa: la lista que se está viendo, entera (no solo lo que cabe en pantalla), tal cual la publica la fuente
+const hoy = () => new Date().toISOString().slice(0, 10);
+const siNo = (x) => (x ? t('sí', 'yes') : t('no', 'no'));
+function pintarDescargas(items) {
+  const caja = $('descargas');
+  if (!items) caja.replaceChildren();
+  else botones(caja, items);
+}
+const descargaContratos = (r) => ({
+  texto: t(`Estos ${num(r.length)} contratos`, `These ${num(r.length)} contracts`),
+  fichero: fichero(`contratos-${hoy()}`),
+  tabla: () => [
+    [t('Contrato', 'Contract'), t('Paga', 'Paid by'), t('Lugar', 'Place'), t('Administración', 'Administration'), t('Gana', 'Won by'), t('Adjudicado (€, sin IVA)', 'Awarded (EUR, excl. VAT)'), t('Licitado (€, sin IVA)', 'Tendered (EUR, excl. VAT)'), t('Acuerdo marco', 'Framework agreement'), t('Tipo', 'Type'), t('Finalidad', 'Purpose'), t('Temas', 'Topics'), t('Fecha', 'Date'), t('Expediente', 'File')],
+    r.map((c) => [c.t, c.o, c.l, c.n && nombreNivel(c.n), c.g?.join(' | '), c.a, c.li ?? null, siNo(c.m), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti), c.fi && en(FINALIDADES, c.fi, c.fi), (c.te ?? []).map(nombreTema).join(' | '), c.f, c.u]),
+  ],
+});
+const descargaSubvenciones = (r) => ({
+  texto: t(`Estas ${num(r.length)} subvenciones`, `These ${num(r.length)} grants`),
+  fichero: fichero(`subvenciones-${hoy()}`),
+  tabla: () => [
+    [t('Convocatoria', 'Call'), t('Paga', 'Paid by'), t('Lugar', 'Place'), t('Administración', 'Administration'), t('Recibe', 'Received by'), 'NIF', t('Concedido (€)', 'Granted (EUR)'), t('Fecha', 'Date'), t('Convocatoria (enlace)', 'Call (link)')],
+    r.map((x) => [x.c, x.o, x.l, x.n && nombreNivel(x.n), x.b, x.nif ?? null, x.i, x.f, x.u]),
+  ],
+});
+
 function pintarResultados(tot, r, { contratos, progreso = '', disponibles = r.length }) {
   const resumen = $('resumen-lupa');
   const lista = $('resultados');
@@ -293,6 +320,7 @@ function pintarResultados(tot, r, { contratos, progreso = '', disponibles = r.le
   lista.innerHTML = r.slice(0, estado.mostrados).map(contratos ? fichaContrato : fichaSubvencion).join('');
   mas.hidden = progreso !== '' || disponibles <= estado.mostrados;
   mas.textContent = t(`Ver más (quedan ${fmt(disponibles - estado.mostrados)})`, `See more (${fmt(disponibles - estado.mostrados)} left)`);
+  pintarDescargas(progreso || !r.length ? null : [contratos ? descargaContratos(r) : descargaSubvenciones(r)]);
 }
 
 // Ayuda a otros países: en qué se da, a qué países y año a año; y, al pulsar un país, su detalle con los proyectos
@@ -354,6 +382,30 @@ function pintarAyuda(d) {
     .join('');
   $('mas').hidden = filas.length <= estado.mostrados;
   $('mas').textContent = t(`Ver más (quedan ${filas.length - estado.mostrados})`, `See more (${filas.length - estado.mostrados} left)`);
+  pintarDescargas(
+    filas.length
+      ? [
+          {
+            texto: t(`Estos ${num(filas.length)} países`, `These ${num(filas.length)} countries`),
+            fichero: fichero(`ayuda-paises${sector ? `-sector-${sector}` : ''}`),
+            tabla: () =>
+              sector
+                ? [[t('País', 'Country'), 'ISO', t('Sector', 'Sector'), t('Año', 'Year'), t('Millones de $', 'USD million')], filas.map((p) => [p.nombre, p.iso, nombreSector(sector), ultimo, p.ultimo])]
+                : [[t('País', 'Country'), 'ISO', ...años.map((a) => `${a} (${t('millones de $', 'USD million')})`)], filas.map((p) => [p.nombre, p.iso, ...años.map((a) => d.paises[p.iso][a] ?? null)])],
+          },
+          ...(d.sectores?.[ultimo]
+            ? [{
+                texto: t('Toda la ayuda por sectores', 'All aid by sector'),
+                fichero: fichero('ayuda-sectores'),
+                tabla: () => [
+                  [t('Año', 'Year'), t('Código CRS', 'CRS code'), t('Sector', 'Sector'), t('Millones de $', 'USD million')],
+                  años.flatMap((a) => Object.entries(d.sectores?.[a] ?? {}).map(([g, v]) => [a, g, nombreSector(g), v])),
+                ],
+              }]
+            : []),
+        ]
+      : null
+  );
 }
 
 async function pintarPais(d, iso, mio) {
@@ -391,6 +443,26 @@ async function pintarPais(d, iso, mio) {
     )
     .join('');
   $('mas').hidden = true;
+  pintarDescargas([
+    {
+      texto: t(`Ayuda a ${nombre} por sectores`, `Aid to ${nombre} by sector`),
+      fichero: fichero(`ayuda-${iso}-sectores`),
+      tabla: () => [
+        [t('Año', 'Year'), t('Código CRS', 'CRS code'), t('Sector', 'Sector'), t('Millones de $', 'USD million')],
+        años.flatMap((a) => Object.entries(p.sectores?.[a] ?? {}).map(([g, v]) => [a, g, nombreSector(g), v])),
+      ],
+    },
+    ...(p.proyectos?.length
+      ? [{
+          texto: t(`Sus ${p.proyectos.length} mayores proyectos`, `Its ${p.proyectos.length} largest projects`),
+          fichero: fichero(`ayuda-${iso}-proyectos-${p.proyectosAño}`),
+          tabla: () => [
+            [t('Proyecto', 'Project'), t('Descripción', 'Description'), t('Sector', 'Sector'), t('Quién lo da', 'Given by'), t('Canal', 'Channel'), t('Año', 'Year'), t('Millones de $', 'USD million')],
+            p.proyectos.map((x) => [x.t, x.d, x.s && nombreSector(x.s), x.a, x.c && en(CANALES, x.c, x.c), p.proyectosAño, x.v]),
+          ],
+        }]
+      : []),
+  ]);
 }
 
 const textosEs = {
