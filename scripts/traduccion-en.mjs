@@ -462,4 +462,28 @@ export const EN = {
   'La deuda y el déficit vienen de la tabla': 'Debt and deficit come from the Eurostat table',
   'de Eurostat, la del procedimiento de déficit excesivo de la Unión Europea: la deuda es la bruta consolidada de todas las administraciones al final del año (la que se usa para la regla del 60 % del PIB) y el déficit, su necesidad de financiación.':
     ', the one used for the European Union’s excessive deficit procedure: debt is the consolidated gross debt of all administrations at the end of the year (the one used for the 60% of GDP rule) and the deficit is their net borrowing.',
+  // Hasta cuándo están los datos
+  'cada día. Si una fuente falla, la web sigue con los últimos datos buenos. Debajo de cada dato pone de dónde sale y hasta cuándo llega, y':
+    'every day. If a source fails, the site keeps the latest good data. Under each figure it says where it comes from and how recent it is, and',
+  'aquí están todas las fechas juntas': 'here are all the dates together',
+  'Hasta cuándo están los datos': 'How recent the data is',
+  'Cada dato de hucha dice debajo de dónde sale y hasta cuándo llega. Aquí están todos juntos, con la fecha real de cada fuente:':
+    'Every figure on hucha says underneath where it comes from and how recent it is. Here they all are together, with the actual date of each source:',
+  'Hasta': 'Up to',
+  ': el último periodo que tiene la fuente. Cada fuente va a su ritmo: el gasto por funciones se cierra un año después, la ejecución del presupuesto sale cada mes y los contratos, cada día.':
+    ': the latest period the source has. Each source has its own pace: spending by function is closed a year later, budget execution comes out every month and contracts every day.',
+  'Publicado por la fuente': 'Published by the source',
+  ': cuándo la fuente cambió sus datos por última vez (cuando lo dice).': ': when the source last changed its data (when it says so).',
+  'Descargado por hucha': 'Downloaded by hucha',
+  ': cuándo hucha los recogió. hucha mira todas las fuentes cada mañana; si una publica algo nuevo, sale en la web ese mismo día.':
+    ': when hucha collected it. hucha checks every source each morning; if one publishes something new, it is on the site the same day.',
+  'Última comprobación': 'Last check',
+  ': si la descarga de hoy fue bien. Si una fuente falla, la web sigue con los últimos datos buenos y lo dice aquí.':
+    ': whether today’s download went well. If a source fails, the site keeps the latest good data and says so here.',
+  ': el último año que publica Eurostat puede cambiar un poco cuando se cierran las cuentas. hucha lo marca siempre.':
+    ': the latest year Eurostat publishes may change slightly when the accounts are closed. hucha always marks it.',
+  'Hasta cuándo llega cada fuente de datos': 'How recent each data source is',
+  'Qué': 'What',
+  'Fuente': 'Source',
+  'Cada cuánto publica': 'How often it publishes',
 };

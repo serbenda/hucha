@@ -59,11 +59,30 @@
       <h2 id="t-pocas" class="con-icono"><span class="insignia"><svg class="icono" data-icono="sello" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.8 1 2.8-2.4 1.8-.9 2.9-3-.2L12 21l-2.4-1.8-3 .2-.9-2.9-2.4-1.8 1-2.8-1-2.8 2.4-1.8.9-2.9 3 .2Z M9 12l2 2 4-4"/></svg></span>En pocas palabras</h2>
       <ul class="lista-clara">
         <li><strong>Todas las cifras son oficiales.</strong> Salen de organismos públicos (Eurostat, el Ministerio de Hacienda, la Plataforma de Contratación, la OCDE) y hucha solo las ordena y las explica. No inventa ni estima nada, salvo tu ticket, que es un cálculo aproximado y lo dice.</li>
-        <li><strong>Se actualizan solas</strong> cada día. Si una fuente falla, la web sigue con los últimos datos buenos.</li>
+        <li><strong>Se actualizan solas</strong> cada día. Si una fuente falla, la web sigue con los últimos datos buenos. Debajo de cada dato pone de dónde sale y hasta cuándo llega, y <a href="#t-al-dia">aquí están todas las fechas juntas</a>.</li>
         <li><strong>hucha no es una web oficial</strong> ni pertenece a ningún partido, administración o empresa. No da opiniones: enseña cifras y las compara con la misma vara.</li>
         <li><strong>Puede tener errores.</strong> Si vas a tomar una decisión, mira la fuente oficial, que siempre está enlazada. Y si ves algo mal, <a href="#t-error">avísalo</a>.</li>
         <li><strong>No guarda nada tuyo:</strong> sin cookies, sin cuentas, y tu sueldo no sale de tu dispositivo.</li>
       </ul>
+    </section>
+
+    <section aria-labelledby="t-al-dia">
+      <h2 id="t-al-dia" class="con-icono"><span class="insignia"><svg class="icono" data-icono="presupuesto" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 17a8.5 8.5 0 1 1 17 0 M12 17l4.5-5.5 M3.5 17h17"/></svg></span>Hasta cuándo están los datos</h2>
+      <p>Cada dato de hucha dice debajo de dónde sale y hasta cuándo llega. Aquí están todos juntos, con la fecha real de cada fuente:</p>
+      <ul class="lista-clara">
+        <li><strong>Hasta</strong>: el último periodo que tiene la fuente. Cada fuente va a su ritmo: el gasto por funciones se cierra un año después, la ejecución del presupuesto sale cada mes y los contratos, cada día.</li>
+        <li><strong>Publicado por la fuente</strong>: cuándo la fuente cambió sus datos por última vez (cuando lo dice).</li>
+        <li><strong>Descargado por hucha</strong>: cuándo hucha los recogió. hucha mira todas las fuentes cada mañana; si una publica algo nuevo, sale en la web ese mismo día.</li>
+        <li><strong>Última comprobación</strong>: si la descarga de hoy fue bien. Si una fuente falla, la web sigue con los últimos datos buenos y lo dice aquí.</li>
+        <li><strong>Provisional</strong>: el último año que publica Eurostat puede cambiar un poco cuando se cierran las cuentas. hucha lo marca siempre.</li>
+      </ul>
+      <div class="tabla-al-dia-caja">
+        <table class="tabla-al-dia">
+          <caption class="oculto">Hasta cuándo llega cada fuente de datos</caption>
+          <thead><tr><th scope="col">Qué</th><th scope="col">Fuente</th><th scope="col">Hasta</th><th scope="col">Publicado por la fuente</th><th scope="col">Descargado por hucha</th><th scope="col">Cada cuánto publica</th><th scope="col">Última comprobación</th></tr></thead>
+          <tbody id="tabla-al-dia"><tr><td colspan="7">Cargando…</td></tr></tbody>
+        </table>
+      </div>
     </section>
 
     <section aria-labelledby="t-palabras">

@@ -144,6 +144,10 @@ En la portada («Lo que deben» y cuánto del gasto se pagó con deuda), en el t
 
 Eurostat va un año por detrás (las cuentas de un año salen al siguiente), y A dónde va lo dice arriba, con el enlace a Presupuesto para el año en curso. En Defensa, que paga casi entera el Estado, se añade lo presupuestado y gastado este año (IGAE) y por qué la cifra de la OTAN es otra.
 
+### 🗓️ De dónde sale y hasta cuándo llega cada dato
+
+Debajo de cada bloque de datos hay un **pie de fuente** (`assets/js/fuente.js`): la fuente con su enlace (y la tabla, si es de Eurostat), hasta qué periodo llega, cuándo la publicó la fuente (si lo dice) y cuándo la descargó hucha. En Fuentes, **«Hasta cuándo están los datos»** junta todas las fuentes en una tabla con esas fechas, cada cuánto publica cada una y el resultado de la última comprobación (de `data/estado.json`, que escribe cada descarga).
+
 ### 🛟 Si algo no funciona
 
 `assets/js/antiguo.js` es un script clásico, sin sintaxis moderna, que avisa si el navegador es demasiado antiguo para la web en vez de dejarla en blanco. En Fuentes, «¿Ves un error o algo no funciona?» abre un aviso en GitHub ya rellenado con la página, el navegador y la pantalla.

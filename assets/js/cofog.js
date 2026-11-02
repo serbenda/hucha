@@ -276,6 +276,7 @@ export function resumenDeuda(datos) {
   const años = Object.keys(d.es?.GD?.PC_GDP ?? {}).filter((a) => a >= String(PRIMER_AÑO) && a <= año).sort();
   return {
     año,
+    actualizado: d.actualizado ?? null,
     total: total[año],
     pib: v('es', 'GD', 'PC_GDP'),
     pibUe: v('ue', 'GD', 'PC_GDP'),

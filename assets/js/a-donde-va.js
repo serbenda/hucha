@@ -1,6 +1,8 @@
 // «A dónde va»: las partidas en euros por habitante, con su evolución frente a la UE.
 
 import { cargarVista } from './datos.js';
+import { pieFuente, FUENTES, hastaAño } from './fuente.js';
+
 import { botones, fichero, jsonVista } from './descargas.js';
 import { bloques } from './graficos.js';
 import { t, LOCALE } from './idioma.js';
@@ -103,6 +105,7 @@ function comparar(es, ue) {
  * Defensa este año: lo que presupuesta y lleva gastado el Estado (IGAE), que es quien paga casi toda la defensa.
  * La cifra de la OTAN se calcula con otro criterio (suma pensiones militares y partidas de otros ministerios).
  */
+const mesDe = (mes) => new Intl.DateTimeFormat(LOCALE, { month: 'long' }).format(new Date(`${mes}-15`));
 function esteAñoDefensa(e) {
   if (!e?.defensa?.creditos) return '';
   const mes = Number(e.mes.slice(5));
@@ -197,6 +200,11 @@ try {
     $('bloque-tipos').hidden = false;
   }
 
+  pieFuente($('fuente-partidas'), [
+    { ...FUENTES.gasto, cubre: `${hastaAño(año, v.provisional)}${añoTipos && añoTipos !== año ? t(`; «cómo se gasta», de ${añoTipos}`, `; “how it is spent”, for ${añoTipos}`) : ''}`, publicado: v.eurostat, descargado: v.actualizado },
+    ...(v.esteAño ? [{ ...FUENTES.igae, cubre: t(`defensa en ${v.esteAño.año}, hasta ${mesDe(v.esteAño.mes)}`, `defence in ${v.esteAño.año}, up to ${mesDe(v.esteAño.mes)}`), descargado: v.actualizado }] : []),
+  ]);
+
   // La deuda: cuánto se debe, por habitante, en % del PIB frente a la UE, y el déficit del año
   const d = v.deuda;
   if (d) {
@@ -217,6 +225,7 @@ try {
       `What all administrations together owed at the end of ${d.año} and what they borrowed that year.`
     );
     if (d.serie.length > 1) $('deuda-grafico').innerHTML = grafico(d.serie, t('Deuda pública', 'Public debt'));
+    pieFuente($('fuente-deuda'), [{ ...FUENTES.deuda, cubre: t(`deuda hasta ${d.año}`, `debt up to ${d.año}`), publicado: d.actualizado, descargado: v.actualizado }]);
     $('bloque-deuda').hidden = false;
   }
 

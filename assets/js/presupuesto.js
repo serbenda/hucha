@@ -1,6 +1,8 @@
 // «Presupuesto»: lo presupuestado por el Estado este año frente a lo que lleva gastado (IGAE).
 
 import { cargarVista } from './datos.js';
+import { pieFuente, FUENTES, hastaAño } from './fuente.js';
+
 import { botones, fichero, jsonVista } from './descargas.js';
 import { avance, lineasDelAño } from './graficos.js';
 import { MESES, nombreSeccion } from './ejecucion.js';
@@ -72,6 +74,15 @@ try {
       (dif === null ? '.' : `: ${dif === 0 ? 'almost the same as' : `${fmt(Math.abs(dif), 1)} points ${dif > 0 ? 'more' : 'less'} than`} a year earlier.`)
     : `Parte del presupuesto ya gastada al final de cada mes. Hasta ${nombreMes} de ${año} se ha gastado el ${textoPct(g)}` +
       (dif === null ? '.' : `: ${dif === 0 ? 'casi lo mismo que' : `${fmt(Math.abs(dif), 1)} puntos ${dif > 0 ? 'más' : 'menos'} que`} un año antes.`);
+
+  pieFuente($('fuente-presupuesto'), [
+    {
+      ...FUENTES.igae,
+      enlace: v.url ?? FUENTES.igae.enlace,
+      cubre: t(`ejecución de ${año} hasta el 31 de ${nombreMes}`, `execution for ${año} up to the end of ${nombreMes}`),
+      descargado: v.actualizado,
+    },
+  ]);
 
   // Capítulos (solo los no financieros, con presupuesto)
   const capitulos = v.capitulos.filter((c) => Number(c.id) <= 7 && c.creditos > 0 && c.obligaciones !== null);

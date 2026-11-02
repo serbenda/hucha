@@ -315,6 +315,30 @@ test('fuentes: el aviso de fallo lleva la página y el navegador', async () => {
   await contexto.close();
 });
 
+test('fuentes de cada dato: cada página dice de dónde sale y hasta cuándo llega', async () => {
+  for (const [ruta, id] of [['', 'fuente-todos'], ['a-donde-va/', 'fuente-partidas'], ['quien-gasta/', 'fuente-quien'], ['presupuesto/', 'fuente-presupuesto'], ['lupa/', 'fuente-lupa'], ['en/a-donde-va/', 'fuente-partidas']]) {
+    const { pagina, contexto } = await abrir(ruta, ESCRITORIO);
+    await pagina.waitForSelector(`#${id}:not([hidden])`);
+    const texto = await pagina.textContent(`#${id}`);
+    assert.match(texto, /Fuente|Source/, `${ruta}: pie de fuente`);
+    assert.match(texto, /descargados por hucha|downloaded by hucha/, `${ruta}: fecha de descarga`);
+    await contexto.close();
+  }
+  const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
+  await pagina.waitForFunction(() => document.querySelectorAll('#tabla-al-dia tr th').length >= 5);
+  assert.match(await pagina.textContent('#tabla-al-dia'), /Eurostat/);
+  await contexto.close();
+});
+
+test('portada: «Ver mi ticket» solo sale en el móvil', async () => {
+  const escritorio = await abrir('', ESCRITORIO);
+  assert.equal(await escritorio.pagina.isVisible('.calcular'), false);
+  await escritorio.contexto.close();
+  const movil = await abrir('', MOVIL);
+  assert.equal(await movil.pagina.isVisible('.calcular'), true);
+  await movil.contexto.close();
+});
+
 test('404: página propia con su código', async () => {
   const { pagina, respuesta, contexto } = await abrir('no-existe/', ESCRITORIO);
   assert.equal(respuesta.status(), 404);

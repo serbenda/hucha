@@ -1,6 +1,8 @@
 // Portada: el ticket de tus impuestos y las cifras de todos.
 
 import { cargarVista } from './datos.js';
+import { pieFuente, FUENTES, hastaAño } from './fuente.js';
+
 import { cien, activarCien } from './graficos.js';
 import { colorPartida, tieneColor } from './colores.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
@@ -173,6 +175,14 @@ try {
   $('ticket-año').textContent = t(`Gasto público de España en ${año}`, `Public spending in Spain, ${año}`);
   pintarTicket();
   pintarCifras(vista);
+  pieFuente(
+    $('fuente-todos'),
+    [
+      { ...FUENTES.gasto, cubre: hastaAño(vista.año, vista.provisional), publicado: vista.eurostat, descargado: vista.actualizado },
+      ...(vista.deuda ? [{ ...FUENTES.deuda, cubre: t(`deuda hasta ${vista.deuda.año}`, `debt up to ${vista.deuda.año}`), publicado: vista.deuda.actualizado, descargado: vista.actualizado }] : []),
+    ],
+    { raiz: '' }
+  );
   // De cada 100 €: las partidas con color propio y, en gris, las demás juntas
   const conColor = lista.filter((p) => tieneColor(p.id));
   const otras = lista.filter((p) => !tieneColor(p.id));
