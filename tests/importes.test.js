@@ -89,6 +89,14 @@ test('lo guardado antes de la comprobación también se revisa: el marco inflado
   assert.ok(UMBRAL_CONTRATOS === 1e6);
 });
 
+test('acuerdo marco con varias empresas leído con la versión anterior y sin licitado: techo por revisar hasta releerlo', () => {
+  const viejo = { id: 'C', a: 18000e6, li: 0, m: 1, g: Array.from({ length: 20 }, (_, i) => `E${i}`) };
+  assert.equal(revisarContrato(viejo).x, 'marco');
+  assert.equal(revisarContrato({ ...viejo, v: 2, a: 900e6 }).x, undefined, 'releído con la versión nueva, cuadra');
+  assert.equal(revisarContrato({ ...viejo, g: ['UNA SA'] }).x, undefined, 'con una sola empresa no hay duplicado posible');
+  assert.equal(totales([revisarContrato(viejo)], 'a').marcos.suma, 0);
+});
+
 test('ordenar: un importe dudoso no encabeza la lista; cuenta lo licitado', () => {
   const lista = buscar([{ t: 'a', a: 2357531666, li: 2.5e6, x: 'iva' }, { t: 'b', a: 50e6, li: 50e6 }], '', { campos: ['t'], importe: 'a' });
   assert.deepEqual(lista.map((x) => x.t), ['b', 'a']);

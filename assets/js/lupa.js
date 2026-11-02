@@ -93,6 +93,8 @@ $('temas').addEventListener('click', (e) => {
 // Importe que no cuadra en la propia fuente: se enseña tal cual, con la advertencia, y no suma en los totales
 function avisoDudoso(c) {
   const conIva = c.ci ? (EN ? `€${num(c.ci, { maximumFractionDigits: 2 })} incl. VAT` : `${num(c.ci, { maximumFractionDigits: 2 })} € con IVA`) : '';
+  if (c.x === 'marco')
+    return `<p class="nota-marco nota-dudoso"><strong>${t('Techo por revisar:', 'Ceiling under review:')}</strong> ${t('este acuerdo marco tiene varias empresas y se leyó antes de que hucha contara el techo una vez por lote; puede estar sumado una vez por empresa. No suma en los totales hasta que se vuelva a leer de la fuente.', 'this framework agreement has several companies and was read before hucha counted the ceiling once per lot; it may be added once per company. It is not added to the totals until it is read again from the source.')}</p>`;
   const por = c.x === 'iva'
     ? t(`es mayor que el importe con IVA que publica la misma fuente (${conIva})`, `is higher than the VAT-inclusive amount published by the same source (${conIva})`)
     : t(`es más del doble de lo licitado (${millones(c.li)})`, `is more than twice the tendered amount (${millones(c.li)})`);
@@ -103,7 +105,9 @@ function fichaContrato(c) {
   return `<li class="resultado${c.x ? ' dudoso' : ''}">
     <div class="resultado-cabeza">
       <h3>${esc(c.t)}</h3>
-      ${c.x
+      ${c.x === 'marco'
+        ? `<p class="resultado-importe">${millones(c.a)}<small>${t('techo por revisar', 'ceiling under review')}</small></p>`
+        : c.x
         ? `<p class="resultado-importe">${t('Importe dudoso', 'Doubtful amount')}<small>${t(`licitado por ${millones(c.li)}, sin IVA`, `tendered for ${millones(c.li)}, excl. VAT`)}</small></p>`
         : `<p class="resultado-importe">${millones(c.a)}<small>${c.m ? t('como máximo, sin IVA', 'maximum, excl. VAT') : t('adjudicado, sin IVA', 'awarded, excl. VAT')}</small></p>`}
     </div>
@@ -115,7 +119,7 @@ function fichaContrato(c) {
     </dl>
     ${c.x ? avisoDudoso(c) : ''}
     ${c.m ? `<p class="nota-marco">${t('<strong>Acuerdo marco:</strong> es un techo de lo que se podrá gastar con contratos posteriores, no dinero ya comprometido. No suma en los totales.', '<strong>Framework agreement:</strong> a ceiling on what may be spent through later contracts, not money already committed. It is not added to the totals.')}</p>` : ''}
-    <p class="etiquetas">${[c.x && t('Importe dudoso', 'Doubtful amount'), c.m && t('Acuerdo marco', 'Framework agreement'), c.n && nombreNivel(c.n), c.fi && en(FINALIDADES, c.fi, c.fi), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti)].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
+    <p class="etiquetas">${[c.x && (c.x === 'marco' ? t('Techo por revisar', 'Ceiling under review') : t('Importe dudoso', 'Doubtful amount')), c.m && t('Acuerdo marco', 'Framework agreement'), c.n && nombreNivel(c.n), c.fi && en(FINALIDADES, c.fi, c.fi), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti)].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
       ${c.u ? `<a href="${esc(c.u)}" rel="noopener" hreflang="es">${t('Ver el expediente', 'See the file (in Spanish)')}</a>` : ''}</p>
   </li>`;
 }
@@ -297,7 +301,7 @@ const descargaContratos = (r) => ({
   fichero: fichero(`contratos-${hoy()}`),
   tabla: () => [
     [t('Contrato', 'Contract'), t('Paga', 'Paid by'), t('Lugar', 'Place'), t('Administración', 'Administration'), t('Gana', 'Won by'), t('Adjudicado (€, sin IVA)', 'Awarded (EUR, excl. VAT)'), t('Licitado (€, sin IVA)', 'Tendered (EUR, excl. VAT)'), t('Acuerdo marco', 'Framework agreement'), t('Importe dudoso en la fuente', 'Doubtful amount in the source'), t('Tipo', 'Type'), t('Finalidad', 'Purpose'), t('Temas', 'Topics'), t('Fecha', 'Date'), t('Expediente', 'File')],
-    r.map((c) => [c.t, c.o, c.l, c.n && nombreNivel(c.n), c.g?.join(' | '), c.a, c.li ?? null, siNo(c.m), c.x ? (c.x === 'iva' ? t('sí: mayor que con IVA', 'yes: higher than incl. VAT') : t('sí: más del doble de lo licitado', 'yes: more than twice the tender')) : t('no', 'no'), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti), c.fi && en(FINALIDADES, c.fi, c.fi), (c.te ?? []).map(nombreTema).join(' | '), c.f, c.u]),
+    r.map((c) => [c.t, c.o, c.l, c.n && nombreNivel(c.n), c.g?.join(' | '), c.a, c.li ?? null, siNo(c.m), c.x ? ({ iva: t('sí: mayor que con IVA', 'yes: higher than incl. VAT'), licitado: t('sí: más del doble de lo licitado', 'yes: more than twice the tender'), marco: t('techo por revisar (varias empresas)', 'ceiling under review (several companies)') }[c.x] ?? t('sí', 'yes')) : t('no', 'no'), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti), c.fi && en(FINALIDADES, c.fi, c.fi), (c.te ?? []).map(nombreTema).join(' | '), c.f, c.u]),
   ],
 });
 const descargaSubvenciones = (r) => ({
