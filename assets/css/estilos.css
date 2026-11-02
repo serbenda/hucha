@@ -173,7 +173,10 @@ section + section { margin-top: 3.5rem; }
   font-variant-numeric: tabular-nums;
 }
 .con-unidad b { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--tenue); font-size: 1.3rem; }
-.calcular { justify-self: start; min-height: 44px; }
+/* «Ver mi ticket»: solo en el móvil, donde el ticket queda debajo y el teclado numérico no se cierra solo.
+   En el ordenador el ticket se recalcula al escribir y está al lado, así que el botón no haría nada. */
+.calcular { display: none; justify-self: start; min-height: 44px; }
+@media (max-width: 760px) { .calcular { display: inline-block; } }
 .rapidos { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .rapidos button {
   font: inherit;
@@ -685,3 +688,25 @@ button.apilada span.elegido { box-shadow: inset 0 0 0 3px var(--papel), inset 0 
 .boton-descarga:hover { border-color: var(--tinta); }
 .boton-descarga .icono { width: 1.1em; height: 1.1em; color: var(--cobre); }
 .boton-descarga small { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--tenue); border: 1px solid var(--linea); border-radius: 4px; padding: 0.05rem 0.3rem; }
+
+/* Deuda */
+.nota-deuda { margin: 1rem 0 0; padding: 0.8rem 1rem; border-left: 3px solid var(--cobre); background: var(--superficie); border-radius: 0 var(--radio) var(--radio) 0; max-width: var(--medida); }
+.nota-deuda a { font-weight: 600; white-space: nowrap; }
+.nota-año { margin: -0.5rem 0 1.5rem; color: var(--tenue); font-size: 0.95rem; max-width: var(--medida); }
+.este-año { margin: 0.75rem 0 0; padding: 0.7rem 0.9rem; background: var(--cobre-suave); border-radius: var(--radio); font-size: 0.95rem; }
+.leyenda-evolucion { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--tenue); }
+#bloque-deuda .leyenda { margin-bottom: 1.25rem; }
+
+/* Pie de fuente: de dónde sale cada dato y hasta cuándo llega */
+.pie-fuente { margin: 1rem 0 0; font-size: 0.85rem; color: var(--tenue); line-height: 1.55; max-width: var(--medida); }
+.pie-fuente[hidden] { display: none; }
+.pie-fuente-titulo { font-weight: 700; color: var(--tinta); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; margin-right: 0.25rem; }
+.pie-fuente code { font-size: 0.8rem; }
+/* Siete columnas no caben en el ancho de lectura: cada fuente va como una ficha, con el nombre de cada dato delante */
+.tabla-al-dia { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.tabla-al-dia thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.tabla-al-dia tr { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.15rem 1.5rem; padding: 0.9rem 0; border-bottom: 1px solid var(--linea); }
+.tabla-al-dia th, .tabla-al-dia td { display: block; text-align: left; padding: 0.1rem 0; border: 0; }
+.tabla-al-dia th { grid-column: 1 / -1; font-size: 1rem; margin-bottom: 0.2rem; }
+.tabla-al-dia td::before { content: attr(data-col) ': '; color: var(--tenue); font-size: 0.82rem; }
+.tabla-al-dia .ok, .tabla-al-dia .mal { font-weight: 600; }

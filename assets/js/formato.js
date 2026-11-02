@@ -17,6 +17,11 @@ export const delPib = (pc) => (Number.isFinite(pc) ? (EN ? `${unDecimal.format(p
 /** Millones de euros a texto de calle: 652000 → «652.000 millones de euros» */
 export function millones(m) {
   if (!Number.isFinite(m)) return '—';
+  // Un billón (español) es un millón de millones; en inglés, «trillion»
+  if (Math.abs(m) >= 1e6) {
+    const b = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 }).format(m / 1e6);
+    return EN ? `€${b} trillion` : `${b} ${b === '1' ? 'billón' : 'billones'} de euros`;
+  }
   if (Math.abs(m) >= 1000) return EN ? `€${enteros.format(Math.round(m / 1000))} billion` : `${enteros.format(Math.round(m / 1000))} mil millones de euros`;
   return EN ? `€${enteros.format(Math.round(m))} million` : `${enteros.format(Math.round(m))} millones de euros`;
 }

@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { arrancar } from './servidor.mjs';
-import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos } from '../../assets/js/cofog.js';
+import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos, resumenDeuda } from '../../assets/js/cofog.js';
 
 let servidor, navegador, base, datos;
 
@@ -274,6 +274,69 @@ test('presupuesto: los temas rellenan la búsqueda', async () => {
   await pagina.click('[data-q="igualdad"]');
   assert.equal(await pagina.inputValue('#q'), '');
   await contexto.close();
+});
+
+test('deuda: en la portada y en «A dónde va», con su gráfico frente a la UE', async (t) => {
+  const deuda = resumenDeuda(datos);
+  if (!deuda) return t.skip('el almacén aún no tiene la deuda de Eurostat');
+  const portada = await abrir('', ESCRITORIO);
+  assert.equal(await portada.pagina.isVisible('#cifra-deuda'), true);
+  assert.match(await portada.pagina.textContent('#cifra-deuda'), /del PIB/);
+  if (deuda.deficits?.[ultimoAño(datos)] > 0) assert.match(await portada.pagina.textContent('#nota-deuda'), /pidiendo prestado/);
+  await portada.contexto.close();
+  const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
+  assert.equal(await pagina.isVisible('#bloque-deuda'), true);
+  assert.match(await pagina.textContent('#c-deuda'), new RegExp(String(Math.round(deuda.pib)).slice(0, 2)));
+  assert.equal(await pagina.locator('#deuda-grafico .evolucion').count(), 1);
+  assert.match(await pagina.textContent('#nota-año'), new RegExp(ultimoAño(datos)));
+  await contexto.close();
+});
+
+test('navegadores antiguos: el aviso no sale en uno moderno y sí si falta lo que usa la web', async () => {
+  const { pagina, contexto } = await abrir('', ESCRITORIO);
+  assert.equal(await pagina.locator('.banda').count(), 0);
+  await contexto.close();
+  const viejo = await navegador.newContext();
+  await viejo.addInitScript(() => { delete Array.prototype.at; });
+  const p = await viejo.newPage();
+  await p.route((url) => !url.href.startsWith(base), (r) => r.abort());
+  await p.goto(base);
+  await p.waitForSelector('.banda');
+  assert.match(await p.textContent('.banda'), /navegador es demasiado antiguo/);
+  await viejo.close();
+});
+
+test('fuentes: el aviso de fallo lleva la página y el navegador', async () => {
+  const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
+  const href = new URL(await pagina.getAttribute('[data-aviso="fallo"]', 'href'));
+  assert.equal(href.host, 'github.com');
+  assert.match(href.searchParams.get('body'), /Navegador: Mozilla/);
+  assert.match(href.searchParams.get('body'), /Página: http/);
+  await contexto.close();
+});
+
+test('fuentes de cada dato: cada página dice de dónde sale y hasta cuándo llega', async () => {
+  for (const [ruta, id] of [['', 'fuente-todos'], ['a-donde-va/', 'fuente-partidas'], ['quien-gasta/', 'fuente-quien'], ['presupuesto/', 'fuente-presupuesto'], ['lupa/', 'fuente-lupa'], ['en/a-donde-va/', 'fuente-partidas']]) {
+    const { pagina, contexto } = await abrir(ruta, ESCRITORIO);
+    await pagina.waitForSelector(`#${id}:not([hidden])`);
+    const texto = await pagina.textContent(`#${id}`);
+    assert.match(texto, /Fuente|Source/, `${ruta}: pie de fuente`);
+    assert.match(texto, /descargados por hucha|downloaded by hucha/, `${ruta}: fecha de descarga`);
+    await contexto.close();
+  }
+  const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
+  await pagina.waitForFunction(() => document.querySelectorAll('#tabla-al-dia tr th').length >= 5);
+  assert.match(await pagina.textContent('#tabla-al-dia'), /Eurostat/);
+  await contexto.close();
+});
+
+test('portada: «Ver mi ticket» solo sale en el móvil', async () => {
+  const escritorio = await abrir('', ESCRITORIO);
+  assert.equal(await escritorio.pagina.isVisible('.calcular'), false);
+  await escritorio.contexto.close();
+  const movil = await abrir('', MOVIL);
+  assert.equal(await movil.pagina.isVisible('.calcular'), true);
+  await movil.contexto.close();
 });
 
 test('404: página propia con su código', async () => {

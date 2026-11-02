@@ -136,6 +136,22 @@ Buscador (todas las palabras, sin importar tildes ni mayúsculas), filtros por *
 
 Primero, **en pocas palabras** y con un **glosario** de las palabras que salen en la web (PIB, créditos, obligaciones, acuerdo marco…), para quien no sabe de economía. Después, el detalle: de dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), el presupuesto, la Lupa, cómo se calcula el ticket, privacidad y cómo avisar de un error. Al final, el **aviso legal**: quién está detrás, qué es y qué no es, reutilización de datos públicos (Ley 37/2007), exactitud y responsabilidad, datos personales (minimización de personas físicas, cómo pedir que se retire algo), propiedad intelectual, enlaces y ley aplicable.
 
+### 💳 La deuda
+
+En la portada («Lo que deben» y cuánto del gasto se pagó con deuda), en el ticket y en un apartado propio de A dónde va: deuda pública en euros, por habitante y en % del PIB frente a la UE, el déficit del año y la evolución. Sale de Eurostat `gov_10dd_edpt1` (procedimiento de déficit excesivo: deuda bruta consolidada GD y capacidad o necesidad de financiación B9), que descarga `scripts/fetch-cofog.mjs` junto con el gasto; si falla, se queda la de la última vez. En Presupuesto, «Lo que no es gasto» enseña la amortización de deuda (capítulo 9) y los activos financieros (capítulo 8) del Estado, que no son gasto.
+
+### 📅 El año de los datos
+
+Eurostat va un año por detrás (las cuentas de un año salen al siguiente), y A dónde va lo dice arriba, con el enlace a Presupuesto para el año en curso. En Defensa, que paga casi entera el Estado, se añade lo presupuestado y gastado este año (IGAE) y por qué la cifra de la OTAN es otra.
+
+### 🗓️ De dónde sale y hasta cuándo llega cada dato
+
+Debajo de cada bloque de datos hay un **pie de fuente** (`assets/js/fuente.js`): la fuente con su enlace (y la tabla, si es de Eurostat), hasta qué periodo llega, cuándo la publicó la fuente (si lo dice) y cuándo la descargó hucha. En Fuentes, **«Hasta cuándo están los datos»** junta todas las fuentes en una tabla con esas fechas, cada cuánto publica cada una y el resultado de la última comprobación (de `data/estado.json`, que escribe cada descarga).
+
+### 🛟 Si algo no funciona
+
+`assets/js/antiguo.js` es un script clásico, sin sintaxis moderna, que avisa si el navegador es demasiado antiguo para la web en vez de dejarla en blanco. En Fuentes, «¿Ves un error o algo no funciona?» abre un aviso en GitHub ya rellenado con la página, el navegador y la pantalla.
+
 ### ⬇️ Descargas
 
 Cada página termina con **«Descarga los datos»**, y la Lupa tiene un botón bajo la lista: bajan exactamente las cifras que se ven.

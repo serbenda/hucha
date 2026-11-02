@@ -15,3 +15,35 @@ if (location.hostname.endsWith('bendi.dev')) {
   s.dataset.goatcounter = 'https://serbenda.goatcounter.com/count';
   document.head.append(s);
 }
+
+// Avisos de errores (en Fuentes): el enlace a GitHub ya lleva la página de la que vienes, el navegador y la
+// pantalla, para que quien avisa no tenga que explicarlo. No se envía nada: solo se rellena el formulario.
+const en = document.documentElement.lang.startsWith('en');
+const origen = (() => {
+  try {
+    const r = new URL(document.referrer);
+    return r.origin === location.origin ? r.href : location.href;
+  } catch {
+    return location.href;
+  }
+})();
+for (const a of document.querySelectorAll('a[data-aviso]')) {
+  const fallo = a.dataset.aviso === 'fallo';
+  const titulo = fallo ? (en ? 'Something does not work: ' : 'Algo no funciona: ') : en ? 'Data: ' : 'Dato: ';
+  const cuerpo = fallo
+    ? [
+        en ? '**What happens?** (blank page, button that does nothing, something that does not load…)' : '**¿Qué pasa?** (página en blanco, un botón que no hace nada, algo que no carga…)',
+        '',
+        '',
+        '---',
+        `${en ? 'Page' : 'Página'}: ${origen}`,
+        `${en ? 'Browser' : 'Navegador'}: ${navigator.userAgent}`,
+        `${en ? 'Screen' : 'Pantalla'}: ${innerWidth}×${innerHeight} (${devicePixelRatio}x)`,
+        `${en ? 'Language' : 'Idioma'}: ${navigator.language}`,
+      ]
+    : [en ? '**What is wrong?**' : '**¿Qué no cuadra?**', '', '', en ? '**Link to the official source (if you have it):**' : '**Enlace a la fuente oficial (si lo tienes):**', '', '', '---', `${en ? 'Page' : 'Página'}: ${origen}`];
+  const u = new URL(a.href);
+  u.searchParams.set('title', titulo);
+  u.searchParams.set('body', cuerpo.join('\n'));
+  a.href = u.href;
+}

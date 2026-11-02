@@ -3,7 +3,7 @@
 // se mantienen los de la publicación anterior.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { urlGasto, urlPoblacion, urlTipos, prepararDatos, problema, ultimoAño, gastoPorPersona, ultimoAñoTipos } from '../assets/js/cofog.js';
+import { urlGasto, urlPoblacion, urlTipos, urlDeuda, prepararDatos, prepararDeuda, resumenDeuda, problema, ultimoAño, gastoPorPersona, ultimoAñoTipos } from '../assets/js/cofog.js';
 import { anotar } from './estado.mjs';
 
 const salida = new URL('../almacen/cofog.json', import.meta.url);
@@ -76,6 +76,18 @@ if (!Object.keys(datos.tipos).length) {
   await anotar('eurostat-tipos', false, `Sin desglose por tipo de gasto${fallaTipos ? `: ${fallaTipos}` : ''}; se usa el anterior si lo hay`);
 } else {
   await anotar('eurostat-tipos', true, `Tipos de gasto hasta ${ultimoAñoTipos(datos)}`);
+}
+
+// Deuda y déficit: otro extra. Si falla o no tiene buena pinta, se queda la de la última vez
+try {
+  const deuda = prepararDeuda(await descargar(urlDeuda()));
+  const r = resumenDeuda({ ...datos, deuda });
+  if (!r || !(r.total > 100000) || !(r.pib > 10)) throw new Error(`deuda sospechosa: ${JSON.stringify(r)?.slice(0, 120)}`);
+  datos.deuda = deuda;
+  await anotar('eurostat-deuda', true, `Deuda hasta ${r.año}: ${Math.round(r.pib)} % del PIB`);
+} catch (e) {
+  if (previo?.deuda) datos.deuda = previo.deuda;
+  await anotar('eurostat-deuda', false, `Sin deuda nueva (${e.message}); se usa la anterior si la hay`);
 }
 
 datos.actualizado = new Date().toISOString();

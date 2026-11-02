@@ -3,14 +3,14 @@
 // La Action nunca usa este script.
 
 import { writeFile, mkdir } from 'node:fs/promises';
-import { prepararDatos } from '../assets/js/cofog.js';
+import { prepararDatos, prepararDeuda } from '../assets/js/cofog.js';
 import { respuestasEjemplo } from '../tests/ayuda.js';
 import { escaparate } from './escaparate.mjs';
 import { leerLibro } from '../assets/js/ejecucion.js';
 import { GTOS004, GTOS014, GTOS016, GTOS017 } from '../tests/ejecucion-ejemplo.js';
 
-const { gasto, poblacion, tipos } = respuestasEjemplo();
-const datos = { ...prepararDatos(gasto, poblacion, tipos), ejemplo: true, actualizado: new Date().toISOString() };
+const { gasto, poblacion, tipos, deuda } = respuestasEjemplo();
+const datos = { ...prepararDatos(gasto, poblacion, tipos), deuda: prepararDeuda(deuda), ejemplo: true, actualizado: new Date().toISOString() };
 await mkdir(new URL('../almacen/', import.meta.url), { recursive: true });
 await writeFile(new URL('../almacen/cofog.json', import.meta.url), JSON.stringify(datos));
 console.log('almacen/cofog.json de EJEMPLO creado (no son datos oficiales)');

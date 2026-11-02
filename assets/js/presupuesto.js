@@ -1,6 +1,8 @@
 // «Presupuesto»: lo presupuestado por el Estado este año frente a lo que lleva gastado (IGAE).
 
 import { cargarVista } from './datos.js';
+import { pieFuente, FUENTES, hastaAño } from './fuente.js';
+
 import { botones, fichero, jsonVista } from './descargas.js';
 import { avance, lineasDelAño } from './graficos.js';
 import { MESES, nombreSeccion } from './ejecucion.js';
@@ -73,9 +75,34 @@ try {
     : `Parte del presupuesto ya gastada al final de cada mes. Hasta ${nombreMes} de ${año} se ha gastado el ${textoPct(g)}` +
       (dif === null ? '.' : `: ${dif === 0 ? 'casi lo mismo que' : `${fmt(Math.abs(dif), 1)} puntos ${dif > 0 ? 'más' : 'menos'} que`} un año antes.`);
 
+  pieFuente($('fuente-presupuesto'), [
+    {
+      ...FUENTES.igae,
+      enlace: v.url ?? FUENTES.igae.enlace,
+      cubre: t(`ejecución de ${año} hasta el 31 de ${nombreMes}`, `execution for ${año} up to the end of ${nombreMes}`),
+      descargado: v.actualizado,
+    },
+  ]);
+
   // Capítulos (solo los no financieros, con presupuesto)
   const capitulos = v.capitulos.filter((c) => Number(c.id) <= 7 && c.creditos > 0 && c.obligaciones !== null);
   $('capitulos').innerHTML = avance(capitulos.map((c) => filaAvance(c, { nombre: en(CAPITULOS, Number(c.id), capitalizar(c.nombre).replace('Fdo.', 'Fondo')) })), marca);
+
+  // Operaciones financieras: devolver deuda (capítulo 9) y prestar o comprar participaciones (capítulo 8)
+  const financieros = v.capitulos.filter((c) => (c.id === '9' || c.id === '8') && c.creditos > 0 && c.obligaciones !== null).sort((a, b) => Number(b.id) - Number(a.id));
+  if (financieros.length) {
+    const NOMBRES_FIN = { 9: t('Devolver deuda que vence (amortización)', 'Repaying maturing debt'), 8: t('Préstamos y participaciones (activos financieros)', 'Loans and shareholdings (financial assets)') };
+    $('financiero').innerHTML = avance(financieros.map((c) => filaAvance(c, { nombre: NOMBRES_FIN[c.id] })), marca);
+    const amort = financieros.find((c) => c.id === '9');
+    const intereses = v.capitulos.find((c) => c.id === '3');
+    if (amort && intereses?.creditos) {
+      $('financiero-nota').textContent = t(
+        `Para comparar: los intereses de la deuda, que sí son gasto, son ${millones(intereses.creditos)} presupuestados este año. La deuda que vence se suele devolver emitiendo deuda nueva, por eso la deuda total no baja aunque se amortice.`,
+        `For comparison: interest on the debt, which is spending, is ${millones(intereses.creditos)} budgeted this year. Maturing debt is usually repaid by issuing new debt, which is why total debt does not fall even though debt is repaid.`
+      );
+    }
+    $('bloque-financiero').hidden = false;
+  }
 
   // Políticas, de más a menos presupuesto
   const politicas = [...v.politicas].filter((p) => p.creditos > 0).sort((a, b) => b.creditos - a.creditos);

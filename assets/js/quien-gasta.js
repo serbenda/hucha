@@ -1,6 +1,8 @@
 // «Quién gasta»: el reparto entre Estado, comunidades, ayuntamientos y Seguridad Social.
 
 import { cargarVista } from './datos.js';
+import { pieFuente, FUENTES, hastaAño } from './fuente.js';
+
 import { botones, fichero, jsonVista } from './descargas.js';
 import { icono, ICONO_FUNCION, ICONO_ADMINISTRACION } from './iconos.js';
 import { millones, porcentaje } from './formato.js';
@@ -103,6 +105,8 @@ try {
       return li;
     })
   );
+
+  pieFuente($('fuente-quien'), [{ ...FUENTES.gasto, cubre: hastaAño(año, v.provisional), publicado: v.eurostat, descargado: v.actualizado }]);
 
   // Descargas
   const colMillones = t('Millones de €', 'EUR million');

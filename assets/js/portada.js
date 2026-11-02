@@ -1,6 +1,8 @@
 // Portada: el ticket de tus impuestos y las cifras de todos.
 
 import { cargarVista } from './datos.js';
+import { pieFuente, FUENTES, hastaAño } from './fuente.js';
+
 import { cien, activarCien } from './graficos.js';
 import { colorPartida, tieneColor } from './colores.js';
 import { aportacion, repartir, REGLAS } from './impuestos.js';
@@ -79,10 +81,13 @@ function pintarTicket() {
   const repartidas = repartir(total, lista);
   reparto.replaceChildren(...repartidas.map((p) => linea(p.nombre, euros(p.euros), { titulo: p.que, extra: porcentaje(p.cuota), id: p.id })));
 
+  const d = vista?.deuda;
+  const deficitAño = d?.deficits?.[año] ?? (d?.año === año ? d.deficit : null);
+  const conDeuda = deficitAño > 0 ? Math.round((deficitAño / vista.total) * 100) : null;
   $('ticket-pie').textContent =
     t(
-      `Si ganas ${euros(bruto)} brutos, te quedan unos ${euros(a.neto)} netos al año. Reparto según el gasto público de ${año}${vista?.provisional ? ' (provisional)' : ''}. Reglas fiscales de ${REGLAS.año}. Estimación orientativa.`,
-      `If you earn ${euros(bruto)} gross, you keep about ${euros(a.neto)} net a year. Split according to public spending in ${año}${vista?.provisional ? ' (provisional)' : ''}. ${REGLAS.año} tax rules. Rough estimate.`
+      `Si ganas ${euros(bruto)} brutos, te quedan unos ${euros(a.neto)} netos al año. Reparto según el gasto público de ${año}${vista?.provisional ? ' (provisional)' : ''}${conDeuda ? `, del que unos ${conDeuda} € de cada 100 se pagaron con deuda` : ''}. Reglas fiscales de ${REGLAS.año}. Estimación orientativa.`,
+      `If you earn ${euros(bruto)} gross, you keep about ${euros(a.neto)} net a year. Split according to public spending in ${año}${vista?.provisional ? ' (provisional)' : ''}${conDeuda ? `, of which about €${conDeuda} in every €100 was paid for with debt` : ''}. ${REGLAS.año} tax rules. Rough estimate.`
     );
 }
 
@@ -99,6 +104,21 @@ function pintarCifras(v) {
   cifra(cifras[0], millones(total), t(`en ${año}`, `in ${año}`));
   cifra(cifras[1], euros(v.porPersona), t('al año, contando a todos: niños, jubilados…', 'a year, counting everyone: children, pensioners…'));
   cifra(cifras[2], delPib(pib), pibUe !== null ? t(`La media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}`, `European Union average: ${delPib(pibUe).replace(' of GDP', '')}`) : '');
+  // La deuda: lo que se debe y lo que se pidió prestado ese año (el déficit)
+  const d = v.deuda;
+  if (d) {
+    cifra($('cifra-deuda').querySelector('dd'), delPib(d.pib), t(`${millones(d.total)}: ${euros(d.porPersona)} por habitante, a final de ${d.año}`, `${millones(d.total)}: ${euros(d.porPersona)} per person, at the end of ${d.año}`));
+    $('cifra-deuda').hidden = false;
+    const deficitAño = d.deficits?.[año] ?? (d.año === año ? d.deficit : null);
+    if (deficitAño > 0) {
+      const de100 = (deficitAño / total) * 100;
+      $('nota-deuda').innerHTML = t(
+        `En ${año} las administraciones gastaron <strong>${millones(deficitAño)}</strong> más de lo que ingresaron (el déficit): de cada 100 € de gasto, unos <strong>${euros(Math.round(de100))}</strong> se pagaron pidiendo prestado. Eso hace crecer la deuda. <a href="a-donde-va/#t-deuda">Más sobre la deuda</a>`,
+        `In ${año} the administrations spent <strong>${millones(deficitAño)}</strong> more than they took in (the deficit): out of every €100 spent, about <strong>${euros(Math.round(de100))}</strong> was paid for by borrowing. That makes the debt grow. <a href="a-donde-va/#t-deuda">More about the debt</a>`
+      );
+      $('nota-deuda').hidden = false;
+    }
+  }
   $('todos-texto').textContent =
     t(
       `En ${año}${v.provisional ? ' (datos provisionales)' : ''}, todas las administraciones juntas (Estado, comunidades, ayuntamientos y Seguridad Social) gastaron esto.`,
@@ -155,6 +175,14 @@ try {
   $('ticket-año').textContent = t(`Gasto público de España en ${año}`, `Public spending in Spain, ${año}`);
   pintarTicket();
   pintarCifras(vista);
+  pieFuente(
+    $('fuente-todos'),
+    [
+      { ...FUENTES.gasto, cubre: hastaAño(vista.año, vista.provisional), publicado: vista.eurostat, descargado: vista.actualizado },
+      ...(vista.deuda ? [{ ...FUENTES.deuda, cubre: t(`deuda hasta ${vista.deuda.año}`, `debt up to ${vista.deuda.año}`), publicado: vista.deuda.actualizado, descargado: vista.actualizado }] : []),
+    ],
+    { raiz: '' }
+  );
   // De cada 100 €: las partidas con color propio y, en gris, las demás juntas
   const conColor = lista.filter((p) => tieneColor(p.id));
   const otras = lista.filter((p) => !tieneColor(p.id));

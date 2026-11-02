@@ -8,6 +8,7 @@ import { euros, fecha } from './formato.js';
 import { barras, columnas } from './graficos.js';
 import { icono, ICONO_TEMA } from './iconos.js';
 import { botones, fichero } from './descargas.js';
+import { pieFuente, FUENTES } from './fuente.js';
 import { t, LOCALE, EN } from './idioma.js';
 import { en, TEMAS as TEMAS_EN, NIVELES as NIVELES_EN, TIPOS_CONTRATO, FINALIDADES, SECTORES_AYUDA as SECTORES_EN, CANALES } from './en.js';
 
@@ -146,6 +147,7 @@ async function pintar() {
     return;
   }
 
+  pintarFuenteLupa(d);
   if (estado.tab === 'ayuda') {
     if (estado.pais) await pintarPais(d, estado.pais, mio);
     else pintarAyuda(d);
@@ -208,6 +210,19 @@ async function pintar() {
         })
     )
   );
+}
+
+// De dónde sale cada pestaña y hasta cuándo llega
+function pintarFuenteLupa(d) {
+  const meses = (d.meses ?? []).map((m) => m.mes).filter((m) => /^\d{4}-\d{2}$/.test(m)).sort();
+  const ultimo = meses.at(-1) ? mesLargo(meses.at(-1)) : null;
+  const f =
+    estado.tab === 'contratos'
+      ? { ...FUENTES.contratos, cubre: [d.desde && t(`adjudicaciones desde el ${fecha(d.desde)}`, `awards since ${fecha(d.desde)}`), ultimo && t(`hasta ${ultimo}`, `up to ${ultimo}`)].filter(Boolean).join(' ') }
+      : estado.tab === 'subvenciones'
+        ? { ...FUENTES.subvenciones, cubre: t(`concesiones de los últimos 12 meses${ultimo ? `, hasta ${ultimo}` : ''}`, `awards in the last 12 months${ultimo ? `, up to ${ultimo}` : ''}`) }
+        : { ...FUENTES.ayuda, cubre: [d.años?.length && t(`ayuda de ${d.años[0]} a ${d.años.at(-1)}`, `aid from ${d.años[0]} to ${d.años.at(-1)}`), d.proyectosAño && t(`proyectos de ${d.proyectosAño}`, `projects for ${d.proyectosAño}`)].filter(Boolean).join('; ') };
+  pieFuente($('fuente-lupa'), [{ ...f, descargado: d.actualizado }]);
 }
 
 // Panorama: de un vistazo, en qué temas, quién paga y mes a mes. Pulsar una barra filtra la lista.
