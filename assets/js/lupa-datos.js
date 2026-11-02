@@ -147,17 +147,30 @@ export function parsearEntrada(e) {
   const proyecto = e.match(/<cac:ProcurementProject>([\s\S]*?)<\/cac:ProcurementProject>/)?.[1] ?? '';
   const tipo = numero(etiqueta(proyecto, 'cbc:TypeCode'));
   const cpvs = todas(proyecto, 'cbc:ItemClassificationCode').map(texto);
-  const licitado = numero(etiqueta(proyecto.match(/<cac:BudgetAmount>([\s\S]*?)<\/cac:BudgetAmount>/)?.[1] ?? '', 'cbc:TaxExclusiveAmount'));
+  const presupuesto = proyecto.match(/<cac:BudgetAmount>([\s\S]*?)<\/cac:BudgetAmount>/)?.[1] ?? '';
+  const licitado = numero(etiqueta(presupuesto, 'cbc:TaxExclusiveAmount'));
+  const estimado = numero(etiqueta(presupuesto, 'cbc:EstimatedOverallContractAmount'));
+  const sistema = numero(etiqueta(e.match(/<cac:TenderingProcess>([\s\S]*?)<\/cac:TenderingProcess>/)?.[1] ?? '', 'cbc:ContractingSystemCode'));
+  const marco = esMarco(sistema, titulo);
 
-  // Un contrato puede tener varios lotes, cada uno con su adjudicatario
-  let adjudicado = 0;
+  // Un contrato puede tener varios lotes, cada uno con uno o varios adjudicatarios. En un acuerdo marco con
+  // varios adjudicatarios, cada uno lleva el mismo techo del lote: se cuenta una vez por lote, no una por empresa.
+  const lotes = new Map(); // lote → { sin, con, importes: [] }
   let fecha = null;
   const ganadores = new Map();
   for (const r of todas(e, 'cac:TenderResult')) {
     const codigo = numero(etiqueta(r, 'cbc:ResultCode'));
     if (codigo !== null && ![8, 9].includes(codigo)) continue; // 8 adjudicado, 9 formalizado; el resto: desierto, desistido…
-    const importe = numero(etiqueta(r.match(/<cac:LegalMonetaryTotal>([\s\S]*?)<\/cac:LegalMonetaryTotal>/)?.[1] ?? '', 'cbc:TaxExclusiveAmount'));
-    if (importe) adjudicado += importe;
+    const total = r.match(/<cac:LegalMonetaryTotal>([\s\S]*?)<\/cac:LegalMonetaryTotal>/)?.[1] ?? '';
+    const importe = numero(etiqueta(total, 'cbc:TaxExclusiveAmount'));
+    const conIva = numero(etiqueta(total, 'cbc:PayableAmount'));
+    const lote = etiqueta(r, 'cbc:ProcurementProjectLotID') ?? '';
+    if (importe) {
+      const l = lotes.get(lote) ?? { importes: [], conIva: [] };
+      l.importes.push(importe);
+      if (conIva > 0) l.conIva.push(conIva);
+      lotes.set(lote, l);
+    }
     const f = etiqueta(r, 'cbc:AwardDate');
     if (f && (!fecha || f > fecha)) fecha = f;
     const g = r.match(/<cac:WinningParty>([\s\S]*?)<\/cac:WinningParty>/)?.[1];
@@ -168,14 +181,23 @@ export function parsearEntrada(e) {
       if (clave) ganadores.set(clave, esPersona(nif) ? 'Persona física' : nombre);
     }
   }
-
-  const sistema = numero(etiqueta(e.match(/<cac:TenderingProcess>([\s\S]*?)<\/cac:TenderingProcess>/)?.[1] ?? '', 'cbc:ContractingSystemCode'));
+  // Por lote: en un acuerdo marco, o si todos los adjudicatarios llevan el mismo importe, el mayor (es un techo
+  // compartido); si son importes distintos en un contrato normal, se suman (cada uno es su parte)
+  const delLote = (xs) => (!xs.length ? 0 : marco || xs.every((x) => x === xs[0]) ? Math.max(...xs) : xs.reduce((a, b) => a + b, 0));
+  let adjudicado = 0;
+  let conIva = 0;
+  let conIvaCompleto = true;
+  for (const l of lotes.values()) {
+    adjudicado += delLote(l.importes);
+    if (l.conIva.length === l.importes.length) conIva += delLote(l.conIva);
+    else conIvaCompleto = false;
+  }
 
   return {
     id: id.split('/').at(-1),
     estado,
     sistema,
-    marco: esMarco(sistema, titulo),
+    marco,
     titulo,
     organo,
     nivel: nivelAdministracion([organo ?? '', ...jerarquia]),
@@ -184,7 +206,9 @@ export function parsearEntrada(e) {
     finalidad: finalidad(cpvs[0]),
     temas: temas(`${titulo} ${organo}`, cpvs),
     licitado,
+    estimado,
     adjudicado: adjudicado || null,
+    conIva: conIvaCompleto && conIva > 0 ? conIva : null,
     fecha,
     ganadores: [...ganadores.values()],
     enlace,
@@ -195,13 +219,53 @@ export function parsearEntrada(e) {
 /** Se guardan los contratos adjudicados o resueltos a partir de 1 millón de € (sin IVA). */
 export const UMBRAL_CONTRATOS = 1000000;
 
-export const esContratoUtil = (c) => ['ADJ', 'RES'].includes(c?.estado) && c.adjudicado >= UMBRAL_CONTRATOS;
+/**
+ * Importes que no cuadran en la propia fuente. A veces la Plataforma publica un importe adjudicado que no puede
+ * ser (un error de coma en origen, por ejemplo 2.357.531.666 € por 2.357.531,67 €). hucha no lo corrige a ojo:
+ * lo marca como dudoso, lo deja fuera de los totales y lo enseña tal cual con la advertencia.
+ * - «iva»: el importe sin IVA es mayor que el importe con IVA del mismo adjudicatario.
+ * - «licitado»: el adjudicado es más del doble de lo licitado o del valor estimado (una oferta no puede
+ *   pasar del presupuesto de licitación; el margen cubre lotes y prórrogas mal declarados).
+ */
+export const DESVIO_MAX = 2;
+export function importeDudoso({ adjudicado, licitado, estimado, conIva }) {
+  if (!(adjudicado > 0)) return null;
+  if (conIva > 0 && adjudicado > conIva * 1.01) return 'iva';
+  const referencia = Math.max(licitado ?? 0, estimado ?? 0);
+  if (referencia > 0 && adjudicado > referencia * DESVIO_MAX) return 'licitado';
+  return null;
+}
 
-/** Forma compacta para la web (claves cortas para que pese menos). */
-export const compactarContrato = (c) => ({
-  id: c.id, t: c.titulo, o: c.organo, n: c.nivel, l: c.lugar, ti: c.tipo, fi: c.finalidad, te: c.temas,
-  li: c.licitado, a: c.adjudicado, f: c.fecha, g: [...new Set(c.ganadores)], u: c.enlace, up: c.actualizado, m: c.marco ? 1 : 0,
-});
+/**
+ * Lo que cuenta para el umbral: el adjudicado si cuadra; si es dudoso, lo licitado (que sí cuadra con la
+ * fuente). Así un contrato de 19.540 € publicado como 1.954 millones no entra en la Lupa.
+ */
+const importeUmbral = (c) => (importeDudoso(c) ? c.licitado ?? 0 : c.adjudicado ?? 0);
+export const esContratoUtil = (c) => ['ADJ', 'RES'].includes(c?.estado) && importeUmbral(c) >= UMBRAL_CONTRATOS;
+
+/** Versión de la lectura de contratos: si cambia, el histórico se vuelve a leer con la nueva. */
+export const VERSION_CONTRATOS = 2;
+
+/** Forma compacta para la web (claves cortas para que pese menos). x: importe dudoso («iva» o «licitado»). */
+export const compactarContrato = (c) => {
+  const x = importeDudoso(c);
+  return {
+    id: c.id, t: c.titulo, o: c.organo, n: c.nivel, l: c.lugar, ti: c.tipo, fi: c.finalidad, te: c.temas,
+    li: c.licitado, ...(c.estimado ? { ve: c.estimado } : {}), a: c.adjudicado, ...(c.conIva ? { ci: c.conIva } : {}),
+    f: c.fecha, g: [...new Set(c.ganadores)], u: c.enlace, up: c.actualizado, m: c.marco ? 1 : 0, ...(x ? { x } : {}), v: VERSION_CONTRATOS,
+  };
+};
+
+/**
+ * Revisa un contrato ya guardado (también los de antes de esta comprobación) con lo que tiene: lo marca como
+ * dudoso si el importe no cuadra. Devuelve null si, sin ese importe, no llega al umbral.
+ */
+export function revisarContrato(c) {
+  const { x: _, ...resto } = c;
+  const x = importeDudoso({ adjudicado: c.a, licitado: c.li, estimado: c.ve, conIva: c.ci });
+  if (x && !(c.li >= UMBRAL_CONTRATOS)) return null;
+  return x ? { ...resto, x } : resto;
+}
 
 // ---------------------------------------------------------------------------
 // Subvenciones (Base de Datos Nacional de Subvenciones)
@@ -230,7 +294,7 @@ export function buscar(lista, consulta, { campos, importe, tema } = {}) {
       const t = normalizar(campos.map((c) => (Array.isArray(x[c]) ? x[c].join(' ') : x[c] ?? '')).join(' '));
       return palabras.every((p) => t.includes(p));
     })
-    .sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+    .sort((a, b) => paraOrdenar(b, importe) - paraOrdenar(a, importe));
 }
 
 export const suma = (lista, campo) => lista.reduce((t, x) => t + (x[campo] ?? 0), 0);
@@ -510,10 +574,24 @@ export function acumuladorProyectos(porPais = 25) {
 export const EN_PORTADA = 40;
 
 /** Número de resultados y su suma, con los acuerdos marco aparte (su importe es un máximo, no gasto). */
+/**
+ * Número y suma de una lista. Los acuerdos marco van aparte (su importe es un techo) y los importes dudosos
+ * no suman en nada: se cuentan aparte para que se sepa cuántos hay.
+ */
 export function totales(lista, importe) {
-  const marcos = lista.filter((x) => x.m);
-  return { n: lista.length, suma: suma(lista, importe) - suma(marcos, importe), marcos: { n: marcos.length, suma: suma(marcos, importe) } };
+  const fiables = lista.filter((x) => !x.x);
+  const marcos = fiables.filter((x) => x.m);
+  const dudosos = lista.length - fiables.length;
+  return {
+    n: lista.length,
+    suma: suma(fiables, importe) - suma(marcos, importe),
+    marcos: { n: marcos.length, suma: suma(marcos, importe) },
+    ...(dudosos ? { dudosos: { n: dudosos } } : {}),
+  };
 }
+
+/** Importe para ordenar: si es dudoso, lo licitado (para que un error de la fuente no encabece la lista). */
+export const paraOrdenar = (x, importe) => (x.x ? x.li ?? 0 : x[importe] ?? 0);
 
 /** Mes (AAAA-MM) de un contrato o subvención: el de su fecha y, si no tiene, el de su última actualización. */
 export const mesDe = (x) => (x.f ?? x.up ?? '').slice(0, 7) || 'sin-fecha';
@@ -522,14 +600,14 @@ export const mesDe = (x) => (x.f ?? x.up ?? '').slice(0, 7) || 'sin-fecha';
 export function porMes(lista, importe) {
   const meses = {};
   for (const x of lista) (meses[mesDe(x)] ??= []).push(x);
-  for (const m of Object.values(meses)) m.sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+  for (const m of Object.values(meses)) m.sort((a, b) => paraOrdenar(b, importe) - paraOrdenar(a, importe));
   return meses;
 }
 
 /** El índice de la Lupa a partir de los datos completos del almacén. */
 export function indiceDe(datos, clave, importe) {
   const { cursores, [clave]: lista = [], ...resto } = datos;
-  const orden = [...lista].sort((a, b) => (b[importe] ?? 0) - (a[importe] ?? 0));
+  const orden = [...lista].sort((a, b) => paraOrdenar(b, importe) - paraOrdenar(a, importe));
   const agrupar = (claveDe) => {
     const grupos = {};
     for (const x of lista) for (const g of [claveDe(x)].flat().filter(Boolean)) (grupos[g] ??= []).push(x);

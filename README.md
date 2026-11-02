@@ -328,6 +328,18 @@ Desembolsos de ayuda oficial al desarrollo, en millones de dólares de cada año
 - **Año a año**: el total de cada año.
 - **Cada país**, al pulsarlo: en qué sectores se le da, su evolución y sus **mayores proyectos** del último año (título, descripción, sector, quién lo da y por qué canal). Se puede compartir: `?tab=ayuda&pais=MAR`.
 
+### Importes que no cuadran y acuerdos marco
+
+La Plataforma a veces publica importes imposibles, casi siempre por un error de comas en origen (por ejemplo, 2.357.531.666 € sin IVA para una obra de 2,6 millones con IVA). La Lupa no los corrige a ojo: `importeDudoso()` en `lupa-datos.js` los marca y la web los enseña como **«Importe dudoso»**, tal cual y con la advertencia. No suman en ningún total, gráfico ni clasificación, y se ordenan por lo licitado.
+
+- **Dudoso** es lo que cumple alguna de estas dos condiciones: el importe sin IVA es mayor que el importe con IVA del mismo adjudicatario (`iva`), o el adjudicado es más del doble de lo licitado y del valor estimado (`licitado`, con `DESVIO_MAX = 2`).
+- **El umbral del millón** se aplica después de comprobarlo: si el importe es dudoso, cuenta lo licitado. Un contrato de 19.540 € publicado como 1.954 millones no entra.
+- **Acuerdos marco y lotes:** el importe se agrupa por lote (`ProcurementProjectLotID`). Si varias empresas comparten el techo de un lote en un acuerdo marco, o llevan el mismo importe, el lote cuenta una vez. En un contrato normal, importes distintos del mismo lote se suman.
+- **Lo ya guardado** se revisa con `revisarContrato()` al publicar (escaparate) y al descargar.
+  - Como el reparto por lotes necesita el XML original, `VERSION_CONTRATOS` (ahora 2) hace que el histórico se vuelva a leer mes a mes con la lectura nueva, sin que retroceda lo cubierto.
+  - Mientras tanto, los acuerdos marco inflados del histórico ya salen como dudosos por la regla de lo licitado.
+- **Los tests** de `tests/importes.test.js` reproducen los cuatro casos del issue #18.
+
 ### Cómo se busca
 
 - Todo en el navegador, sin servidor. Al abrir solo se descarga el **índice** (unos KB): los 40 mayores, los totales por tema, por administración y por mes, y la lista de meses. Con él se pinta el **panorama** (gráficos por tema, quién paga y mes a mes) y la primera página.

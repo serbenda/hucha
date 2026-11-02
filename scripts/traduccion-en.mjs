@@ -486,4 +486,12 @@ export const EN = {
   'Qué': 'What',
   'Fuente': 'Source',
   'Cada cuánto publica': 'How often it publishes',
+  'Cómo se revisan los importes de los contratos.': 'How contract amounts are checked.',
+  'La Lupa enseña lo que publica la Plataforma, pero comprueba que cuadre: si el adjudicado sin IVA es mayor que el importe con IVA, o más del doble de lo licitado o del valor estimado, casi siempre es un error de comas al registrarlo en origen. Ese contrato sale como «Importe dudoso», tal cual y con la advertencia, y no suma en ningún total ni gráfico; para el umbral del millón cuenta lo licitado. En los acuerdos marco con varias empresas adjudicatarias, el techo de cada lote se cuenta una vez, no una por empresa. Si ves otro importe raro,':
+    'The Lens shows what the Platform publishes, but checks that it adds up: if the awarded amount excluding VAT is higher than the VAT-inclusive amount, or more than twice the tender or the estimated value, it is almost always a decimal error at the source. That contract appears as “Doubtful amount”, as published and with the warning, and is not added to any total or chart; for the one-million threshold the tendered amount counts. In framework agreements with several winning companies, each lot’s ceiling counts once, not once per company. If you see another strange amount,',
+  // Apoyo
+  '¿Te sirve hucha?': 'Is hucha useful to you?',
+  'Es gratis, sin anuncios ni cookies, y los datos se actualizan solos cada día. Si te es útil y quieres que siga creciendo, puedes apoyarla.':
+    'It is free, with no ads or cookies, and the data updates itself every day. If it is useful to you and you want it to keep growing, you can support it.',
+  'Apoyar en GitHub Sponsors': 'Support on GitHub Sponsors',
 };

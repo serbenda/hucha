@@ -22,7 +22,7 @@ const pc = t(' %', '%');
 const $ = (id) => document.getElementById(id);
 const POR_PAGINA = 40;
 const millones = (n) => {
-  const texto = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: n >= 100e6 ? 0 : 1 }).format(n / 1e6);
+  const texto = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: n >= 100e6 ? 0 : 1, useGrouping: 'always' }).format(n / 1e6);
   return EN ? `€${texto} million` : `${texto} ${texto === '1' ? 'millón' : 'millones'} de €`;
 };
 const fechaCorta = (iso) => (iso ? new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) : '');
@@ -90,20 +90,32 @@ $('temas').addEventListener('click', (e) => {
   pintar();
 });
 
+// Importe que no cuadra en la propia fuente: se enseña tal cual, con la advertencia, y no suma en los totales
+function avisoDudoso(c) {
+  const conIva = c.ci ? (EN ? `€${num(c.ci, { maximumFractionDigits: 2 })} incl. VAT` : `${num(c.ci, { maximumFractionDigits: 2 })} € con IVA`) : '';
+  const por = c.x === 'iva'
+    ? t(`es mayor que el importe con IVA que publica la misma fuente (${conIva})`, `is higher than the VAT-inclusive amount published by the same source (${conIva})`)
+    : t(`es más del doble de lo licitado (${millones(c.li)})`, `is more than twice the tendered amount (${millones(c.li)})`);
+  return `<p class="nota-marco nota-dudoso"><strong>${t('Importe dudoso en la fuente:', 'Doubtful amount in the source:')}</strong> ${t(`el adjudicado que publica la Plataforma (${millones(c.a)}) ${por}. Suele ser un error de comas o de unidades al registrarlo. hucha no lo corrige a ojo: lo enseña tal cual y no lo suma en los totales.`, `the awarded amount published by the Platform (${millones(c.a)}) ${por}. It is usually a decimal or unit error when it was registered. hucha does not guess a correction: it shows it as published and leaves it out of the totals.`)}</p>`;
+}
+
 function fichaContrato(c) {
-  return `<li class="resultado">
+  return `<li class="resultado${c.x ? ' dudoso' : ''}">
     <div class="resultado-cabeza">
       <h3>${esc(c.t)}</h3>
-      <p class="resultado-importe">${millones(c.a)}<small>${c.m ? t('como máximo, sin IVA', 'maximum, excl. VAT') : t('adjudicado, sin IVA', 'awarded, excl. VAT')}</small></p>
+      ${c.x
+        ? `<p class="resultado-importe">${t('Importe dudoso', 'Doubtful amount')}<small>${t(`licitado por ${millones(c.li)}, sin IVA`, `tendered for ${millones(c.li)}, excl. VAT`)}</small></p>`
+        : `<p class="resultado-importe">${millones(c.a)}<small>${c.m ? t('como máximo, sin IVA', 'maximum, excl. VAT') : t('adjudicado, sin IVA', 'awarded, excl. VAT')}</small></p>`}
     </div>
     <dl class="resultado-datos">
       <div><dt>${t('Paga', 'Paid by')}</dt><dd>${esc(c.o)}${c.l ? ` <span class="tenue">(${esc(c.l)})</span>` : ''}</dd></div>
       <div><dt>${t('Gana', 'Won by')}</dt><dd>${esc(c.g?.join(', ') || t('Sin dato', 'No data'))}</dd></div>
       <div><dt>${t('Fecha', 'Date')}</dt><dd>${fechaCorta(c.f)}</dd></div>
-      ${c.li && Math.abs(c.li - c.a) / c.li > 0.005 ? `<div><dt>${t('Licitado por', 'Tendered for')}</dt><dd>${millones(c.li)} <span class="tenue">(${EN ? `${Math.abs(Math.round((1 - c.a / c.li) * 100))}% ${c.a < c.li ? 'lower' : 'higher'}` : `${c.a < c.li ? 'baja' : 'sube'} un ${Math.abs(Math.round((1 - c.a / c.li) * 100))} %`})</span></dd></div>` : ''}
+      ${!c.x && c.li && Math.abs(c.li - c.a) / c.li > 0.005 ? `<div><dt>${t('Licitado por', 'Tendered for')}</dt><dd>${millones(c.li)} <span class="tenue">(${EN ? `${Math.abs(Math.round((1 - c.a / c.li) * 100))}% ${c.a < c.li ? 'lower' : 'higher'}` : `${c.a < c.li ? 'baja' : 'sube'} un ${Math.abs(Math.round((1 - c.a / c.li) * 100))} %`})</span></dd></div>` : ''}
     </dl>
+    ${c.x ? avisoDudoso(c) : ''}
     ${c.m ? `<p class="nota-marco">${t('<strong>Acuerdo marco:</strong> es un techo de lo que se podrá gastar con contratos posteriores, no dinero ya comprometido. No suma en los totales.', '<strong>Framework agreement:</strong> a ceiling on what may be spent through later contracts, not money already committed. It is not added to the totals.')}</p>` : ''}
-    <p class="etiquetas">${[c.m && t('Acuerdo marco', 'Framework agreement'), c.n && nombreNivel(c.n), c.fi && en(FINALIDADES, c.fi, c.fi), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti)].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
+    <p class="etiquetas">${[c.x && t('Importe dudoso', 'Doubtful amount'), c.m && t('Acuerdo marco', 'Framework agreement'), c.n && nombreNivel(c.n), c.fi && en(FINALIDADES, c.fi, c.fi), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti)].filter(Boolean).map((e) => `<span>${esc(e)}</span>`).join('')}
       ${c.u ? `<a href="${esc(c.u)}" rel="noopener" hreflang="es">${t('Ver el expediente', 'See the file (in Spanish)')}</a>` : ''}</p>
   </li>`;
 }
@@ -281,15 +293,15 @@ function pintarDescargas(items) {
   else botones(caja, items);
 }
 const descargaContratos = (r) => ({
-  texto: t(`Estos ${num(r.length)} contratos`, `These ${num(r.length)} contracts`),
+  texto: r.length === 1 ? t('Este contrato', 'This contract') : t(`Estos ${num(r.length)} contratos`, `These ${num(r.length)} contracts`),
   fichero: fichero(`contratos-${hoy()}`),
   tabla: () => [
-    [t('Contrato', 'Contract'), t('Paga', 'Paid by'), t('Lugar', 'Place'), t('Administración', 'Administration'), t('Gana', 'Won by'), t('Adjudicado (€, sin IVA)', 'Awarded (EUR, excl. VAT)'), t('Licitado (€, sin IVA)', 'Tendered (EUR, excl. VAT)'), t('Acuerdo marco', 'Framework agreement'), t('Tipo', 'Type'), t('Finalidad', 'Purpose'), t('Temas', 'Topics'), t('Fecha', 'Date'), t('Expediente', 'File')],
-    r.map((c) => [c.t, c.o, c.l, c.n && nombreNivel(c.n), c.g?.join(' | '), c.a, c.li ?? null, siNo(c.m), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti), c.fi && en(FINALIDADES, c.fi, c.fi), (c.te ?? []).map(nombreTema).join(' | '), c.f, c.u]),
+    [t('Contrato', 'Contract'), t('Paga', 'Paid by'), t('Lugar', 'Place'), t('Administración', 'Administration'), t('Gana', 'Won by'), t('Adjudicado (€, sin IVA)', 'Awarded (EUR, excl. VAT)'), t('Licitado (€, sin IVA)', 'Tendered (EUR, excl. VAT)'), t('Acuerdo marco', 'Framework agreement'), t('Importe dudoso en la fuente', 'Doubtful amount in the source'), t('Tipo', 'Type'), t('Finalidad', 'Purpose'), t('Temas', 'Topics'), t('Fecha', 'Date'), t('Expediente', 'File')],
+    r.map((c) => [c.t, c.o, c.l, c.n && nombreNivel(c.n), c.g?.join(' | '), c.a, c.li ?? null, siNo(c.m), c.x ? (c.x === 'iva' ? t('sí: mayor que con IVA', 'yes: higher than incl. VAT') : t('sí: más del doble de lo licitado', 'yes: more than twice the tender')) : t('no', 'no'), c.ti && en(TIPOS_CONTRATO, c.ti, c.ti), c.fi && en(FINALIDADES, c.fi, c.fi), (c.te ?? []).map(nombreTema).join(' | '), c.f, c.u]),
   ],
 });
 const descargaSubvenciones = (r) => ({
-  texto: t(`Estas ${num(r.length)} subvenciones`, `These ${num(r.length)} grants`),
+  texto: r.length === 1 ? t('Esta subvención', 'This grant') : t(`Estas ${num(r.length)} subvenciones`, `These ${num(r.length)} grants`),
   fichero: fichero(`subvenciones-${hoy()}`),
   tabla: () => [
     [t('Convocatoria', 'Call'), t('Paga', 'Paid by'), t('Lugar', 'Place'), t('Administración', 'Administration'), t('Recibe', 'Received by'), 'NIF', t('Concedido (€)', 'Granted (EUR)'), t('Fecha', 'Date'), t('Convocatoria (enlace)', 'Call (link)')],
@@ -320,12 +332,18 @@ function pintarResultados(tot, r, { contratos, progreso = '', disponibles = r.le
         `with a ceiling of ${millones(tot.marcos.suma)} for later contracts, not added because it is not spending yet`,
       )
     : '';
-  const nota = progreso ? ` <span class="tenue">${esc(progreso)}</span>` : '';
+  const nd = tot.dudosos?.n ?? 0;
+  const dudosos = nd
+    ? ` ${t(`${nd === 1 ? 'Uno tiene' : `${fmt(nd)} tienen`} un importe dudoso en la fuente y no ${nd === 1 ? 'suma' : 'suman'}.`, `${nd === 1 ? 'One has' : `${fmt(nd)} have`} a doubtful amount in the source and ${nd === 1 ? 'is' : 'are'} not added up.`)}`
+    : '';
+  const nota = (progreso ? ` <span class="tenue">${esc(progreso)}</span>` : '') + (dudosos && n - nm - nd > 0 ? `<span class="tenue">${dudosos}</span>` : '');
   resumen.innerHTML =
     (!n
       ? progreso
         ? ''
         : t(`No hay ${contratos ? 'contratos' : 'subvenciones'}${con} en lo que cubre la Lupa.`, `No ${contratos ? 'contracts' : 'grants'}${con} in what the Lens covers.`)
+      : n - nm - nd <= 0 && nd
+        ? t(`${nd === 1 ? 'Hay un contrato' : `Hay ${fmt(nd)} contratos`}${con} con un importe dudoso en la fuente: no ${nd === 1 ? 'suma' : 'suman'} hasta que la fuente lo corrija.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`, `There ${nd === 1 ? 'is one contract' : `are ${fmt(nd)} contracts`}${con} with a doubtful amount in the source: not added up until the source fixes it.${nm ? ` There ${nm === 1 ? 'is' : 'are'} also ${quien}, ${techo}.` : ''}`)
       : n > nm
         ? t(
             `<strong>${cuantos(n - nm)}</strong> por <strong>${millones(tot.suma)}</strong>${con}.${nm ? ` Además hay ${quien}, ${techo}.` : ''}`,
@@ -401,7 +419,7 @@ function pintarAyuda(d) {
     filas.length
       ? [
           {
-            texto: t(`Estos ${num(filas.length)} países`, `These ${num(filas.length)} countries`),
+            texto: filas.length === 1 ? t('Este país', 'This country') : t(`Estos ${num(filas.length)} países`, `These ${num(filas.length)} countries`),
             fichero: fichero(`ayuda-paises${sector ? `-sector-${sector}` : ''}`),
             tabla: () =>
               sector
@@ -484,7 +502,8 @@ const textosEs = {
   contratos: async () => {
     const d = await indice('contratos');
     return `<p><strong>Contratos adjudicados desde ${millones(d.umbral)} (sin IVA)</strong> publicados en la <a href="https://contrataciondelestado.es/">Plataforma de Contratación del Sector Público</a>, incluidos los de las plataformas propias de comunidades y ayuntamientos que se agregan a ella. Recoge los movimientos desde el ${fecha(d.desde)} y los va reuniendo cada día, así que el histórico crece solo.</p>
-      <p><strong>Los acuerdos marco</strong> aparecen con su importe máximo y no suman en los totales: fijan un techo para contratos posteriores, no un gasto. Esos contratos posteriores, si pasan del millón, aparecen por su cuenta.</p>
+      <p><strong>Los acuerdos marco</strong> aparecen con su importe máximo y no suman en los totales: fijan un techo para contratos posteriores, no un gasto. Esos contratos posteriores, si pasan del millón, aparecen por su cuenta. Si un acuerdo marco tiene varias empresas adjudicatarias, su techo cuenta una vez por lote, no una por empresa.</p>
+      <p><strong>Importes dudosos:</strong> a veces la fuente publica un adjudicado que no puede ser, casi siempre por un error de comas al registrarlo (más que el importe con IVA, o más del doble de lo licitado). hucha no lo corrige a ojo: lo marca como «Importe dudoso», lo enseña tal cual y no lo suma en ningún total. Para el umbral del millón cuenta entonces lo licitado.</p>
       <p><strong>Lo que no aparece:</strong> los contratos menores y los de menos de un millón; lo que una plataforma propia no haya enviado a la estatal; y lo que se paga al final, que puede cambiar por modificados o revisiones de precio. Los adjudicatarios que son personas físicas aparecen sin nombre.</p>`;
   },
   subvenciones: async () => {
@@ -503,7 +522,8 @@ const textosEn = {
   contratos: async () => {
     const d = await indice('contratos');
     return `<p><strong>Contracts awarded from ${millones(d.umbral)} (excl. VAT)</strong> published on the <a href="https://contrataciondelestado.es/" hreflang="es">Public Sector Procurement Platform</a> (Plataforma de Contratación del Sector Público), including those from the regions’ and councils’ own platforms that feed into it. It collects updates since ${fecha(d.desde)} and gathers them every day, so the history grows by itself.</p>
-      <p><strong>Framework agreements</strong> are shown with their maximum amount and are not added to the totals: they set a ceiling for later contracts, not spending. Those later contracts, if over a million, appear on their own.</p>
+      <p><strong>Framework agreements</strong> are shown with their maximum amount and are not added to the totals: they set a ceiling for later contracts, not spending. Those later contracts, if over a million, appear on their own. If a framework agreement has several winning companies, its ceiling counts once per lot, not once per company.</p>
+      <p><strong>Doubtful amounts:</strong> sometimes the source publishes an awarded amount that cannot be right, almost always a decimal error when it was registered (more than the VAT-inclusive amount, or more than twice the tender). hucha does not guess a correction: it marks it as “Doubtful amount”, shows it as published and leaves it out of every total. For the one-million threshold, the tendered amount counts instead.</p>
       <p><strong>What is not included:</strong> minor contracts and those under a million; anything a regional platform has not sent to the national one; and what is finally paid, which can change through amendments or price revisions. Winners who are private individuals appear without their name.</p>
       <p>Contract titles, bodies and companies are shown as published, in Spanish.</p>`;
   },
