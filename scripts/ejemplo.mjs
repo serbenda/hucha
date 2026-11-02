@@ -23,6 +23,8 @@ await writeFile(new URL('contratos.json', lupa), JSON.stringify({ ejemplo: true,
   contrato('1', 'EJEMPLO: mantenimiento de la catenaria de la línea Madrid-Sevilla', 'Consejo de Administración de Adif', 'Estado', 'EMPRESA DE EJEMPLO SA', 48e6, ['tren'], 'Mantenimiento y reparación'),
   contrato('2', 'EJEMPLO: obras del nuevo hospital comarcal', 'Servicio de Salud', 'Comunidades', 'CONSTRUCTORA DE EJEMPLO SA', 32e6, ['sanidad'], 'Obra'),
   contrato('3', 'EJEMPLO: conservación de la autovía A-4', 'Dirección General de Carreteras', 'Estado', 'CONSERVACIÓN DE EJEMPLO SL', 12e6, ['carreteras'], 'Mantenimiento y reparación'),
+  // Un importe con un error de comas en la fuente: sale como dudoso y no suma
+  { ...contrato('4', 'EJEMPLO: rehabilitación de un edificio de alojamientos dotacionales', 'Sociedad de Vivienda de Ejemplo', 'Comunidades', 'REHABILITACIONES DE EJEMPLO SA', 2357531666, ['vivienda'], 'Obra'), li: 2521000, ci: 2593284.83 },
 ] }));
 await writeFile(new URL('subvenciones.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), umbral: 1e6, subvenciones: [
   { id: 'S1', f: '2026-10-13', i: 28e6, b: 'AYUNTAMIENTO DE EJEMPLO', nif: 'P0000000A', c: 'EJEMPLO: plan de obras municipales', o: 'Dirección General de Ejemplo', n: 'Estado', l: null, u: null, te: [] },

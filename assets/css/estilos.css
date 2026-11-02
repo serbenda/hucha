@@ -369,8 +369,27 @@ section + section { margin-top: 3.5rem; }
 /* Pie */
 .pie { border-top: 1px solid var(--linea); padding-block: 1.5rem 3rem; color: var(--tenue); font-size: 0.9rem; }
 .pie p { margin: 0.25rem 0; max-width: var(--medida); }
-.apoyo a { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--tinta); }
-.apoyo svg { fill: #bf3989; }
+/* Apoyo (GitHub Sponsors): una tarjeta cálida al pie, con el corazón de Sponsors */
+.apoyo {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.6rem 1.1rem;
+  margin: 0 0 1.25rem; padding: 1rem 1.2rem; max-width: 46rem;
+  background: var(--superficie); border: 1px solid var(--linea); border-left: 4px solid #bf3989; border-radius: var(--radio);
+}
+.apoyo p { margin: 0; }
+.apoyo-corazon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: rgba(191, 57, 137, 0.12); }
+.apoyo-corazon svg { fill: #bf3989; }
+.apoyo-titulo { font-weight: 700; color: var(--tinta); font-size: 1.02rem; }
+.apoyo-texto p + p { margin-top: 0.15rem; font-size: 0.9rem; color: var(--tenue); }
+.apoyo-boton {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0.5rem 1rem;
+  border-radius: 999px; background: #bf3989; color: #fff !important; font-weight: 700; text-decoration: none; white-space: nowrap;
+}
+.apoyo-boton:hover { background: #a32d74; }
+.apoyo-boton:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+@media (max-width: 40rem) {
+  .apoyo { grid-template-columns: auto minmax(0, 1fr); }
+  .apoyo-boton { grid-column: 1 / -1; }
+}
 
 
 /* Resumen junto al campo: solo cuando el ticket queda debajo */
@@ -710,3 +729,5 @@ button.apilada span.elegido { box-shadow: inset 0 0 0 3px var(--papel), inset 0 
 .tabla-al-dia th { grid-column: 1 / -1; font-size: 1rem; margin-bottom: 0.2rem; }
 .tabla-al-dia td::before { content: attr(data-col) ': '; color: var(--tenue); font-size: 0.82rem; }
 .tabla-al-dia .ok, .tabla-al-dia .mal { font-weight: 600; }
+.nota-dudoso { border-left-color: var(--tinta); }
+.resultado.dudoso .resultado-importe { color: var(--tenue); }

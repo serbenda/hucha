@@ -149,6 +149,7 @@
         <li><strong>Ayuda a otros países</strong>: los desembolsos de ayuda oficial al desarrollo de España por país, de la <a href="https://data-explorer.oecd.org/">OCDE</a>, en millones de dólares.</li>
       </ul>
       <p>Las personas físicas (autónomos, particulares) no aparecen con su nombre en ningún caso.</p>
+      <p><strong>Cómo se revisan los importes de los contratos.</strong> La Lupa enseña lo que publica la Plataforma, pero comprueba que cuadre: si el adjudicado sin IVA es mayor que el importe con IVA, o más del doble de lo licitado o del valor estimado, casi siempre es un error de comas al registrarlo en origen. Ese contrato sale como «Importe dudoso», tal cual y con la advertencia, y no suma en ningún total ni gráfico; para el umbral del millón cuenta lo licitado. En los acuerdos marco con varias empresas adjudicatarias, el techo de cada lote se cuenta una vez, no una por empresa. Si ves otro importe raro, <a href="#t-error">avísalo</a>.</p>
     </section>
 
     <section aria-labelledby="t-ticket">
@@ -225,7 +226,14 @@
   </main>
 
   <footer class="envoltorio pie">
-    <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
+    <div class="apoyo">
+      <span class="apoyo-corazon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 16 16"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg></span>
+      <div class="apoyo-texto">
+        <p class="apoyo-titulo">¿Te sirve hucha?</p>
+        <p>Es gratis, sin anuncios ni cookies, y los datos se actualizan solos cada día. Si te es útil y quieres que siga creciendo, puedes apoyarla.</p>
+      </div>
+      <a class="apoyo-boton" href="https://github.com/sponsors/serbenda" rel="noopener">Apoyar en GitHub Sponsors</a>
+    </div>
     <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. <a href="../fuentes/#t-error">¿Ves un error o algo no funciona?</a> Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
   </footer>
 

@@ -31,7 +31,7 @@ const entrada = ({ id = '1', estado = 'RES', titulo = 'Mantenimiento de la caten
     <cac:TenderResult>
       <cbc:ResultCode listURI="x">9</cbc:ResultCode><cbc:AwardDate>2026-10-01</cbc:AwardDate>
       <cac:WinningParty><cac:PartyIdentification><cbc:ID schemeName="NIF">${nif}</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name>${ganador}</cbc:Name></cac:PartyName></cac:WinningParty>
-      <cac:AwardedTenderedProject><cac:LegalMonetaryTotal><cbc:TaxExclusiveAmount currencyID="EUR">${importe}</cbc:TaxExclusiveAmount><cbc:PayableAmount currencyID="EUR">1</cbc:PayableAmount></cac:LegalMonetaryTotal></cac:AwardedTenderedProject>
+      <cac:AwardedTenderedProject><cac:LegalMonetaryTotal><cbc:TaxExclusiveAmount currencyID="EUR">${importe}</cbc:TaxExclusiveAmount><cbc:PayableAmount currencyID="EUR">${Math.round(importe * 1.21 * 100) / 100}</cbc:PayableAmount></cac:LegalMonetaryTotal></cac:AwardedTenderedProject>
     </cac:TenderResult>
     ${lote2 ? `<cac:TenderResult><cbc:ResultCode>8</cbc:ResultCode><cbc:AwardDate>2026-10-05</cbc:AwardDate><cac:WinningParty><cac:PartyIdentification><cbc:ID schemeName="NIF">${lote2.nif}</cbc:ID></cac:PartyIdentification><cac:PartyName><cbc:Name>${lote2.nombre}</cbc:Name></cac:PartyName></cac:WinningParty><cac:AwardedTenderedProject><cac:LegalMonetaryTotal><cbc:TaxExclusiveAmount currencyID="EUR">${lote2.importe}</cbc:TaxExclusiveAmount></cac:LegalMonetaryTotal></cac:AwardedTenderedProject></cac:TenderResult>` : ''}
     <cac:TenderResult><cbc:ResultCode>4</cbc:ResultCode><cac:AwardedTenderedProject><cac:LegalMonetaryTotal><cbc:TaxExclusiveAmount currencyID="EUR">999999</cbc:TaxExclusiveAmount></cac:LegalMonetaryTotal></cac:AwardedTenderedProject></cac:TenderResult>

@@ -18,6 +18,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import {
   parsearAtom, esContratoUtil, compactarContrato, urlConcesiones, parsearConcesiones, UMBRAL_SUBVENCIONES,
   urlCrs, urlCrsProyectos, lectorCsv, acumuladorCrs, acumuladorProyectos, UMBRAL_CONTRATOS, esMarcoPorTitulo,
+  VERSION_CONTRATOS, revisarContrato,
 } from '../assets/js/lupa-datos.js';
 import { esPais } from '../assets/js/paises.js';
 import { anotar } from './estado.mjs';
@@ -113,6 +114,10 @@ async function contratos() {
   const previo = (await leer('contratos.json')) ?? { contratos: [], cursores: {} };
   previo.cursores ??= {};
   const porId = new Map(previo.contratos.map((c) => [c.id, c]));
+  // Si ha cambiado la forma de leer los contratos (p. ej., los acuerdos marco contados una vez por lote), el
+  // histórico se vuelve a leer desde el mes más reciente, sin perder lo que ya se cubría
+  const relectura = (previo.version ?? 1) < VERSION_CONTRATOS;
+  if (relectura) for (const c of Object.values(previo.cursores)) c.mes = mesAnterior(mesActual);
   const resumen = [];
   let nuevos = 0;
   let porCodigo = 0;
@@ -124,10 +129,14 @@ async function contratos() {
     const quedaTiempo = () => (Date.now() - inicioFeed) / 60000 < MINUTOS_FEED;
     const procesar = (pagina) => {
       for (const e of pagina.entradas) {
-        if (!esContratoUtil(e)) continue;
         const id = `${clave[0]}${e.id}`;
         const anterior = porId.get(id);
-        if (anterior && anterior.up >= e.actualizado) continue;
+        if (!esContratoUtil(e)) {
+          // Leído con la versión de antes podía estar inflado: si ya no llega al umbral, fuera
+          if (anterior && (anterior.v ?? 1) < VERSION_CONTRATOS) porId.delete(id);
+          continue;
+        }
+        if (anterior && (anterior.v ?? 1) === VERSION_CONTRATOS && anterior.up >= e.actualizado) continue;
         if (!anterior) nuevos++;
         if (e.sistema === 1 || e.sistema === 2) porCodigo++;
         porId.set(id, { ...compactarContrato(e), id });
@@ -181,7 +190,8 @@ async function contratos() {
         }
         partes.push(`${mes}: ${paginasMes} páginas`);
         cursor.mes = mesAnterior(mes);
-        cursor.hasta = `${mes}-01`;
+        // Al releer meses ya leídos, lo cubierto no retrocede
+        if (!cursor.hasta || `${mes}-01` < cursor.hasta) cursor.hasta = `${mes}-01`;
       } catch (e) {
         partes.push(`${mes} falló (${e.message})`);
         break;
@@ -194,7 +204,8 @@ async function contratos() {
   // Los guardados antes de marcar los acuerdos marco se miran por el título
   for (const c of porId.values()) c.m ??= esMarcoPorTitulo(c.t) ? 1 : 0;
   const limite = isoDia(new Date(hoy - ANTIGUEDAD_MAX * 864e5));
-  const lista = [...porId.values()].filter((c) => !c.f || c.f >= limite).sort((a, b) => (b.a ?? 0) - (a.a ?? 0));
+  // Los importes que no cuadran en la fuente se marcan como dudosos (y fuera si, sin ellos, no llegan al umbral)
+  const lista = [...porId.values()].map(revisarContrato).filter((c) => c && (!c.f || c.f >= limite)).sort((a, b) => (b.a ?? 0) - (a.a ?? 0));
   if (!lista.length) throw new Error(`sin contratos (${resumen.join('; ')})`);
   // «Desde» lo que está completo en los dos feeds: el más reciente de los dos límites. Con ficheros mensuales,
   // el primer día del mes más antiguo ya leído; si no, hasta donde llegó el feed hacia atrás.
@@ -204,11 +215,13 @@ async function contratos() {
   await guardar('contratos.json', {
     actualizado: new Date().toISOString(),
     umbral: UMBRAL_CONTRATOS,
+    version: VERSION_CONTRATOS,
     desde,
     cursores: previo.cursores,
     contratos: lista,
   });
-  return `${lista.length} contratos (${nuevos} nuevos; ${lista.filter((c) => c.m).length} acuerdos marco, ${porCodigo} reconocidos por su código). ${resumen.join('; ')}`;
+  const pendientes = lista.filter((c) => (c.v ?? 1) < VERSION_CONTRATOS).length;
+  return `${lista.length} contratos (${nuevos} nuevos; ${lista.filter((c) => c.m).length} acuerdos marco, ${porCodigo} reconocidos por su código; ${lista.filter((c) => c.x).length} con importe dudoso${pendientes ? `; ${pendientes} por releer con la versión ${VERSION_CONTRATOS}` : ''}${relectura ? '; empieza la relectura del histórico' : ''}). ${resumen.join('; ')}`;
 }
 
 // ---------------------------------------------------------------------------

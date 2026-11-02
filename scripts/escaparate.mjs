@@ -16,7 +16,7 @@
 
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { VISTAS, vistaPresupuesto, aJson } from '../assets/js/vistas.js';
-import { indiceDe, porMes } from '../assets/js/lupa-datos.js';
+import { indiceDe, porMes, revisarContrato } from '../assets/js/lupa-datos.js';
 
 const raiz = new URL('../', import.meta.url);
 const almacen = new URL('almacen/', raiz);
@@ -59,6 +59,13 @@ export async function escaparate() {
   for (const [nombre, clave, importe] of [['contratos', 'contratos', 'a'], ['subvenciones', 'subvenciones', 'i']]) {
     const d = await leer(`${nombre}.json`);
     if (!d) continue;
+    // Contratos: los importes que no cuadran en la fuente se marcan (y fuera si, sin ellos, no llegan al umbral)
+    if (clave === 'contratos') {
+      const antes = d.contratos?.length ?? 0;
+      d.contratos = (d.contratos ?? []).map(revisarContrato).filter(Boolean);
+      const dudosos = d.contratos.filter((c) => c.x).length;
+      resumen.push(`lupa/contratos: ${dudosos} con importe dudoso (fuera de los totales), ${antes - d.contratos.length} fuera por no llegar al umbral sin él`);
+    }
     // Se rehacen todos los meses: así no quedan ficheros de meses que ya no están en el almacén
     await rm(new URL(`lupa/${nombre}/`, data), { recursive: true, force: true });
     const meses = porMes(d[clave] ?? [], importe);

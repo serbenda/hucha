@@ -122,4 +122,6 @@ export function vistaPresupuesto(e) {
 }
 
 /** JSON compacto: los decimales, con 6 cifras significativas, que es más de lo que se enseña. */
-export const aJson = (x) => JSON.stringify(x, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Number(v.toPrecision(6)) : v));
+// Los importes en euros de la Lupa (de un millón en adelante) se guardan al céntimo, como los publica la fuente.
+export const aJson = (x) =>
+  JSON.stringify(x, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? (Math.abs(v) >= 1e6 ? Math.round(v * 100) / 100 : Number(v.toPrecision(6))) : v));
