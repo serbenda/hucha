@@ -226,6 +226,7 @@ export const UMBRAL_CONTRATOS = 1000000;
  * - «iva»: el importe sin IVA es mayor que el importe con IVA del mismo adjudicatario.
  * - «licitado»: el adjudicado es más del doble de lo licitado o del valor estimado (una oferta no puede
  *   pasar del presupuesto de licitación; el margen cubre lotes y prórrogas mal declarados).
+ * - «marco» (solo en lo ya guardado): acuerdo marco con varias empresas leído antes de contar el techo por lote.
  */
 export const DESVIO_MAX = 2;
 export function importeDudoso({ adjudicado, licitado, estimado, conIva }) {
@@ -262,8 +263,11 @@ export const compactarContrato = (c) => {
  */
 export function revisarContrato(c) {
   const { x: _, ...resto } = c;
-  const x = importeDudoso({ adjudicado: c.a, licitado: c.li, estimado: c.ve, conIva: c.ci });
+  let x = importeDudoso({ adjudicado: c.a, licitado: c.li, estimado: c.ve, conIva: c.ci });
   if (x && !(c.li >= UMBRAL_CONTRATOS)) return null;
+  // Un acuerdo marco con varias empresas leído con la versión anterior pudo sumar el techo una vez por empresa.
+  // Hasta que se relea, su techo queda como dudoso (fuera de los totales de acuerdos marco)
+  if (!x && c.m && (c.v ?? 1) < VERSION_CONTRATOS && (c.g?.length ?? 0) > 1) x = 'marco';
   return x ? { ...resto, x } : resto;
 }
 
