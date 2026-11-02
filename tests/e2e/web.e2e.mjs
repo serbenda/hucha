@@ -282,6 +282,7 @@ test('deuda: en la portada y en «A dónde va», con su gráfico frente a la UE'
   const portada = await abrir('', ESCRITORIO);
   assert.equal(await portada.pagina.isVisible('#cifra-deuda'), true);
   assert.match(await portada.pagina.textContent('#cifra-deuda'), /del PIB/);
+  if (deuda.deficits?.[ultimoAño(datos)] > 0) assert.match(await portada.pagina.textContent('#nota-deuda'), /pidiendo prestado/);
   await portada.contexto.close();
   const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
   assert.equal(await pagina.isVisible('#bloque-deuda'), true);

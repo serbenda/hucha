@@ -284,6 +284,9 @@ export function resumenDeuda(datos) {
     deficitPib: menos(v('es', 'B9', 'PC_GDP')),
     deficitPibUe: menos(v('ue', 'B9', 'PC_GDP')),
     serie: años.map((a) => ({ año: a, es: v('es', 'GD', 'PC_GDP', a), ue: v('ue', 'GD', 'PC_GDP', a), deficit: menos(v('es', 'B9', 'PC_GDP', a)) })),
+    // El déficit de cada año en millones: la deuda suele ir un año por delante del gasto por funciones,
+    // y así la portada puede usar el del mismo año que el gasto
+    deficits: Object.fromEntries(Object.entries(d.es?.B9?.MIO_EUR ?? {}).filter(([a]) => a >= String(PRIMER_AÑO)).map(([a, x]) => [a, -x])),
   };
 }
 
