@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { arrancar } from './servidor.mjs';
-import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos } from '../../assets/js/cofog.js';
+import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos, resumenDeuda } from '../../assets/js/cofog.js';
 
 let servidor, navegador, base, datos;
 
@@ -273,6 +273,44 @@ test('presupuesto: los temas rellenan la búsqueda', async () => {
   assert.match(pagina.url(), /q=igualdad/);
   await pagina.click('[data-q="igualdad"]');
   assert.equal(await pagina.inputValue('#q'), '');
+  await contexto.close();
+});
+
+test('deuda: en la portada y en «A dónde va», con su gráfico frente a la UE', async (t) => {
+  const deuda = resumenDeuda(datos);
+  if (!deuda) return t.skip('el almacén aún no tiene la deuda de Eurostat');
+  const portada = await abrir('', ESCRITORIO);
+  assert.equal(await portada.pagina.isVisible('#cifra-deuda'), true);
+  assert.match(await portada.pagina.textContent('#cifra-deuda'), /del PIB/);
+  await portada.contexto.close();
+  const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
+  assert.equal(await pagina.isVisible('#bloque-deuda'), true);
+  assert.match(await pagina.textContent('#c-deuda'), new RegExp(String(Math.round(deuda.pib)).slice(0, 2)));
+  assert.equal(await pagina.locator('#deuda-grafico .evolucion').count(), 1);
+  assert.match(await pagina.textContent('#nota-año'), new RegExp(ultimoAño(datos)));
+  await contexto.close();
+});
+
+test('navegadores antiguos: el aviso no sale en uno moderno y sí si falta lo que usa la web', async () => {
+  const { pagina, contexto } = await abrir('', ESCRITORIO);
+  assert.equal(await pagina.locator('.banda').count(), 0);
+  await contexto.close();
+  const viejo = await navegador.newContext();
+  await viejo.addInitScript(() => { delete Array.prototype.at; });
+  const p = await viejo.newPage();
+  await p.route((url) => !url.href.startsWith(base), (r) => r.abort());
+  await p.goto(base);
+  await p.waitForSelector('.banda');
+  assert.match(await p.textContent('.banda'), /navegador es demasiado antiguo/);
+  await viejo.close();
+});
+
+test('fuentes: el aviso de fallo lleva la página y el navegador', async () => {
+  const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
+  const href = new URL(await pagina.getAttribute('[data-aviso="fallo"]', 'href'));
+  assert.equal(href.host, 'github.com');
+  assert.match(href.searchParams.get('body'), /Navegador: Mozilla/);
+  assert.match(href.searchParams.get('body'), /Página: http/);
   await contexto.close();
 });
 

@@ -116,5 +116,20 @@ export function respuestasEjemplo({ desde = 2014, hasta = 2024, quitar = [] } = 
     for (const [t, v] of Object.entries(suma)) tiposObs.push({ freq: 'A', unit: 'MIO_EUR', sector: 'S13', cofog99: 'TOTAL', na_item: t, geo: 'ES', time: String(año), valor: v * 0.98 });
   }
   const tipos = crearJsonStat(['freq', 'unit', 'sector', 'cofog99', 'na_item', 'geo', 'time'], tiposObs);
-  return { gasto, poblacion, tipos };
+  // Deuda y déficit de ejemplo (del orden de los de España, sin ser los oficiales)
+  const deudaObs = [];
+  for (let año = desde; año <= hasta; año++) {
+    const pib = 1100000 * (1 + 0.04 * (año - desde));
+    const pc = 100 + 2 * Math.sin(año) - 0.3 * (año - desde);
+    const def = 3 + Math.cos(año);
+    const comun = { freq: 'A', sector: 'S13', time: String(año) };
+    deudaObs.push({ ...comun, unit: 'MIO_EUR', na_item: 'GD', geo: 'ES', valor: (pib * pc) / 100 });
+    deudaObs.push({ ...comun, unit: 'PC_GDP', na_item: 'GD', geo: 'ES', valor: pc });
+    deudaObs.push({ ...comun, unit: 'MIO_EUR', na_item: 'B9', geo: 'ES', valor: (-pib * def) / 100 });
+    deudaObs.push({ ...comun, unit: 'PC_GDP', na_item: 'B9', geo: 'ES', valor: -def });
+    deudaObs.push({ ...comun, unit: 'PC_GDP', na_item: 'GD', geo: 'EU27_2020', valor: 82 });
+    deudaObs.push({ ...comun, unit: 'PC_GDP', na_item: 'B9', geo: 'EU27_2020', valor: -3.1 });
+  }
+  const deuda = crearJsonStat(['freq', 'unit', 'sector', 'na_item', 'geo', 'time'], deudaObs);
+  return { gasto, poblacion, tipos, deuda };
 }

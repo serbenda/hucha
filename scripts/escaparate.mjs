@@ -42,9 +42,11 @@ export async function escaparate() {
   const resumen = [];
 
   const cofog = await leer('cofog.json');
+  // La ejecución del presupuesto también le da a «A dónde va» lo de este año (defensa)
+  const ejecucionActual = await leer('ejecucion.json');
   if (cofog) {
     for (const [pagina, vista] of Object.entries(VISTAS)) {
-      const bytes = await escribir(`vistas/${pagina}.json`, vista(cofog));
+      const bytes = await escribir(`vistas/${pagina}.json`, vista(cofog, ejecucionActual));
       resumen.push(`vistas/${pagina}: ${(bytes / 1024).toFixed(1)} KB`);
     }
   }

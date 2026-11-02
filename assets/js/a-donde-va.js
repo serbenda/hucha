@@ -7,7 +7,7 @@ import { t, LOCALE } from './idioma.js';
 import { PARTIDAS, GRUPOS, TIPOS, en, enQue } from './en.js';
 import { colorPartida } from './colores.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
-import { euros, porcentaje, delPib } from './formato.js';
+import { euros, porcentaje, delPib, millones } from './formato.js';
 
 const $ = (id) => document.getElementById(id);
 const unDecimal = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -55,7 +55,7 @@ function grafico(serie, nombre) {
     <div class="lienzo" aria-hidden="true">
       <svg viewBox="0 0 100 100" preserveAspectRatio="none">${rejilla}${covid}${marcasX}${ue}<polyline class="es" points="${trazo('es')}"/></svg>
       ${etiquetasY}${etiquetasX}${notaCovid}
-      <span class="etiqueta-es" style="top: ${Y(ultimo.es)}%">${unDecimal.format(ultimo.es)} %</span>
+      <span class="etiqueta-es" style="top: ${Y(ultimo.es)}%">${unDecimal.format(ultimo.es)}${t(' %', '%')}</span>
     </div>
   </div>`;
 }
@@ -99,6 +99,21 @@ function comparar(es, ue) {
   return `<p class="comparacion">España dedica <strong>${delPib(es)}</strong>, ${como} la media de la Unión Europea (${delPib(ue)}).</p>`;
 }
 
+/**
+ * Defensa este año: lo que presupuesta y lleva gastado el Estado (IGAE), que es quien paga casi toda la defensa.
+ * La cifra de la OTAN se calcula con otro criterio (suma pensiones militares y partidas de otros ministerios).
+ */
+function esteAñoDefensa(e) {
+  if (!e?.defensa?.creditos) return '';
+  const mes = Number(e.mes.slice(5));
+  const nombreMes = new Intl.DateTimeFormat(LOCALE, { month: 'long' }).format(new Date(2000, mes - 1, 15));
+  const gastado = e.defensa.obligaciones / e.defensa.creditos;
+  return `<p class="este-año">${t(
+    `<strong>En ${e.año}</strong>, el Estado presupuesta <strong>${millones(e.defensa.creditos)}</strong> para defensa y hasta ${nombreMes} lleva gastado el ${porcentaje(gastado)} (<a href="../presupuesto/?q=defensa#t-ministerios">ver en Presupuesto</a>). La cifra que da la OTAN es mayor porque se calcula con otro criterio: suma, por ejemplo, las pensiones militares y gastos de defensa de otros ministerios.`,
+    `<strong>In ${e.año}</strong>, central government budgets <strong>${millones(e.defensa.creditos)}</strong> for defence and by ${nombreMes} it has spent ${porcentaje(gastado)} (<a href="../presupuesto/?q=defensa#t-ministerios">see in Budget</a>). NATO’s figure is higher because it uses a different method: it adds, for example, military pensions and defence spending by other ministries.`
+  )}</p>`;
+}
+
 try {
   const v = await cargarVista('a-donde-va');
   const { año, porPersona, pib, pibUe, añoTipos, porHabitante, porHabitanteTipos } = v;
@@ -122,6 +137,10 @@ try {
   cifra('c-habitante', euros(porPersona), t(`al año, en ${año}${provisional}`, `a year, in ${año}${provisional}`));
   cifra('c-mayor', porcentaje(primera.cuota), primera.nombre);
   cifra('c-pib', delPib(pib), pibUe !== null ? t(`Media de la Unión Europea: ${delPib(pibUe).replace(' del PIB', '')}`, `European Union average: ${delPib(pibUe).replace(' of GDP', '')}`) : '');
+  $('nota-año').innerHTML = t(
+    `Datos de ${año}${v.provisional ? ' (provisionales)' : ''}, el último año que Eurostat tiene cerrado: las cuentas de un año se publican al año siguiente. Lo de este año, mes a mes, está en <a href="../presupuesto/">Presupuesto</a>.`,
+    `Data for ${año}${v.provisional ? ' (provisional)' : ''}, the latest year Eurostat has closed: a year’s accounts are published the following year. This year’s figures, month by month, are in <a href="../presupuesto/">Budget</a>.`
+  );
 
   const mayor = lista[0].cuota;
   $('partidas').replaceChildren(
@@ -143,6 +162,7 @@ try {
           <p>${p.que}</p>
           ${grupos.length ? `<h3 class="detalle-titulo">${t('En qué se va', 'What it is spent on')}</h3>${desglose(grupos, porHabitante, t('de la partida', 'of the item'))}` : ''}
           ${tipos.length ? `<h3 class="detalle-titulo">${t('Cómo se gasta', 'How it is spent')}${añoTipos !== año ? ` <small>(${añoTipos})</small>` : ''}</h3>${desglose(tipos, porHabitanteTipos, t('de la partida', 'of the item'))}` : ''}
+          ${p.id === 'defensa' ? esteAñoDefensa(v.esteAño) : ''}
           <h3 class="detalle-titulo">${t('Frente a Europa', 'Compared with Europe')}</h3>
           ${comparar(esPib, uePib)}
           ${serie.length > 1 ? grafico(serie, p.nombre) : ''}
@@ -175,6 +195,29 @@ try {
     $('t-tipos-texto').textContent = t(`Todo el gasto público de ${añoTipos} según en qué se materializa, en euros por habitante.`, `All public spending in ${añoTipos} by what it turns into, in euros per person.`);
     $('tipos').innerHTML = desglose(total.map((x) => ({ ...x, nombre: en(TIPOS, x.id, x.nombre), que: enQue(TIPOS, x.id, x.que) })), porHabitanteTipos, t('del gasto', 'of spending'));
     $('bloque-tipos').hidden = false;
+  }
+
+  // La deuda: cuánto se debe, por habitante, en % del PIB frente a la UE, y el déficit del año
+  const d = v.deuda;
+  if (d) {
+    cifra('c-deuda', delPib(d.pib), t(`${millones(d.total)} a final de ${d.año}${d.pibUe !== null ? `. Media de la UE: ${delPib(d.pibUe).replace(' del PIB', '')}` : ''}`, `${millones(d.total)} at the end of ${d.año}${d.pibUe !== null ? `. EU average: ${delPib(d.pibUe).replace(' of GDP', '')}` : ''}`));
+    cifra('c-deuda-persona', euros(d.porPersona), t('contando a todos, también niños y jubilados', 'counting everyone, children and pensioners too'));
+    if (d.deficit !== null) {
+      const superavit = d.deficit < 0;
+      cifra(
+        'c-deficit',
+        superavit ? t('Superávit', 'Surplus') : millones(d.deficit),
+        superavit
+          ? t(`en ${d.año} se ingresó más de lo que se gastó`, `in ${d.año} more came in than was spent`)
+          : t(`gastado de más en ${d.año}: ${delPib(d.deficitPib)}${d.deficitPibUe !== null ? ` (UE: ${delPib(d.deficitPibUe).replace(' del PIB', '')})` : ''}`, `overspent in ${d.año}: ${delPib(d.deficitPib)}${d.deficitPibUe !== null ? ` (EU: ${delPib(d.deficitPibUe).replace(' of GDP', '')})` : ''}`)
+      );
+    }
+    $('deuda-texto').textContent = t(
+      `Lo que deben todas las administraciones juntas al final de ${d.año} y lo que pidieron prestado ese año.`,
+      `What all administrations together owed at the end of ${d.año} and what they borrowed that year.`
+    );
+    if (d.serie.length > 1) $('deuda-grafico').innerHTML = grafico(d.serie, t('Deuda pública', 'Public debt'));
+    $('bloque-deuda').hidden = false;
   }
 
   // Descargas: lo mismo que se ve, en tablas
@@ -211,6 +254,16 @@ try {
           tabla: () => [
             [t('Tipo de gasto', 'Type of spending'), t('Qué incluye', 'What it includes'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person'), t('Parte del gasto', 'Share of spending')],
             v.tipos.map((x) => [en(TIPOS, x.id, x.nombre), enQue(TIPOS, x.id, x.que), añoTipos, x.valor, Math.round(x.valor * porHabitanteTipos), x.cuota]),
+          ],
+        }]
+      : []),
+    ...(d
+      ? [{
+          texto: t('La deuda, año a año', 'Debt, year by year'),
+          fichero: fichero('deuda'),
+          tabla: () => [
+            [t('Año', 'Year'), t('Deuda de España (% del PIB)', 'Spain’s debt (% of GDP)'), t('Deuda de la UE (% del PIB)', 'EU debt (% of GDP)'), t('Déficit de España (% del PIB)', 'Spain’s deficit (% of GDP)')],
+            d.serie.map((x) => [x.año, x.es, x.ue, x.deficit]),
           ],
         }]
       : []),

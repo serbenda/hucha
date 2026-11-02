@@ -59,6 +59,7 @@
       <div class="cifra"><dt>La partida más grande</dt><dd id="c-mayor">—<small>&nbsp;</small></dd></div>
       <div class="cifra"><dt>Sobre lo que produce España</dt><dd id="c-pib">—<small>&nbsp;</small></dd></div>
     </dl>
+    <p class="nota-año" id="nota-año">Datos del último año que Eurostat tiene cerrado: las cuentas de un año se publican al año siguiente. Lo de este año, mes a mes, está en <a href="../presupuesto/">Presupuesto</a>.</p>
 
     <section aria-labelledby="t-vistazo">
       <div class="seccion-titulo">
@@ -93,6 +94,28 @@
         <li><i class="linea-es"></i>España</li>
         <li><i class="linea-ue"></i>Media de la Unión Europea</li>
       </ul>
+    </section>
+
+    <section aria-labelledby="t-deuda" id="bloque-deuda" hidden>
+      <div class="seccion-titulo">
+        <h2 id="t-deuda">La deuda</h2>
+        <p id="deuda-texto">Lo que deben todas las administraciones juntas y lo que piden prestado cada año.</p>
+      </div>
+      <dl class="cifras" id="cifras-deuda">
+        <div class="cifra"><dt>Deuda pública</dt><dd id="c-deuda">—<small>&nbsp;</small></dd></div>
+        <div class="cifra"><dt>Por habitante</dt><dd id="c-deuda-persona">—<small>&nbsp;</small></dd></div>
+        <div class="cifra"><dt>Déficit del año</dt><dd id="c-deficit">—<small>&nbsp;</small></dd></div>
+      </dl>
+      <h3 class="subtitulo">La deuda, en % de lo que produce España</h3>
+      <div id="deuda-grafico"></div>
+      <ul class="leyenda" aria-label="Leyenda del gráfico de la deuda">
+        <li><i class="linea-es"></i>España</li>
+        <li><i class="linea-ue"></i>Media de la Unión Europea</li>
+      </ul>
+      <div class="aviso">
+        <p><strong>Deuda</strong> es todo lo que deben el Estado, las comunidades, los ayuntamientos y la Seguridad Social al final del año, contado una sola vez (sin lo que se deben entre ellos). <strong>Déficit</strong> es lo que ese año se gastó por encima de lo que se ingresó: se cubre pidiendo prestado, así que hace crecer la deuda.</p>
+        <p>Por la deuda se pagan <strong>intereses</strong>, que son gasto y salen en la partida «Intereses de la deuda». Devolver lo que vence (la <strong>amortización</strong>) no es gasto: se suele pagar con deuda nueva. Lo que el Estado presupuesta este año para devolver deuda está en <a href="../presupuesto/#t-financiero">Presupuesto</a>.</p>
+      </div>
     </section>
 
     <section aria-labelledby="t-temas">
@@ -136,10 +159,11 @@
 
   <footer class="envoltorio pie">
     <p class="apoyo"><a href="https://github.com/sponsors/serbenda" rel="noopener"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.2 6.9 13.2C3 9.7.5 7.4.5 4.6.5 2.3 2.3.5 4.6.5c1.3 0 2.5.6 3.4 1.6C8.9 1.1 10.1.5 11.4.5c2.3 0 4.1 1.8 4.1 4.1 0 2.8-2.5 5.1-6.4 8.6Z"/></svg>¿Te sirve? Apoya hucha en GitHub Sponsors</a></p>
-    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. <a href="../fuentes/#t-error">¿Ves un error?</a> Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
+    <p>Web sin anuncios ni cookies, con datos oficiales. <a href="../fuentes/">Fuentes y condiciones</a>. Código en <a href="https://github.com/serbenda/hucha">GitHub</a>. <a href="../fuentes/#t-error">¿Ves un error o algo no funciona?</a> Hermana de <a href="https://bolsillo.bendi.dev/">bolsillo</a>.</p>
   </footer>
 
   <script type="module" src="../assets/js/a-donde-va.js"></script>
+  <script src="../assets/js/antiguo.js" defer></script>
   <script type="module" src="../assets/js/comun.js"></script>
 </body>
 </html>

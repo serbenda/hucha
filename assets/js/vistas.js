@@ -4,7 +4,7 @@
 
 import {
   partidas, ultimoAño, esProvisional, gastoPorPersona, valor, seriePartida, detallePartida, tiposDeGasto, ultimoAñoTipos,
-  reparto, gastoPorAdministracion,
+  reparto, gastoPorAdministracion, resumenDeuda,
 } from './cofog.js';
 
 /** Lo común a todas las vistas: año, si es provisional, de cuándo son los datos y si son de ejemplo. */
@@ -33,11 +33,24 @@ export function vistaPortada(d) {
     ...b,
     ...cifrasTotales(d, b.año),
     partidas: partidas(d, b.año).map(({ id, nombre, que, cuota }) => ({ id, nombre, que, cuota })),
+    deuda: resumenDeuda(d),
   };
 }
 
+/**
+ * Lo de este año, del presupuesto del Estado (IGAE), para las partidas que son solo del Estado: defensa.
+ * Eurostat va un año por detrás; esto deja ver por dónde va el año en curso.
+ */
+function esteAño(e) {
+  const v = e ? vistaPresupuesto(e) : null;
+  if (!v) return null;
+  const sinTildes = (t) => String(t ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const def = v.politicas.find((p) => sinTildes(p.nombre) === 'defensa');
+  return { año: v.año, mes: v.mes, defensa: def ? { creditos: def.creditos, obligaciones: def.obligaciones } : null };
+}
+
 /** A dónde va: cada partida con su detalle, cómo se gasta y su serie frente a la UE. */
-export function vistaADondeVa(d) {
+export function vistaADondeVa(d, ejecucion = null) {
   const b = base(d);
   const añoTipos = ultimoAñoTipos(d);
   const quitarQue = (lista) => lista.map(({ que, ...x }) => x);
@@ -58,6 +71,8 @@ export function vistaADondeVa(d) {
       tipos: añoTipos ? quitarQue(tiposDeGasto(d, p.id, añoTipos)) : [],
     })),
     tipos: añoTipos ? tiposDeGasto(d, 'TOTAL', añoTipos) : [],
+    deuda: resumenDeuda(d),
+    esteAño: esteAño(ejecucion),
   };
 }
 

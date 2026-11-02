@@ -685,3 +685,11 @@ button.apilada span.elegido { box-shadow: inset 0 0 0 3px var(--papel), inset 0 
 .boton-descarga:hover { border-color: var(--tinta); }
 .boton-descarga .icono { width: 1.1em; height: 1.1em; color: var(--cobre); }
 .boton-descarga small { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; color: var(--tenue); border: 1px solid var(--linea); border-radius: 4px; padding: 0.05rem 0.3rem; }
+
+/* Deuda */
+.nota-deuda { margin: 1rem 0 0; padding: 0.8rem 1rem; border-left: 3px solid var(--cobre); background: var(--superficie); border-radius: 0 var(--radio) var(--radio) 0; max-width: var(--medida); }
+.nota-deuda a { font-weight: 600; white-space: nowrap; }
+.nota-año { margin: -0.5rem 0 1.5rem; color: var(--tenue); font-size: 0.95rem; max-width: var(--medida); }
+.este-año { margin: 0.75rem 0 0; padding: 0.7rem 0.9rem; background: var(--cobre-suave); border-radius: var(--radio); font-size: 0.95rem; }
+.leyenda-evolucion { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--tenue); }
+#bloque-deuda .leyenda { margin-bottom: 1.25rem; }

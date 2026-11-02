@@ -4,7 +4,7 @@
 // Los textos que escriben los scripts (cifras, gráficos, resultados) se traducen en cada script con t().
 
 export const NO_SE_TRADUCE = new Set([
-  'CSV', 'JSON', 'data/vistas/', 'data/lupa/',
+  'CSV', 'JSON', 'data/vistas/', 'data/lupa/', 'gov_10dd_edpt1',
   'hucha', 'English', 'GitHub', 'bolsillo', 'GoatCounter', 'gov_10a_exp', 'demo_gind', 'github.com/serbenda', 'IRPF', 'Total', '&nbsp;',
   'width=device-width, initial-scale=1',
 ]);
@@ -427,4 +427,39 @@ export const EN = {
   'Becas': 'Student grants',
   'Investigación': 'Research',
   'Temas que se buscan a menudo': 'Frequently searched topics',
+  // Deuda, año de los datos, operaciones financieras y avisos de fallos
+  'Lo que deben': 'What they owe',
+  '¿Ves un error o algo no funciona?': 'Spotted a mistake or something not working?',
+  'Datos del último año que Eurostat tiene cerrado: las cuentas de un año se publican al año siguiente. Lo de este año, mes a mes, está en':
+    'Data for the latest year Eurostat has closed: a year’s accounts are published the following year. This year’s figures, month by month, are in',
+  'La deuda': 'The debt',
+  'Lo que deben todas las administraciones juntas y lo que piden prestado cada año.': 'What all administrations together owe and what they borrow each year.',
+  'Deuda pública': 'Public debt',
+  'Déficit del año': 'Deficit for the year',
+  'La deuda, en % de lo que produce España': 'Debt, as a % of what Spain produces',
+  'Deuda': 'Debt',
+  'es todo lo que deben el Estado, las comunidades, los ayuntamientos y la Seguridad Social al final del año, contado una sola vez (sin lo que se deben entre ellos).':
+    'is everything central government, the regions, local councils and Social Security owe at the end of the year, counted once (without what they owe each other).',
+  'Déficit': 'Deficit',
+  'es lo que ese año se gastó por encima de lo que se ingresó: se cubre pidiendo prestado, así que hace crecer la deuda.':
+    'is how much more was spent that year than came in: it is covered by borrowing, so it makes the debt grow.',
+  'Por la deuda se pagan': 'The debt carries',
+  'intereses': 'interest',
+  ', que son gasto y salen en la partida «Intereses de la deuda». Devolver lo que vence (la': ', which is spending and appears in the item “Interest on debt”. Paying back what falls due (the',
+  'amortización': 'repayment',
+  ') no es gasto: se suele pagar con deuda nueva. Lo que el Estado presupuesta este año para devolver deuda está en':
+    ') is not spending: it is usually paid with new debt. What central government budgets this year to repay debt is in',
+  'Leyenda del gráfico de la deuda': 'Legend of the debt chart',
+  'Lo que no es gasto: devolver deuda y prestar': 'What is not spending: repaying debt and lending',
+  'Además del gasto, el presupuesto del Estado lleva dinero que solo cambia de manos: devolver la deuda que vence y dar préstamos o comprar participaciones. No cuenta en las cifras de arriba.':
+    'Besides spending, the central government budget includes money that only changes hands: repaying debt that falls due, and giving loans or buying shareholdings. It is not included in the figures above.',
+  ', mejor con el enlace a la fuente oficial. Se revisa y, si hay que corregirlo, se corrige para todos.': ', ideally with the link to the official source. It gets checked and, if it needs fixing, it is fixed for everyone.',
+  'Si la web no carga, se queda en blanco o algo no responde,': 'If the site does not load, stays blank or something does not respond,',
+  'cuéntalo aquí': 'tell us here',
+  ': el aviso ya lleva la página, tu navegador y el tamaño de la pantalla, que es lo que hace falta para encontrar el fallo. Si usas un navegador muy antiguo, actualizarlo suele bastar.':
+    ': the report already includes the page, your browser and screen size, which is what is needed to find the problem. If you use a very old browser, updating it usually fixes it.',
+  'Los avisos son públicos: no pongas datos personales.': 'Reports are public: do not include personal data.',
+  'La deuda y el déficit vienen de la tabla': 'Debt and deficit come from the Eurostat table',
+  'de Eurostat, la del procedimiento de déficit excesivo de la Unión Europea: la deuda es la bruta consolidada de todas las administraciones al final del año (la que se usa para la regla del 60 % del PIB) y el déficit, su necesidad de financiación.':
+    ', the one used for the European Union’s excessive deficit procedure: debt is the consolidated gross debt of all administrations at the end of the year (the one used for the 60% of GDP rule) and the deficit is their net borrowing.',
 };

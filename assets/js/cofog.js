@@ -235,6 +235,58 @@ export function urlTipos() {
   return `${API}/gov_10a_exp?${p}`;
 }
 
+/**
+ * Deuda y déficit de todas las administraciones (procedimiento de déficit excesivo), de España y de la UE:
+ * GD es la deuda bruta consolidada (lo que se debe al final de cada año) y B9 la capacidad (+) o necesidad (−)
+ * de financiación, es decir, el superávit o el déficit del año.
+ */
+export function urlDeuda() {
+  const p = new URLSearchParams({ lang: 'EN', sector: 'S13', sinceTimePeriod: String(PRIMER_AÑO) });
+  for (const g of ['ES', 'EU27_2020']) p.append('geo', g);
+  for (const n of ['GD', 'B9']) p.append('na_item', n);
+  for (const u of ['MIO_EUR', 'PC_GDP']) p.append('unit', u);
+  return `${API}/gov_10dd_edpt1?${p}`;
+}
+
+/** Deuda y déficit en el formato del almacén: { es: { GD: { MIO_EUR: { año }, PC_GDP }, B9 }, ue: { GD: { PC_GDP }, B9 }, actualizado }. */
+export function prepararDeuda(json) {
+  const d = { es: {}, ue: {}, actualizado: json?.updated ?? null };
+  for (const o of aplanar(json)) {
+    const destino = o.geo === 'ES' ? 'es' : o.geo === 'EU27_2020' ? 'ue' : null;
+    if (!destino || (o.sector && o.sector !== 'S13') || !['GD', 'B9'].includes(o.na_item) || !['MIO_EUR', 'PC_GDP'].includes(o.unit)) continue;
+    if (destino === 'ue' && o.unit !== 'PC_GDP') continue;
+    if (o.valor === null || o.valor === undefined) continue;
+    ((d[destino][o.na_item] ??= {})[o.unit] ??= {})[o.time] = o.valor;
+  }
+  return d;
+}
+
+/**
+ * Resumen de la deuda para la web, del último año con deuda y población:
+ * { año, total (M€), pib (%), pibUe, porPersona (€), deficit (M€, positivo si hay déficit), deficitPib, deficitPibUe, serie: [{ año, es, ue }] }
+ * Devuelve null si no hay datos de deuda.
+ */
+export function resumenDeuda(datos) {
+  const d = datos?.deuda;
+  const total = d?.es?.GD?.MIO_EUR ?? {};
+  const año = Object.keys(total).sort().reverse().find((a) => total[a] > 0 && datos.poblacion?.[a] > 0);
+  if (!año) return null;
+  const v = (zona, item, unidad, a = año) => d[zona]?.[item]?.[unidad]?.[a] ?? null;
+  const menos = (x) => (x === null ? null : -x);
+  const años = Object.keys(d.es?.GD?.PC_GDP ?? {}).filter((a) => a >= String(PRIMER_AÑO) && a <= año).sort();
+  return {
+    año,
+    total: total[año],
+    pib: v('es', 'GD', 'PC_GDP'),
+    pibUe: v('ue', 'GD', 'PC_GDP'),
+    porPersona: (total[año] * 1e6) / datos.poblacion[año],
+    deficit: menos(v('es', 'B9', 'MIO_EUR')),
+    deficitPib: menos(v('es', 'B9', 'PC_GDP')),
+    deficitPibUe: menos(v('ue', 'B9', 'PC_GDP')),
+    serie: años.map((a) => ({ año: a, es: v('es', 'GD', 'PC_GDP', a), ue: v('ue', 'GD', 'PC_GDP', a), deficit: menos(v('es', 'B9', 'PC_GDP', a)) })),
+  };
+}
+
 /** Población media anual de España. */
 export function urlPoblacion() {
   const p = new URLSearchParams({ lang: 'EN', geo: 'ES', indic_de: 'AVG', sinceTimePeriod: String(PRIMER_AÑO) });
