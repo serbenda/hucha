@@ -4,7 +4,7 @@
 
 import {
   partidas, ultimoAño, esProvisional, gastoPorPersona, valor, seriePartida, detallePartida, tiposDeGasto, ultimoAñoTipos,
-  reparto, gastoPorAdministracion, resumenDeuda,
+  reparto, gastoPorAdministracion, resumenDeuda, resumenIngresos,
 } from './cofog.js';
 
 /** Lo común a todas las vistas: año, si es provisional, de cuándo son los datos y si son de ejemplo. */
@@ -34,6 +34,7 @@ export function vistaPortada(d) {
     ...cifrasTotales(d, b.año),
     partidas: partidas(d, b.año).map(({ id, nombre, que, cuota }) => ({ id, nombre, que, cuota })),
     deuda: resumenDeuda(d),
+    ingresos: resumenIngresos(d),
   };
 }
 
@@ -72,6 +73,7 @@ export function vistaADondeVa(d, ejecucion = null) {
     })),
     tipos: añoTipos ? tiposDeGasto(d, 'TOTAL', añoTipos) : [],
     deuda: resumenDeuda(d),
+    ingresos: resumenIngresos(d),
     esteAño: esteAño(ejecucion),
   };
 }

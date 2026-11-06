@@ -45,3 +45,7 @@ export function leerXlsx(fichero, nombres) {
   }
   return salida;
 }
+
+/** Nombres de las hojas de un libro. */
+export const hojasXlsx = (fichero) =>
+  [...xml(fichero, 'xl/workbook.xml').matchAll(/<sheet\b([^>]*)\/?>/g)].map(([, a]) => entidades(a.match(/name="([^"]+)"/)?.[1] ?? ''));

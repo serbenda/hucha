@@ -731,3 +731,5 @@ button.apilada span.elegido { box-shadow: inset 0 0 0 3px var(--papel), inset 0 
 .tabla-al-dia .ok, .tabla-al-dia .mal { font-weight: 600; }
 .nota-dudoso { border-left-color: var(--tinta); }
 .resultado.dudoso .resultado-importe { color: var(--tenue); }
+#bloque-ingresos .subtitulo { margin-bottom: 0.75rem; }
+#bloque-ingresos .desglose { margin-bottom: 1.5rem; }

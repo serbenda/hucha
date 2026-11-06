@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { arrancar } from './servidor.mjs';
-import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos, resumenDeuda } from '../../assets/js/cofog.js';
+import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos, resumenDeuda, resumenIngresos } from '../../assets/js/cofog.js';
 
 let servidor, navegador, base, datos;
 
@@ -337,6 +337,16 @@ test('portada: «Ver mi ticket» solo sale en el móvil', async () => {
   const movil = await abrir('', MOVIL);
   assert.equal(await movil.pagina.isVisible('.calcular'), true);
   await movil.contexto.close();
+});
+
+test('ingresos: de dónde sale el dinero, con sus bloques y lo que faltó', async (t) => {
+  const r = resumenIngresos(datos);
+  if (!r) return t.skip('el almacén aún no tiene los ingresos de Eurostat');
+  const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
+  assert.equal(await pagina.isVisible('#bloque-ingresos'), true);
+  assert.equal(await pagina.locator('#ingresos-barras .desglose li').count(), r.bloques.length);
+  assert.match(await pagina.textContent('#ingresos-barras'), /Cotizaciones sociales/);
+  await contexto.close();
 });
 
 test('404: página propia con su código', async () => {

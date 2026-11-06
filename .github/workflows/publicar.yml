@@ -63,6 +63,12 @@ jobs:
         # Si falla, se queda la versión anterior del almacén
         run: node scripts/fetch-ejecucion.mjs
 
+      - name: Fondos de la UE (sondeo)
+        # Solo mira cómo es el Excel de la Comisión; no guarda nada ni puede romper la publicación
+        continue-on-error: true
+        timeout-minutes: 5
+        run: node scripts/fetch-ue.mjs
+
       - name: Lupa (contratos, subvenciones y ayuda a otros países)
         # Cada fuente es independiente; si una falla, se queda su versión anterior
         timeout-minutes: 45

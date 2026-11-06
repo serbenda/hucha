@@ -131,5 +131,24 @@ export function respuestasEjemplo({ desde = 2014, hasta = 2024, quitar = [] } = 
     deudaObs.push({ ...comun, unit: 'PC_GDP', na_item: 'B9', geo: 'EU27_2020', valor: -3.1 });
   }
   const deuda = crearJsonStat(['freq', 'unit', 'sector', 'na_item', 'geo', 'time'], deudaObs);
-  return { gasto, poblacion, tipos, deuda };
+  // Ingresos de ejemplo (gov_10a_main y gov_10a_taxag), del orden de los de España
+  const mainObs = [];
+  const taxObs = [];
+  for (let año = desde; año <= hasta; año++) {
+    const pib = 1100000 * (1 + 0.04 * (año - desde));
+    const pc = { TR: 42, TE: 45.5, D2REC: 11.5, D5REC: 11, D91REC: 0.4, D61REC: 13 };
+    const comun = { freq: 'A', sector: 'S13', time: String(año) };
+    for (const [c, x] of Object.entries(pc)) {
+      mainObs.push({ ...comun, unit: 'MIO_EUR', na_item: c, geo: 'ES', valor: (pib * x) / 100 });
+      mainObs.push({ ...comun, unit: 'PC_GDP', na_item: c, geo: 'ES', valor: x });
+      mainObs.push({ ...comun, unit: 'PC_GDP', na_item: c, geo: 'EU27_2020', valor: x * 1.08 });
+    }
+    for (const [c, x] of Object.entries({ D211: 6.5, D51A_C1: 7.8, D51B_C2: 2.6 })) {
+      taxObs.push({ ...comun, unit: 'MIO_EUR', na_item: c, geo: 'ES', valor: (pib * x) / 100 });
+      taxObs.push({ ...comun, unit: 'PC_GDP', na_item: c, geo: 'ES', valor: x });
+      taxObs.push({ ...comun, unit: 'PC_GDP', na_item: c, geo: 'EU27_2020', valor: x * 1.05 });
+    }
+  }
+  const dims = ['freq', 'unit', 'sector', 'na_item', 'geo', 'time'];
+  return { gasto, poblacion, tipos, deuda, ingresos: crearJsonStat(dims, mainObs), impuestos: crearJsonStat(dims, taxObs) };
 }

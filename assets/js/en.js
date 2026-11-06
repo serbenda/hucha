@@ -97,6 +97,17 @@ export const CANALES = {
   'Organismos multilaterales': 'Multilateral organisations', 'Universidades y centros de investigación': 'Universities and research centres', 'Empresas privadas': 'Private companies', Otros: 'Other',
 };
 
+export const INGRESOS = {
+  cotizaciones: ['Social security contributions', 'What workers and employers pay to Social Security with every payslip, and what the self-employed pay as their fee.'],
+  irpf: ['Personal income tax (IRPF)', 'The tax on people’s income: what is withheld from payslips, pensions and savings.'],
+  iva: ['VAT', 'The tax on almost everything you buy: 21%, 10% or 4%, depending on the product.'],
+  sociedades: ['Corporate income tax', 'What companies pay on their profits.'],
+  'otros-impuestos': ['Other taxes', 'Fuel, tobacco and alcohol, electricity, property tax and other local taxes, inheritance, wealth, fees…'],
+  otros: ['Other revenue', 'Sales and services charged by the administrations, interest and dividends, EU money and other transfers.'],
+  consumo: ['Taxes on consumption and production', 'VAT, fuel, tobacco, alcohol, electricity, property tax and other taxes on what is bought and produced.'],
+  renta: ['Taxes on income and wealth', 'Personal income tax, corporate tax, inheritance and wealth taxes.'],
+};
+
 /** Capítulos del presupuesto de gastos del Estado (por número). */
 export const CAPITULOS = {
   1: 'Staff costs', 2: 'Goods and services', 3: 'Financial costs (interest)', 4: 'Current transfers', 5: 'Contingency fund',

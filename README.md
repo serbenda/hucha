@@ -136,6 +136,14 @@ Buscador (todas las palabras, sin importar tildes ni mayúsculas), filtros por *
 
 Primero, **en pocas palabras** y con un **glosario** de las palabras que salen en la web (PIB, créditos, obligaciones, acuerdo marco…), para quien no sabe de economía. Después, el detalle: de dónde sale cada cifra, la tabla de cómo se agrupan las partidas (generada desde el código, así que nunca se desfasa), el presupuesto, la Lupa, cómo se calcula el ticket, privacidad y cómo avisar de un error. Al final, el **aviso legal**: quién está detrás, qué es y qué no es, reutilización de datos públicos (Ley 37/2007), exactitud y responsabilidad, datos personales (minimización de personas físicas, cómo pedir que se retire algo), propiedad intelectual, enlaces y ley aplicable.
 
+### 💶 De dónde sale el dinero
+
+Un apartado en A dónde va, y la nota de la portada («ingresaron X y gastaron Y: lo que faltó se pidió prestado»). Muestra los ingresos de todas las administraciones por bloques (cotizaciones sociales, IRPF, IVA, sociedades, otros impuestos y otros ingresos), por habitante y en % del PIB frente a la UE. Con CSV.
+
+- **Fuente:** Eurostat `gov_10a_main` (TR, TE, D2, D5, D91 y D61) y `gov_10a_taxag` (IVA D211, IRPF D51A_C1 y sociedades D51B_C2). Las dos se piden sin filtrar el concepto, para que un código que falte no rompa la descarga.
+- **Si no hay desglose de impuestos:** van en dos bloques, consumo y renta. Si falla la descarga, se queda la de la última vez.
+- **Fondos de la UE:** `scripts/fetch-ue.mjs` está de momento en sondeo. Mira cómo es el Excel «EU spending and revenue» de la Comisión antes de leerlo.
+
 ### 💳 La deuda
 
 En la portada («Lo que deben» y cuánto del gasto se pagó con deuda), en el ticket y en un apartado propio de A dónde va: deuda pública en euros, por habitante y en % del PIB frente a la UE, el déficit del año y la evolución. Sale de Eurostat `gov_10dd_edpt1` (procedimiento de déficit excesivo: deuda bruta consolidada GD y capacidad o necesidad de financiación B9), que descarga `scripts/fetch-cofog.mjs` junto con el gasto; si falla, se queda la de la última vez. En Presupuesto, «Lo que no es gasto» enseña la amortización de deuda (capítulo 9) y los activos financieros (capítulo 8) del Estado, que no son gasto.

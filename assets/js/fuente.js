@@ -31,6 +31,7 @@ export function pieFuente(el, fuentes, { raiz = '../' } = {}) {
 export const FUENTES = {
   gasto: { nombre: 'Eurostat', enlace: 'https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table', tabla: 'gov_10a_exp' },
   deuda: { nombre: 'Eurostat', enlace: 'https://ec.europa.eu/eurostat/databrowser/view/gov_10dd_edpt1/default/table', tabla: 'gov_10dd_edpt1' },
+  ingresos: { nombre: 'Eurostat', enlace: 'https://ec.europa.eu/eurostat/databrowser/view/gov_10a_main/default/table', tabla: 'gov_10a_main + gov_10a_taxag' },
   igae: { nombre: t('IGAE (Ministerio de Hacienda)', 'IGAE (Spanish Ministry of Finance)'), enlace: 'https://www.igae.pap.hacienda.gob.es/' },
   contratos: { nombre: t('Plataforma de Contratación del Sector Público', 'Public Sector Procurement Platform'), enlace: 'https://contrataciondelestado.es/' },
   subvenciones: { nombre: t('Base de Datos Nacional de Subvenciones', 'National Grants Database'), enlace: 'https://www.infosubvenciones.es/' },
