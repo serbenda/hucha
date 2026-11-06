@@ -325,6 +325,7 @@ test('fuentes de cada dato: cada página dice de dónde sale y hasta cuándo lle
     await contexto.close();
   }
   const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
+  await pagina.locator('#tabla-al-dia').scrollIntoViewIfNeeded(); // se carga al acercarse
   await pagina.waitForFunction(() => document.querySelectorAll('#tabla-al-dia tr th').length >= 5);
   assert.match(await pagina.textContent('#tabla-al-dia'), /Eurostat/);
   await contexto.close();

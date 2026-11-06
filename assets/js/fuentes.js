@@ -151,4 +151,17 @@ async function pintarAlDia() {
         .join('')
     : `<tr><td colspan="7">${t('No se han podido cargar las fechas ahora mismo.', 'The dates could not be loaded right now.')}</td></tr>`;
 }
-pintarAlDia();
+// La tabla está a mitad de la página: se carga al acercarse a ella (o al ir a #t-al-dia), para que sus siete
+// ficheros no compitan con la primera pantalla
+const tablaAlDia = document.getElementById('tabla-al-dia');
+if (tablaAlDia && 'IntersectionObserver' in window && location.hash !== '#t-al-dia') {
+  const vigia = new IntersectionObserver(
+    (entradas) => {
+      if (!entradas.some((e) => e.isIntersecting)) return;
+      vigia.disconnect();
+      pintarAlDia();
+    },
+    { rootMargin: '600px 0px' }
+  );
+  vigia.observe(tablaAlDia);
+} else pintarAlDia();
