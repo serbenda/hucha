@@ -32,12 +32,18 @@ try {
   const hojas = hojasXlsx(fichero);
   console.log(`Excel: ${datos.length} bytes; hojas: ${hojas.join(' | ')}`);
   const libro = leerXlsx(fichero, hojas);
-  for (const h of hojas) {
+  // Las dos últimas hojas, enteras: código, concepto y la columna de España (la que tiene «ES» en la cabecera)
+  for (const h of hojas.slice(-2)) {
     const filas = libro[h] ?? [];
-    console.log(`\n=== ${h}: ${filas.length} filas`);
-    for (const [i, f] of filas.slice(0, 14).entries()) console.log(`${i}: ${JSON.stringify(f).slice(0, 400)}`);
-    const espana = filas.findIndex((f) => Object.values(f).some((v) => /^(ES|Spain|España)$/i.test(String(v).trim())));
-    if (espana >= 0) console.log(`España en la fila ${espana}: ${JSON.stringify(filas[espana]).slice(0, 600)}`);
+    const cabecera = filas.find((f) => Object.values(f).some((v) => String(v).trim() === 'ES')) ?? {};
+    const col = Object.keys(cabecera).find((k) => String(cabecera[k]).trim() === 'ES');
+    const colUe = Object.keys(cabecera).find((k) => /^EU-\d+$/.test(String(cabecera[k]).trim()));
+    const colTotal = Object.keys(cabecera).find((k) => String(cabecera[k]).trim() === 'Total');
+    console.log(`\n=== ${h}: ${filas.length} filas; España en la columna ${col}, UE en ${colUe}, total en ${colTotal}`);
+    for (const [i, f] of filas.entries()) {
+      const etiqueta = [f.A, f.B].filter((x) => x !== undefined).join(' | ');
+      if (etiqueta) console.log(`${i}: ${String(etiqueta).replace(/\s+/g, ' ').slice(0, 120)} => ES ${f[col] ?? ''} · UE ${f[colUe] ?? ''} · total ${f[colTotal] ?? ''}`);
+    }
   }
 } catch (e) {
   console.warn(`Fondos de la UE (sondeo): ${e.message}`);
