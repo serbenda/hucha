@@ -35,7 +35,8 @@ export function vistaPortada(d) {
     ...cifrasTotales(d, b.año),
     partidas: partidas(d, b.año).map(({ id, nombre, que, cuota }) => ({ id, nombre, que, cuota })),
     deuda: resumenDeuda(d),
-    ingresos: resumenIngresos(d),
+    // En la portada, los ingresos del mismo año que el gasto: «ingresaron X y gastaron Y»
+    ingresos: resumenIngresos(d, b.año),
   };
 }
 

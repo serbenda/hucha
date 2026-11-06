@@ -347,10 +347,11 @@ export const BLOQUES_INGRESOS = [
  * gasto, bloques: [{ id, nombre, que, valor, cuota, pib, pibUe }], detalle: true si están IVA, IRPF y sociedades }.
  * Si no hay el desglose de impuestos, los impuestos van en dos bloques (consumo y producción; renta y patrimonio).
  */
-export function resumenIngresos(datos) {
+export function resumenIngresos(datos, añoPedido = null) {
   const d = datos?.ingresos;
   const tr = d?.es?.TR?.MIO_EUR ?? {};
-  const año = Object.keys(tr).sort().reverse().find((a) => tr[a] > 0 && datos.poblacion?.[a] > 0);
+  // El año pedido (p. ej., el del gasto por funciones, para comparar lo mismo), o el último que haya
+  const año = añoPedido && tr[añoPedido] > 0 && datos.poblacion?.[añoPedido] > 0 ? String(añoPedido) : Object.keys(tr).sort().reverse().find((a) => tr[a] > 0 && datos.poblacion?.[a] > 0);
   if (!año) return null;
   const v = (zona, c, unidad = 'MIO_EUR') => d[zona]?.[c]?.[unidad]?.[año] ?? null;
   const total = tr[año];

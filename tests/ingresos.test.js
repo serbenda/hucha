@@ -31,6 +31,12 @@ test('resumen: bloques que suman el total, de mayor a menor, con IVA, IRPF y soc
   assert.ok(r.bloques.every((b) => b.pibUe !== null), 'cada bloque se compara con la UE');
 });
 
+test('se puede pedir un año concreto (el del gasto), y si no lo hay, el último', () => {
+  const d = datosEjemplo();
+  assert.equal(resumenIngresos(d, '2020').año, '2020');
+  assert.equal(resumenIngresos(d, '1990').año, '2024');
+});
+
 test('sin el desglose de impuestos, dos bloques de impuestos y el total sigue cuadrando', () => {
   const { ingresos } = respuestasEjemplo();
   const d = { ...datosEjemplo(), ingresos: prepararIngresos(ingresos, null) };

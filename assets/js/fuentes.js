@@ -78,11 +78,11 @@ async function pintarAlDia() {
       ritmo: t('Unas dos veces al año; los datos de un año, a partir del año siguiente', 'About twice a year; a year’s data, from the following year'),
       estado: 'eurostat',
     },
-    portada?.ingresos && {
+    adonde?.ingresos && {
       que: t('Ingresos: impuestos, cotizaciones y otros', 'Revenue: taxes, contributions and other'),
       fuente: fuente(FUENTES.ingresos),
-      hasta: portada.ingresos.año,
-      publicado: portada.ingresos.actualizado,
+      hasta: adonde.ingresos.año,
+      publicado: adonde.ingresos.actualizado,
       descargado: portada.actualizado,
       ritmo: t('Una vez al año (abril), con los datos del año anterior', 'Once a year (April), with the previous year’s data'),
       estado: 'eurostat-ingresos',
