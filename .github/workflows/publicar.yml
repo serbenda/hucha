@@ -266,7 +266,8 @@ jobs:
             const fs = require('fs');
             let estado = {};
             try { estado = JSON.parse(fs.readFileSync('estado.json', 'utf8')); } catch {}
-            const fallos = Object.entries(estado).filter(([, e]) => !e.ok).map(([f, e]) => `- **${f}**: ${e.detalle}`);
+            // Un fallo con avisar: false (la fuente no responde hoy, pero los datos son de hace muy poco) no abre aviso
+            const fallos = Object.entries(estado).filter(([, e]) => !e.ok && e.avisar !== false).map(([f, e]) => `- **${f}**: ${e.detalle}`);
             if (process.env.RESULTADO_CONSTRUIR !== 'success') fallos.push('- **construcción o tests**: la web no se ha podido preparar o no ha pasado los tests');
             else if (process.env.RESULTADO_PUBLICAR !== 'success') fallos.push('- **publicación**: GitHub Pages no ha aceptado la nueva versión');
 

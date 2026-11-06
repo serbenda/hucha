@@ -36,7 +36,11 @@ async function leer(nombre) {
 }
 const guardar = (nombre, datos) => writeFile(new URL(nombre, carpeta), JSON.stringify(datos));
 
-async function descargar(url, { tipo = 'text', intentos = 3 } = {}) {
+/**
+ * Descarga con reintentos y espera creciente (3 s, 6 s, 12 s…): las fuentes fallan a ratos y casi siempre
+ * vuelven a responder al poco. `esperaInicial` alarga la primera espera para las que tardan más en volver.
+ */
+async function descargar(url, { tipo = 'text', intentos = 3, esperaInicial = 3000 } = {}) {
   let ultimo;
   for (let i = 1; i <= intentos; i++) {
     try {
@@ -45,10 +49,10 @@ async function descargar(url, { tipo = 'text', intentos = 3 } = {}) {
       return tipo === 'json' ? await r.json() : await r.text();
     } catch (e) {
       ultimo = e;
-      await new Promise((ok) => setTimeout(ok, 3000 * i));
+      if (i < intentos) await new Promise((ok) => setTimeout(ok, esperaInicial * 2 ** (i - 1)));
     }
   }
-  throw ultimo;
+  throw new Error(`${ultimo?.message ?? ultimo} tras ${intentos} intentos`);
 }
 
 const hoy = new Date();
@@ -241,6 +245,7 @@ async function subvenciones() {
   }
   const leidos = [];
   const meses = [];
+  const fallidos = [];
   for (let m = 0; m < MESES_SUBVENCIONES; m++) {
     const fin = new Date(hoy.getFullYear(), hoy.getMonth() - m + 1, 0);
     const ini = new Date(hoy.getFullYear(), hoy.getMonth() - m, 1);
@@ -248,16 +253,31 @@ async function subvenciones() {
     const desde = isoDia(ini);
     const mes = desde.slice(0, 7);
     meses.push(mes);
+    // Si ya han fallado dos meses, la BDNS está caída: no se insiste con el resto (se quedan sus datos)
+    if (fallidos.length >= 2) {
+      fallidos.push(mes);
+      leidos.push(`${mes}: no se intenta (la BDNS no responde)`);
+      continue;
+    }
     const nuevas = new Map();
     let primera = null;
+    // La BDNS falla a ratos: hasta 5 intentos por página (unos 2,5 minutos de espera en total). Si un mes no
+    // responde, se queda lo que ya había de ese mes y se sigue con los demás
+    try {
     for (let pagina = 0; pagina < 10; pagina++) {
-      const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json' });
+      const json = await descargar(urlConcesiones(desde, hasta, pagina), { tipo: 'json', intentos: 5, esperaInicial: 10000 });
       primera ??= json;
       const importes = (json?.content ?? []).map((c) => c.importe ?? 0);
       if (importes.some((v, k) => k > 0 && v > importes[k - 1] + 0.01)) throw new Error(`la API no devuelve las concesiones ordenadas por importe (${importes.slice(0, 5).join(', ')}…)`);
       for (const c of parsearConcesiones(json)) if (c.i >= UMBRAL_SUBVENCIONES) nuevas.set(c.id, c);
       const ultimo = json?.content?.at(-1)?.importe ?? 0;
       if (json.last || ultimo < UMBRAL_SUBVENCIONES) break;
+    }
+    } catch (e) {
+      if (/ordenadas por importe/.test(e.message)) throw e; // la API ha cambiado: eso sí hay que verlo
+      fallidos.push(mes);
+      leidos.push(`${mes}: sin respuesta (${e.message})${porMes.get(mes)?.length ? `, se quedan ${porMes.get(mes).length}` : ''}`);
+      continue;
     }
     const antes = porMes.get(mes)?.length ?? 0;
     if (nuevas.size) porMes.set(mes, [...nuevas.values()]);
@@ -267,9 +287,10 @@ async function subvenciones() {
   }
   // Solo los meses de la ventana (los últimos 12)
   const lista = meses.flatMap((mes) => porMes.get(mes) ?? []).sort((a, b) => b.i - a.i);
+  if (fallidos.length === meses.length) throw new Error(`la BDNS no ha respondido en ningún mes (${leidos[0]})`);
   if (lista.length < 10) throw new Error(`solo ${lista.length} concesiones (${leidos.join(', ')})`);
   await guardar('subvenciones.json', { actualizado: new Date().toISOString(), umbral: UMBRAL_SUBVENCIONES, subvenciones: lista });
-  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses (${leidos.join(', ')})`;
+  return `${lista.length} concesiones de ${MESES_SUBVENCIONES} meses${fallidos.length ? `; ${fallidos.length} sin respuesta hoy (se quedan los datos anteriores)` : ''} (${leidos.join(', ')})`;
 }
 
 // ---------------------------------------------------------------------------
@@ -410,8 +431,12 @@ for (const [nombre, parte] of [['contratos', contratos], ['subvenciones', subven
     console.log(`Lupa ${nombre}: ${resumen}`);
     await anotar(`lupa-${nombre}`, true, resumen);
   } catch (e) {
-    console.warn(`Lupa ${nombre}: ${e.message}. Se mantiene la versión anterior`);
-    await anotar(`lupa-${nombre}`, false, `${e.message} (${Math.round((Date.now() - inicio) / 1000)} s)`);
+    // Si lo guardado es de hace menos de 3 días, un mal día de la fuente no abre aviso: se avisa si sigue
+    const anterior = await leer(`${nombre}.json`);
+    const dias = anterior?.actualizado ? (Date.now() - Date.parse(anterior.actualizado)) / 864e5 : Infinity;
+    const avisar = !(dias < 3);
+    console.warn(`Lupa ${nombre}: ${e.message}. Se mantiene la versión anterior${avisar ? '' : ` (de hace ${dias.toFixed(1)} días: sin aviso)`}`);
+    await anotar(`lupa-${nombre}`, false, `${e.message} (${Math.round((Date.now() - inicio) / 1000)} s)${avisar ? '' : `; los datos guardados son de hace ${Math.round(dias * 24)} horas`}`, { avisar });
   }
 }
 
