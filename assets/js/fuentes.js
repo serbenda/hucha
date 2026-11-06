@@ -56,8 +56,8 @@ const ultimoMes = (d) => (d?.meses ?? []).map((m) => m.mes).filter((m) => /^\d{4
 async function pintarAlDia() {
   const cuerpo = document.getElementById('tabla-al-dia');
   if (!cuerpo) return;
-  const [portada, presupuesto, contratos, subvenciones, ayuda, estado] = await Promise.all(
-    ['vistas/portada.json', 'vistas/presupuesto.json', 'lupa/contratos.json', 'lupa/subvenciones.json', 'lupa/ayuda.json', 'estado.json'].map(pedir)
+  const [portada, presupuesto, contratos, subvenciones, ayuda, estado, adonde] = await Promise.all(
+    ['vistas/portada.json', 'vistas/presupuesto.json', 'lupa/contratos.json', 'lupa/subvenciones.json', 'lupa/ayuda.json', 'estado.json', 'vistas/a-donde-va.json'].map(pedir)
   );
   const comprobacion = (clave) => {
     const e = estado?.[clave];
@@ -86,6 +86,15 @@ async function pintarAlDia() {
       descargado: portada.actualizado,
       ritmo: t('Una vez al año (abril), con los datos del año anterior', 'Once a year (April), with the previous year’s data'),
       estado: 'eurostat-ingresos',
+    },
+    adonde?.ue && {
+      que: t('España y la UE: lo que llega y lo que aporta', 'Spain and the EU: what comes in and what is paid'),
+      fuente: fuente({ nombre: t('Comisión Europea', 'European Commission'), enlace: adonde.ue.fuente ?? 'https://commission.europa.eu/strategy-and-policy/eu-budget/long-term-eu-budget/2021-2027/spending-and-revenue_en' }),
+      hasta: adonde.ue.año,
+      publicado: null,
+      descargado: adonde.ue.actualizado,
+      ritmo: t('Una vez al año (en otoño), con los pagos del año anterior', 'Once a year (in autumn), with the previous year’s payments'),
+      estado: 'ue',
     },
     portada?.deuda && {
       que: t('Deuda y déficit', 'Debt and deficit'),

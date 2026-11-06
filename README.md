@@ -142,7 +142,14 @@ Un apartado en A dónde va, y la nota de la portada («ingresaron X y gastaron Y
 
 - **Fuente:** Eurostat `gov_10a_main` (TR, TE, D2, D5, D91 y D61) y `gov_10a_taxag` (IVA D211, IRPF D51A_C1 y sociedades D51B_C2). Las dos se piden sin filtrar el concepto, para que un código que falte no rompa la descarga.
 - **Si no hay desglose de impuestos:** van en dos bloques, consumo y renta. Si falla la descarga, se queda la de la última vez.
-- **Fondos de la UE:** `scripts/fetch-ue.mjs` está de momento en sondeo. Mira cómo es el Excel «EU spending and revenue» de la Comisión antes de leerlo.
+
+### 🇪🇺 España y la Unión Europea
+
+Un apartado en A dónde va: lo que llega a España del presupuesto de la UE cada año, por rúbricas (agricultura, fondos regionales, investigación…, y el plan de recuperación NextGenerationEU aparte), lo que aporta España (según la renta nacional, IVA, aduanas, plásticos y ajustes) y el saldo. Todo por habitante y con CSV año a año.
+
+- **Fuente:** el Excel «EU spending and revenue» de la Comisión Europea, con una hoja por año y una columna por país. El enlace cambia cada año, así que `scripts/fetch-ue.mjs` lo busca en la página de la Comisión.
+- **Lectura:** la hace `leerHojaUe()` en `assets/js/ue.js`, que encuentra la columna de España por la cabecera «ES» y las filas por su nombre.
+- **Almacén:** se guarda en `almacen/ue.json`. Si falla, se queda la versión anterior.
 
 ### 💳 La deuda
 

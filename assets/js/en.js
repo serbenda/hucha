@@ -108,6 +108,28 @@ export const INGRESOS = {
   renta: ['Taxes on income and wealth', 'Personal income tax, corporate tax, inheritance and wealth taxes.'],
 };
 
+export const UE_RUBROS = {
+  '1.': ['Research, innovation and digital', 'Horizon Europe, transport and energy links, the digital programme, space…'],
+  '2.': ['Regional and social funds', 'European Regional Development Fund (ERDF), European Social Fund, Erasmus+…'],
+  '3.': ['Farming, fisheries and environment', 'The Common Agricultural Policy (support for farmers and rural development), fisheries and the LIFE programme.'],
+  '4.': ['Migration and borders', 'External border management, asylum and migration.'],
+  '5.': ['Security and defence', 'European Defence Fund, internal security and civil protection.'],
+  '6.': ['External aid', 'What the EU spends in neighbouring countries and the rest of the world, carried out from Spain.'],
+  '7.': ['European administration', 'Salaries, schools and pensions of EU institutions based or staffed in Spain.'],
+  O: ['Outside the financial framework', 'Spending outside the seven-year budget.'],
+  S: ['Special instruments', 'Solidarity fund for disasters, globalisation adjustment and Brexit.'],
+  ngeu: ['Recovery plan (NextGenerationEU)', 'The European post-pandemic recovery funds received that year (grants, without loans).'],
+};
+
+export const UE_APORTACION = {
+  rnb: ['Contribution based on national income', 'The largest part: each country pays in proportion to its gross national income.'],
+  iva: ['Share of VAT', 'A small percentage of VAT revenue.'],
+  aduanas: ['Customs duties', 'What Spanish customs collect on goods from outside the EU: it is EU money, and Spain keeps a share for collecting it.'],
+  plasticos: ['Non-recycled plastic', 'Since 2021, €0.80 per kilo of plastic packaging that is not recycled.'],
+  reduccion: ['Rebates for other countries', 'Spain’s share in paying for the rebates some large contributors get.'],
+  ajustes: ['Adjustments for previous years', 'Corrections for what was overpaid or underpaid in other years.'],
+};
+
 /** Capítulos del presupuesto de gastos del Estado (por número). */
 export const CAPITULOS = {
   1: 'Staff costs', 2: 'Goods and services', 3: 'Financial costs (interest)', 4: 'Current transfers', 5: 'Contingency fund',

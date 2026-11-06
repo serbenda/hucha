@@ -63,8 +63,8 @@ jobs:
         # Si falla, se queda la versión anterior del almacén
         run: node scripts/fetch-ejecucion.mjs
 
-      - name: Fondos de la UE (sondeo)
-        # Solo mira cómo es el Excel de la Comisión; no guarda nada ni puede romper la publicación
+      - name: Fondos de la UE (Comisión Europea)
+        # Lo que España recibe y aporta; si falla, se queda la versión anterior del almacén
         continue-on-error: true
         timeout-minutes: 5
         run: node scripts/fetch-ue.mjs

@@ -1,50 +1,63 @@
 // Fondos de la UE: lo que España recibe del presupuesto de la UE y lo que aporta, año a año.
-// Fuente: Comisión Europea, «EU spending and revenue» (un Excel con todos los países desde 2000).
-// El enlace al Excel cambia cada año: se busca en la página de la Comisión.
-//
-// Primera versión: sondeo. Descarga el Excel y escribe en el registro de la Action sus hojas y sus primeras
-// filas, para ver cómo es antes de leerlo. No guarda nada ni rompe nada si falla.
+// Fuente: Comisión Europea, «EU spending and revenue» (un Excel con una hoja por año y una columna por país).
+// El enlace al Excel cambia cada año: se busca en la página de la Comisión. Se guarda en almacen/ue.json.
+// Si falla, se queda lo de la última vez (y se anota en data/estado.json).
 
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { leerXlsx, hojasXlsx } from './xlsx.mjs';
+import { leerHojaUe } from '../assets/js/ue.js';
+import { anotar } from './estado.mjs';
 
-const PAGINA = 'https://commission.europa.eu/strategy-and-policy/eu-budget/long-term-eu-budget/2021-2027/spending-and-revenue_en';
+export const PAGINA_UE = 'https://commission.europa.eu/strategy-and-policy/eu-budget/long-term-eu-budget/2021-2027/spending-and-revenue_en';
+const almacen = new URL('../almacen/', import.meta.url);
+const destino = new URL('ue.json', almacen);
 const cabeceras = { 'User-Agent': 'hucha (datos públicos; https://hucha.bendi.dev)' };
 
 async function pedir(url, tipo = 'text') {
-  const r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(120000), redirect: 'follow' });
-  if (!r.ok) throw new Error(`HTTP ${r.status} en ${url}`);
-  return tipo === 'buffer' ? Buffer.from(await r.arrayBuffer()) : r.text();
+  let ultimo;
+  for (let i = 1; i <= 3; i++) {
+    try {
+      const r = await fetch(url, { headers: cabeceras, signal: AbortSignal.timeout(120000), redirect: 'follow' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return tipo === 'buffer' ? Buffer.from(await r.arrayBuffer()) : await r.text();
+    } catch (e) {
+      ultimo = e;
+      if (i < 3) await new Promise((ok) => setTimeout(ok, 5000 * i));
+    }
+  }
+  throw new Error(`${ultimo.message} en ${url}`);
 }
 
 try {
-  const html = await pedir(PAGINA);
-  const enlaces = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&')).filter((u) => /spending_and_revenue[^"]*\.xlsx/i.test(u));
-  console.log(`Enlaces al Excel: ${enlaces.join(' | ') || 'ninguno'}`);
-  if (!enlaces.length) throw new Error('no hay enlace al Excel en la página');
-  const url = new URL(enlaces[0], PAGINA).href;
-  const datos = await pedir(url, 'buffer');
+  const html = await pedir(PAGINA_UE);
+  const enlace = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&')).find((u) => /spending_and_revenue[^"]*\.xlsx/i.test(u));
+  if (!enlace) throw new Error('no hay enlace al Excel en la página de la Comisión');
+  const url = new URL(enlace, PAGINA_UE).href;
   const carpeta = await mkdtemp(join(tmpdir(), 'ue-'));
   const fichero = join(carpeta, 'ue.xlsx');
-  await writeFile(fichero, datos);
-  const hojas = hojasXlsx(fichero);
-  console.log(`Excel: ${datos.length} bytes; hojas: ${hojas.join(' | ')}`);
+  await writeFile(fichero, await pedir(url, 'buffer'));
+  const hojas = hojasXlsx(fichero).filter((h) => /^\d{4}$/.test(h.trim()));
   const libro = leerXlsx(fichero, hojas);
-  // Las dos últimas hojas, enteras: código, concepto y la columna de España (la que tiene «ES» en la cabecera)
-  for (const h of hojas.slice(-2)) {
-    const filas = libro[h] ?? [];
-    const cabecera = filas.find((f) => Object.values(f).some((v) => String(v).trim() === 'ES')) ?? {};
-    const col = Object.keys(cabecera).find((k) => String(cabecera[k]).trim() === 'ES');
-    const colUe = Object.keys(cabecera).find((k) => /^EU-\d+$/.test(String(cabecera[k]).trim()));
-    const colTotal = Object.keys(cabecera).find((k) => String(cabecera[k]).trim() === 'Total');
-    console.log(`\n=== ${h}: ${filas.length} filas; España en la columna ${col}, UE en ${colUe}, total en ${colTotal}`);
-    for (const [i, f] of filas.entries()) {
-      const etiqueta = [f.A, f.B].filter((x) => x !== undefined).join(' | ');
-      if (etiqueta) console.log(`${i}: ${String(etiqueta).replace(/\s+/g, ' ').slice(0, 120)} => ES ${f[col] ?? ''} · UE ${f[colUe] ?? ''} · total ${f[colTotal] ?? ''}`);
-    }
+  const años = {};
+  for (const h of hojas) {
+    const año = leerHojaUe(libro[h] ?? []);
+    if (año) años[h.trim()] = año;
   }
+  const lista = Object.keys(años).sort();
+  const ultimo = años[lista.at(-1)];
+  if (!ultimo || !(ultimo.recibe > 1000) || !(ultimo.aporta > 1000)) throw new Error(`datos sospechosos: ${lista.length} años; último ${JSON.stringify(ultimo)?.slice(0, 200)}`);
+  await mkdir(almacen, { recursive: true });
+  await writeFile(destino, JSON.stringify({ actualizado: new Date().toISOString(), fuente: url, años }));
+  const r = (x) => Math.round(x).toLocaleString('es-ES');
+  await anotar('ue', true, `${lista[0]}-${lista.at(-1)}; ${lista.at(-1)}: recibe ${r(ultimo.recibe)} M€ (de ellos ${r(ultimo.ngeu ?? 0)} del fondo de recuperación), aporta ${r(ultimo.aporta)} M€`);
+  console.log(`Fondos de la UE: ${lista.length} años (${lista[0]}-${lista.at(-1)}); ${lista.at(-1)}: ${JSON.stringify(ultimo).slice(0, 600)}`);
 } catch (e) {
-  console.warn(`Fondos de la UE (sondeo): ${e.message}`);
+  let previo = null;
+  try {
+    previo = JSON.parse(await readFile(destino, 'utf8'));
+  } catch {}
+  console.warn(`Fondos de la UE: ${e.message}. ${previo ? 'Se queda la versión anterior' : 'Sin datos anteriores'}`);
+  await anotar('ue', false, `${e.message}${previo ? '; se usan los datos anteriores' : ''}`);
 }

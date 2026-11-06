@@ -47,4 +47,11 @@ for (const [mes, f] of [['2025-06', 0.45], ['2025-07', 0.5], ['2025-08', 0.57], 
   meses[mes] = { ...structuredClone(libro), mes, noFinanciero: { ...libro.noFinanciero, obligaciones: libro.noFinanciero.creditos * f } };
 }
 await writeFile(new URL('ejecucion.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), meses }));
+// Fondos de la UE: la hoja de 2024 de ejemplo (de los tests), con un año antes inventado
+{
+  const { hoja2024 } = await import('../tests/ue-ejemplo.js');
+  const { leerHojaUe } = await import('../assets/js/ue.js');
+  const a = leerHojaUe(hoja2024);
+  await writeFile(new URL('ue.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), fuente: 'https://commission.europa.eu/', años: { 2023: { ...a, recibe: a.recibe * 0.8, aporta: a.aporta * 0.95 }, 2024: a } }));
+}
 for (const r of await escaparate()) console.log(r);

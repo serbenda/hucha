@@ -511,4 +511,22 @@ export const EN = {
   '(los grandes bloques: impuestos, cotizaciones y el total) y': '(the main blocks: taxes, contributions and the total) and',
   '(el IVA, el IRPF y el impuesto de sociedades por separado) de Eurostat, también de todas las administraciones juntas. «Otros ingresos» es lo que queda del total: ventas, intereses, transferencias (también las de la UE) y demás.':
     '(VAT, personal income tax and corporate tax separately), also for all administrations together. “Other revenue” is what is left of the total: sales, interest, transfers (including those from the EU) and the rest.',
+  // España y la UE
+  'España y la Unión Europea': 'Spain and the European Union',
+  'Lo que llega a España del presupuesto de la UE y lo que España aporta.': 'What reaches Spain from the EU budget and what Spain pays in.',
+  'Llega de la UE': 'From the EU',
+  'España aporta': 'Spain pays in',
+  'Saldo': 'Balance',
+  'Lo que llega, por habitante': 'What comes in, per person',
+  'Lo que aporta España, por habitante': 'What Spain pays in, per person',
+  'Son los': 'These are the',
+  'pagos hechos cada año': 'payments made each year',
+  ', no lo que se asignó: los fondos europeos se reparten por periodos de siete años y llegan poco a poco, según avanzan los proyectos. Por eso cambian mucho de un año a otro.':
+    ', not what was allocated: EU funds are shared out over seven-year periods and arrive gradually, as projects progress. That is why they change a lot from year to year.',
+  'El dinero que llega de la UE no va solo a las administraciones: también a agricultores, empresas, universidades o centros de investigación. Lo que llega a las administraciones ya está en «Otros ingresos», más arriba.':
+    'EU money does not only go to the administrations: it also goes to farmers, companies, universities and research centres. What reaches the administrations is already in “Other revenue”, above.',
+  'Lo que llega de la Unión Europea y lo que aporta España viene del Excel': 'What comes from the European Union and what Spain pays in comes from the European Commission’s spreadsheet',
+  '«EU spending and revenue»': '“EU spending and revenue”',
+  'de la Comisión Europea, con los pagos de cada año por país desde 2000. Lo que llega incluye las ayudas del plan de recuperación (NextGenerationEU), no sus préstamos; lo que aporta, los recursos propios (aportación según la renta nacional, parte del IVA, aranceles de aduanas y plásticos) y sus ajustes.':
+    ', with each year’s payments by country since 2000. What comes in includes the recovery plan grants (NextGenerationEU), not its loans; what is paid in, the own resources (contribution based on national income, share of VAT, customs duties and plastic) and their adjustments.',
 };

@@ -6,6 +6,7 @@ import {
   partidas, ultimoAño, esProvisional, gastoPorPersona, valor, seriePartida, detallePartida, tiposDeGasto, ultimoAñoTipos,
   reparto, gastoPorAdministracion, resumenDeuda, resumenIngresos,
 } from './cofog.js';
+import { resumenUe } from './ue.js';
 
 /** Lo común a todas las vistas: año, si es provisional, de cuándo son los datos y si son de ejemplo. */
 function base(d) {
@@ -51,7 +52,7 @@ function esteAño(e) {
 }
 
 /** A dónde va: cada partida con su detalle, cómo se gasta y su serie frente a la UE. */
-export function vistaADondeVa(d, ejecucion = null) {
+export function vistaADondeVa(d, ejecucion = null, ue = null) {
   const b = base(d);
   const añoTipos = ultimoAñoTipos(d);
   const quitarQue = (lista) => lista.map(({ que, ...x }) => x);
@@ -74,6 +75,7 @@ export function vistaADondeVa(d, ejecucion = null) {
     tipos: añoTipos ? tiposDeGasto(d, 'TOTAL', añoTipos) : [],
     deuda: resumenDeuda(d),
     ingresos: resumenIngresos(d),
+    ue: ue ? resumenUe(ue, d.poblacion) : null,
     esteAño: esteAño(ejecucion),
   };
 }

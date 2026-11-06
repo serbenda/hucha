@@ -3,7 +3,7 @@
 //   si no hay conexión, lo último guardado.
 // - Fuente e imágenes, que casi nunca cambian: lo guardado, y se actualiza en segundo plano.
 
-const VERSION = 'hucha-v11';
+const VERSION = 'hucha-v12';
 const BASICOS = [
   './',
   'a-donde-va/',
@@ -34,6 +34,7 @@ const BASICOS = [
   'assets/js/descargas.js',
   'assets/js/antiguo.js',
   'assets/js/fuente.js',
+  'assets/js/ue.js',
   'assets/js/colores.js',
   'data/vistas/presupuesto.json',
   'assets/img/favicon.svg',
