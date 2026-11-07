@@ -291,6 +291,118 @@ export function resumenDeuda(datos) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Ingresos: de dónde sale el dinero
+//
+// gov_10a_main da los grandes bloques de ingresos de todas las administraciones (S13): impuestos sobre la
+// producción y el consumo (D2), sobre la renta y el patrimonio (D5), sobre el capital (D91), cotizaciones
+// sociales (D61) y el total (TR). gov_10a_taxag separa dentro de ellos el IVA (D211), el IRPF (D51A_C1) y el
+// impuesto de sociedades (D51B_C2). Se piden sin filtrar el concepto, para que un código que falte no rompa la
+// descarga, y se guardan solo los que se usan.
+
+export const CONCEPTOS_MAIN = ['TR', 'TE', 'D2REC', 'D5REC', 'D91REC', 'D61REC'];
+export const CONCEPTOS_IMPUESTOS = ['D211', 'D51A_C1', 'D51B_C2'];
+
+const urlIngresosDe = (tabla) => {
+  const p = new URLSearchParams({ lang: 'EN', sector: 'S13', sinceTimePeriod: String(PRIMER_AÑO) });
+  for (const g of ['ES', 'EU27_2020']) p.append('geo', g);
+  for (const u of ['MIO_EUR', 'PC_GDP']) p.append('unit', u);
+  return `${API}/${tabla}?${p}`;
+};
+export const urlIngresos = () => urlIngresosDe('gov_10a_main');
+export const urlImpuestos = () => urlIngresosDe('gov_10a_taxag');
+
+/** { es: { concepto: { MIO_EUR: { año }, PC_GDP } }, ue: { concepto: { PC_GDP } }, actualizado, codigos } */
+export function prepararIngresos(main, taxag) {
+  const d = { es: {}, ue: {}, actualizado: main?.updated ?? null, codigos: [] };
+  const vistos = new Set();
+  const meter = (json, conceptos) => {
+    for (const o of aplanar(json)) {
+      vistos.add(o.na_item);
+      if (!conceptos.includes(o.na_item) || (o.sector && o.sector !== 'S13')) continue;
+      const zona = o.geo === 'ES' ? 'es' : o.geo === 'EU27_2020' ? 'ue' : null;
+      if (!zona || o.valor === null || o.valor === undefined || !['MIO_EUR', 'PC_GDP'].includes(o.unit)) continue;
+      if (zona === 'ue' && o.unit !== 'PC_GDP') continue;
+      ((d[zona][o.na_item] ??= {})[o.unit] ??= {})[o.time] = o.valor;
+    }
+  };
+  if (main) meter(main, CONCEPTOS_MAIN);
+  if (taxag) meter(taxag, CONCEPTOS_IMPUESTOS);
+  d.codigos = [...vistos].sort();
+  return d;
+}
+
+/** Bloques de ingresos, de mayor a menor peso en España. */
+export const BLOQUES_INGRESOS = [
+  { id: 'cotizaciones', nombre: 'Cotizaciones sociales', que: 'Lo que pagan trabajadores y empresas a la Seguridad Social por cada nómina, y los autónomos por su cuota.' },
+  { id: 'irpf', nombre: 'IRPF', que: 'El impuesto sobre la renta de las personas: lo que se retiene de la nómina, de las pensiones y de los ahorros.' },
+  { id: 'iva', nombre: 'IVA', que: 'El impuesto que va en casi todo lo que se compra: 21 %, 10 % o 4 %, según el producto.' },
+  { id: 'sociedades', nombre: 'Impuesto de sociedades', que: 'Lo que pagan las empresas por sus beneficios.' },
+  { id: 'otros-impuestos', nombre: 'Otros impuestos', que: 'Gasolina, tabaco y alcohol, electricidad, IBI y otros impuestos locales, sucesiones, patrimonio, tasas…' },
+  { id: 'otros', nombre: 'Otros ingresos', que: 'Ventas y servicios que cobran las administraciones, intereses y dividendos, dinero de la UE y otras transferencias.' },
+];
+
+/**
+ * Resumen de los ingresos para la web, del último año con total: { año, total, porPersona, pib, pibUe,
+ * gasto, bloques: [{ id, nombre, que, valor, cuota, pib, pibUe }], detalle: true si están IVA, IRPF y sociedades }.
+ * Si no hay el desglose de impuestos, los impuestos van en dos bloques (consumo y producción; renta y patrimonio).
+ */
+export function resumenIngresos(datos, añoPedido = null) {
+  const d = datos?.ingresos;
+  const tr = d?.es?.TR?.MIO_EUR ?? {};
+  // El año pedido (p. ej., el del gasto por funciones, para comparar lo mismo), o el último que haya
+  const año = añoPedido && tr[añoPedido] > 0 && datos.poblacion?.[añoPedido] > 0 ? String(añoPedido) : Object.keys(tr).sort().reverse().find((a) => tr[a] > 0 && datos.poblacion?.[a] > 0);
+  if (!año) return null;
+  const v = (zona, c, unidad = 'MIO_EUR') => d[zona]?.[c]?.[unidad]?.[año] ?? null;
+  const total = tr[año];
+  const d2 = v('es', 'D2REC') ?? 0;
+  const d5 = v('es', 'D5REC') ?? 0;
+  const d91 = v('es', 'D91REC') ?? 0;
+  const d61 = v('es', 'D61REC') ?? 0;
+  const iva = v('es', 'D211');
+  const irpf = v('es', 'D51A_C1');
+  const soc = v('es', 'D51B_C2');
+  const detalle = iva > 0 && irpf > 0 && soc > 0;
+  // Lo mismo en % del PIB, para comparar con la UE (con la misma cuenta)
+  const pib = (zona) => {
+    const x = (c) => v(zona, c, 'PC_GDP');
+    const [p2, p5, p91, p61, ptr] = ['D2REC', 'D5REC', 'D91REC', 'D61REC', 'TR'].map(x);
+    if (ptr === null) return {};
+    const [piva, pirpf, psoc] = ['D211', 'D51A_C1', 'D51B_C2'].map(x);
+    const base = { cotizaciones: p61, otros: ptr - (p2 ?? 0) - (p5 ?? 0) - (p91 ?? 0) - (p61 ?? 0) };
+    return detalle && piva !== null && pirpf !== null && psoc !== null
+      ? { ...base, irpf: pirpf, iva: piva, sociedades: psoc, 'otros-impuestos': (p2 ?? 0) + (p5 ?? 0) + (p91 ?? 0) - piva - pirpf - psoc }
+      : { ...base, consumo: p2, renta: (p5 ?? 0) + (p91 ?? 0) };
+  };
+  const valores = detalle
+    ? { cotizaciones: d61, irpf, iva, sociedades: soc, 'otros-impuestos': d2 + d5 + d91 - iva - irpf - soc, otros: total - d2 - d5 - d91 - d61 }
+    : { cotizaciones: d61, consumo: d2, renta: d5 + d91, otros: total - d2 - d5 - d91 - d61 };
+  const sinDetalle = [
+    { id: 'cotizaciones', ...BLOQUES_INGRESOS[0] },
+    { id: 'consumo', nombre: 'Impuestos sobre el consumo y la producción', que: 'IVA, gasolina, tabaco, alcohol, electricidad, IBI y otros impuestos sobre lo que se compra y se produce.' },
+    { id: 'renta', nombre: 'Impuestos sobre la renta y el patrimonio', que: 'IRPF, impuesto de sociedades, sucesiones y patrimonio.' },
+    BLOQUES_INGRESOS[5],
+  ];
+  const pibEs = pib('es');
+  const pibUe = pib('ue');
+  const bloques = (detalle ? BLOQUES_INGRESOS : sinDetalle)
+    .map((b) => ({ ...b, valor: valores[b.id], cuota: valores[b.id] / total, pib: pibEs[b.id] ?? null, pibUe: pibUe[b.id] ?? null }))
+    .filter((b) => b.valor > 0)
+    .sort((a, b) => b.valor - a.valor);
+  return {
+    año,
+    actualizado: d.actualizado ?? null,
+    total,
+    porPersona: (total * 1e6) / datos.poblacion[año],
+    pib: v('es', 'TR', 'PC_GDP'),
+    pibUe: v('ue', 'TR', 'PC_GDP'),
+    gasto: v('es', 'TE'),
+    detalle,
+    bloques,
+    serie: Object.keys(d.es?.TR?.PC_GDP ?? {}).filter((a) => a <= año).sort().map((a) => ({ año: a, es: d.es.TR.PC_GDP[a], ue: d.ue?.TR?.PC_GDP?.[a] ?? null })),
+  };
+}
+
 /** Población media anual de España. */
 export function urlPoblacion() {
   const p = new URLSearchParams({ lang: 'EN', geo: 'ES', indic_de: 'AVG', sinceTimePeriod: String(PRIMER_AÑO) });

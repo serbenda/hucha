@@ -3,14 +3,14 @@
 // La Action nunca usa este script.
 
 import { writeFile, mkdir } from 'node:fs/promises';
-import { prepararDatos, prepararDeuda } from '../assets/js/cofog.js';
+import { prepararDatos, prepararDeuda, prepararIngresos } from '../assets/js/cofog.js';
 import { respuestasEjemplo } from '../tests/ayuda.js';
 import { escaparate } from './escaparate.mjs';
 import { leerLibro } from '../assets/js/ejecucion.js';
 import { GTOS004, GTOS014, GTOS016, GTOS017 } from '../tests/ejecucion-ejemplo.js';
 
-const { gasto, poblacion, tipos, deuda } = respuestasEjemplo();
-const datos = { ...prepararDatos(gasto, poblacion, tipos), deuda: prepararDeuda(deuda), ejemplo: true, actualizado: new Date().toISOString() };
+const { gasto, poblacion, tipos, deuda, ingresos, impuestos } = respuestasEjemplo();
+const datos = { ...prepararDatos(gasto, poblacion, tipos), deuda: prepararDeuda(deuda), ingresos: prepararIngresos(ingresos, impuestos), ejemplo: true, actualizado: new Date().toISOString() };
 await mkdir(new URL('../almacen/', import.meta.url), { recursive: true });
 await writeFile(new URL('../almacen/cofog.json', import.meta.url), JSON.stringify(datos));
 console.log('almacen/cofog.json de EJEMPLO creado (no son datos oficiales)');
@@ -47,4 +47,11 @@ for (const [mes, f] of [['2025-06', 0.45], ['2025-07', 0.5], ['2025-08', 0.57], 
   meses[mes] = { ...structuredClone(libro), mes, noFinanciero: { ...libro.noFinanciero, obligaciones: libro.noFinanciero.creditos * f } };
 }
 await writeFile(new URL('ejecucion.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), meses }));
+// Fondos de la UE: la hoja de 2024 de ejemplo (de los tests), con un año antes inventado
+{
+  const { hoja2024 } = await import('../tests/ue-ejemplo.js');
+  const { leerHojaUe } = await import('../assets/js/ue.js');
+  const a = leerHojaUe(hoja2024);
+  await writeFile(new URL('ue.json', lupa), JSON.stringify({ ejemplo: true, actualizado: new Date().toISOString(), fuente: 'https://commission.europa.eu/', años: { 2023: { ...a, recibe: a.recibe * 0.8, aporta: a.aporta * 0.95 }, 2024: a } }));
+}
 for (const r of await escaparate()) console.log(r);

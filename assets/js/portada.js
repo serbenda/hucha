@@ -110,7 +110,16 @@ function pintarCifras(v) {
     cifra($('cifra-deuda').querySelector('dd'), delPib(d.pib), t(`${millones(d.total)}: ${euros(d.porPersona)} por habitante, a final de ${d.año}`, `${millones(d.total)}: ${euros(d.porPersona)} per person, at the end of ${d.año}`));
     $('cifra-deuda').hidden = false;
     const deficitAño = d.deficits?.[año] ?? (d.año === año ? d.deficit : null);
-    if (deficitAño > 0) {
+    const ing = v.ingresos?.año === año && v.ingresos.gasto > 0 ? v.ingresos : null;
+    if (ing && ing.gasto > ing.total) {
+      // Lo que entra, lo que sale y lo que falta, con los mismos datos (Eurostat, cuentas de las administraciones)
+      const falta = ing.gasto - ing.total;
+      $('nota-deuda').innerHTML = t(
+        `En ${año} las administraciones ingresaron <strong>${millones(ing.total)}</strong> (${euros(ing.porPersona)} por habitante) y gastaron <strong>${millones(ing.gasto)}</strong>: los ${millones(falta)} que faltaron, unos <strong>${Math.round((falta / ing.gasto) * 100)} € de cada 100</strong>, se pidieron prestados. Eso hace crecer la deuda. <a href="a-donde-va/#t-ingresos">De dónde sale el dinero</a> · <a href="a-donde-va/#t-deuda">La deuda</a>`,
+        `In ${año} the administrations took in <strong>${millones(ing.total)}</strong> (${euros(ing.porPersona)} per person) and spent <strong>${millones(ing.gasto)}</strong>: the missing ${millones(falta)}, about <strong>€${Math.round((falta / ing.gasto) * 100)} in every €100</strong>, was borrowed. That makes the debt grow. <a href="a-donde-va/#t-ingresos">Where the money comes from</a> · <a href="a-donde-va/#t-deuda">The debt</a>`
+      );
+      $('nota-deuda').hidden = false;
+    } else if (deficitAño > 0) {
       const de100 = (deficitAño / total) * 100;
       $('nota-deuda').innerHTML = t(
         `En ${año} las administraciones gastaron <strong>${millones(deficitAño)}</strong> más de lo que ingresaron (el déficit): de cada 100 € de gasto, unos <strong>${euros(Math.round(de100))}</strong> se pagaron pidiendo prestado. Eso hace crecer la deuda. <a href="a-donde-va/#t-deuda">Más sobre la deuda</a>`,
@@ -179,6 +188,7 @@ try {
     $('fuente-todos'),
     [
       { ...FUENTES.gasto, cubre: hastaAño(vista.año, vista.provisional), publicado: vista.eurostat, descargado: vista.actualizado },
+      ...(vista.ingresos ? [{ ...FUENTES.ingresos, cubre: t(`ingresos de ${vista.ingresos.año}`, `revenue for ${vista.ingresos.año}`), publicado: vista.ingresos.actualizado, descargado: vista.actualizado }] : []),
       ...(vista.deuda ? [{ ...FUENTES.deuda, cubre: t(`deuda hasta ${vista.deuda.año}`, `debt up to ${vista.deuda.año}`), publicado: vista.deuda.actualizado, descargado: vista.actualizado }] : []),
     ],
     { raiz: '' }

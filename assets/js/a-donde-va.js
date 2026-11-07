@@ -6,7 +6,7 @@ import { pieFuente, FUENTES, hastaAño } from './fuente.js';
 import { botones, fichero, jsonVista } from './descargas.js';
 import { bloques } from './graficos.js';
 import { t, LOCALE } from './idioma.js';
-import { PARTIDAS, GRUPOS, TIPOS, en, enQue } from './en.js';
+import { PARTIDAS, GRUPOS, TIPOS, en, enQue, INGRESOS, UE_RUBROS, UE_APORTACION } from './en.js';
 import { colorPartida } from './colores.js';
 import { icono, ICONO_PARTIDA } from './iconos.js';
 import { euros, porcentaje, delPib, millones } from './formato.js';
@@ -205,6 +205,71 @@ try {
     ...(v.esteAño ? [{ ...FUENTES.igae, cubre: t(`defensa en ${v.esteAño.año}, hasta ${mesDe(v.esteAño.mes)}`, `defence in ${v.esteAño.año}, up to ${mesDe(v.esteAño.mes)}`), descargado: v.actualizado }] : []),
   ]);
 
+  // Los ingresos: de dónde sale el dinero, por bloques, por habitante y frente a la UE
+  const ing = v.ingresos;
+  if (ing) {
+    const porHabIng = ing.porPersona / ing.total;
+    const nombreIng = (b) => en(INGRESOS, b.id, b.nombre);
+    cifra('c-ingresos', millones(ing.total), t(`en ${ing.año}: ${delPib(ing.pib)}${ing.pibUe !== null ? `. Media de la UE: ${delPib(ing.pibUe).replace(' del PIB', '')}` : ''}`, `in ${ing.año}: ${delPib(ing.pib)}${ing.pibUe !== null ? `. EU average: ${delPib(ing.pibUe).replace(' of GDP', '')}` : ''}`));
+    cifra('c-ingresos-persona', euros(ing.porPersona), t('al año, contando a todos', 'a year, counting everyone'));
+    if (ing.gasto > 0) {
+      const falta = ing.gasto - ing.total;
+      cifra(
+        'c-falta',
+        falta > 0 ? millones(falta) : t('Nada', 'Nothing'),
+        falta > 0
+          ? t(`se gastaron ${millones(ing.gasto)}: de cada 100 € de gasto, ${Math.round((falta / ing.gasto) * 100)} se pidieron prestados`, `${millones(ing.gasto)} was spent: out of every €100, ${Math.round((falta / ing.gasto) * 100)} was borrowed`)
+          : t(`en ${ing.año} se ingresó más de lo que se gastó`, `in ${ing.año} more came in than was spent`)
+      );
+    }
+    $('ingresos-texto').textContent = t(
+      `Lo que ingresaron todas las administraciones juntas en ${ing.año}: impuestos, cotizaciones y otros ingresos.`,
+      `What all administrations together took in during ${ing.año}: taxes, social contributions and other revenue.`
+    );
+    // Igual que el detalle de las partidas: euros por habitante, parte del total y qué es cada cosa; con la UE
+    $('ingresos-barras').innerHTML = desglose(
+      ing.bloques.map((b) => ({
+        nombre: nombreIng(b),
+        que: `${enQue(INGRESOS, b.id, b.que)}${b.pib !== null && b.pibUe !== null ? ` ${t(`${delPib(b.pib)}; media de la UE: ${delPib(b.pibUe).replace(' del PIB', '')}.`, `${delPib(b.pib)}; EU average: ${delPib(b.pibUe).replace(' of GDP', '')}.`)}` : ''}`,
+        valor: b.valor,
+        cuota: b.cuota,
+      })),
+      porHabIng,
+      t('de los ingresos', 'of revenue')
+    );
+    pieFuente($('fuente-ingresos'), [{ ...FUENTES.ingresos, cubre: t(`ingresos de ${ing.año}`, `revenue for ${ing.año}`), publicado: ing.actualizado, descargado: v.actualizado }]);
+    $('bloque-ingresos').hidden = false;
+  }
+
+  // España y la UE: lo que llega y lo que aporta, por rúbricas y por habitante
+  const ue = v.ue;
+  if (ue) {
+    const porHabUe = ue.porPersona ? ue.porPersona.recibe / ue.recibe : null;
+    const enUe = (x) => en(x.id === 'ngeu' || /^\d|^[OS]$/.test(x.id) ? UE_RUBROS : UE_APORTACION, x.id, x.nombre);
+    const queUe = (x) => enQue(x.id === 'ngeu' || /^\d|^[OS]$/.test(x.id) ? UE_RUBROS : UE_APORTACION, x.id, x.que);
+    cifra('c-ue-recibe', millones(ue.recibe), ue.ngeu > 0 ? t(`en ${ue.año}; de ellos, ${millones(ue.ngeu)} del plan de recuperación`, `in ${ue.año}; of which ${millones(ue.ngeu)} from the recovery plan`) : t(`en ${ue.año}`, `in ${ue.año}`));
+    cifra('c-ue-aporta', millones(ue.aporta), ue.rnb ? t(`el ${porcentaje(ue.rnb.aporta)} de la renta nacional`, `${porcentaje(ue.rnb.aporta)} of national income`) : '');
+    cifra(
+      'c-ue-saldo',
+      `${ue.saldo >= 0 ? '+' : '−'}${millones(Math.abs(ue.saldo))}`,
+      ue.saldo >= 0
+        ? t(`a favor de España en ${ue.año}${porHabUe ? `: ${euros(ue.saldo * porHabUe)} por habitante` : ''}`, `in Spain’s favour in ${ue.año}${porHabUe ? `: ${euros(ue.saldo * porHabUe)} per person` : ''}`)
+        : t(`España aportó más de lo que recibió en ${ue.año}`, `Spain paid in more than it received in ${ue.año}`)
+    );
+    $('ue-texto').textContent = t(
+      `Lo que llegó a España del presupuesto de la UE en ${ue.año} y lo que España aportó.`,
+      `What reached Spain from the EU budget in ${ue.año} and what Spain paid in.`
+    );
+    const lista = (xs, total) => desglose(xs.filter((x) => x.valor > 0).map((x) => ({ nombre: enUe(x), que: queUe(x), valor: x.valor, cuota: x.valor / total })), porHabUe ?? 0, t('del total', 'of the total'));
+    $('ue-recibe').innerHTML = lista(ue.rubros, ue.recibe);
+    const resta = ue.aportacion.filter((x) => x.valor < 0).reduce((s, x) => s + x.valor, 0);
+    $('ue-aporta').innerHTML =
+      lista(ue.aportacion, ue.aportacion.filter((x) => x.valor > 0).reduce((s, x) => s + x.valor, 0)) +
+      (resta < 0 ? `<p class="nota">${t(`Los ajustes de años anteriores restaron ${millones(-resta)}: por eso la aportación total es de ${millones(ue.aporta)}.`, `Adjustments for previous years took off ${millones(-resta)}: that is why the total contribution is ${millones(ue.aporta)}.`)}</p>` : '');
+    pieFuente($('fuente-ue'), [{ nombre: t('Comisión Europea, «EU spending and revenue»', 'European Commission, “EU spending and revenue”'), enlace: 'https://commission.europa.eu/strategy-and-policy/eu-budget/long-term-eu-budget/2021-2027/spending-and-revenue_en', cubre: t(`pagos de ${ue.serie[0].año} a ${ue.año}`, `payments from ${ue.serie[0].año} to ${ue.año}`), descargado: ue.actualizado }]);
+    $('bloque-ue').hidden = false;
+  }
+
   // La deuda: cuánto se debe, por habitante, en % del PIB frente a la UE, y el déficit del año
   const d = v.deuda;
   if (d) {
@@ -263,6 +328,26 @@ try {
           tabla: () => [
             [t('Tipo de gasto', 'Type of spending'), t('Qué incluye', 'What it includes'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person'), t('Parte del gasto', 'Share of spending')],
             v.tipos.map((x) => [en(TIPOS, x.id, x.nombre), enQue(TIPOS, x.id, x.que), añoTipos, x.valor, Math.round(x.valor * porHabitanteTipos), x.cuota]),
+          ],
+        }]
+      : []),
+    ...(ing
+      ? [{
+          texto: t('De dónde sale el dinero', 'Where the money comes from'),
+          fichero: fichero(`ingresos-${ing.año}`),
+          tabla: () => [
+            [t('Ingreso', 'Revenue'), t('Qué incluye', 'What it includes'), t('Año', 'Year'), colMillones, t('Euros por habitante', 'Euros per person'), t('Parte de los ingresos', 'Share of revenue'), t('España (% del PIB)', 'Spain (% of GDP)'), t('Unión Europea (% del PIB)', 'European Union (% of GDP)')],
+            ing.bloques.map((b) => [en(INGRESOS, b.id, b.nombre), enQue(INGRESOS, b.id, b.que), ing.año, b.valor, Math.round((b.valor * ing.porPersona) / ing.total), b.cuota, b.pib, b.pibUe]),
+          ],
+        }]
+      : []),
+    ...(ue
+      ? [{
+          texto: t('España y la UE, año a año', 'Spain and the EU, year by year'),
+          fichero: fichero('ue'),
+          tabla: () => [
+            [t('Año', 'Year'), t('Llega de la UE (millones de €)', 'From the EU (EUR million)'), t('De ellos, plan de recuperación', 'Of which, recovery plan'), t('España aporta', 'Spain pays in'), t('Saldo', 'Balance')],
+            ue.serie.map((x) => [x.año, x.recibe, x.ngeu, x.aporta, x.recibe - x.aporta]),
           ],
         }]
       : []),

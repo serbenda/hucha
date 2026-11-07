@@ -3,7 +3,7 @@
 // se mantienen los de la publicación anterior.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { urlGasto, urlPoblacion, urlTipos, urlDeuda, prepararDatos, prepararDeuda, resumenDeuda, problema, ultimoAño, gastoPorPersona, ultimoAñoTipos } from '../assets/js/cofog.js';
+import { urlGasto, urlPoblacion, urlTipos, urlDeuda, prepararDatos, prepararDeuda, resumenDeuda, urlIngresos, urlImpuestos, prepararIngresos, resumenIngresos, problema, ultimoAño, gastoPorPersona, ultimoAñoTipos } from '../assets/js/cofog.js';
 import { anotar } from './estado.mjs';
 
 const salida = new URL('../almacen/cofog.json', import.meta.url);
@@ -88,6 +88,26 @@ try {
 } catch (e) {
   if (previo?.deuda) datos.deuda = previo.deuda;
   await anotar('eurostat-deuda', false, `Sin deuda nueva (${e.message}); se usa la anterior si la hay`);
+}
+
+// Ingresos: otro extra. El desglose de impuestos (IVA, IRPF, sociedades) es opcional: sin él, van en dos bloques
+try {
+  const main = await descargar(urlIngresos());
+  let taxag = null;
+  try {
+    taxag = await descargar(urlImpuestos());
+  } catch (e) {
+    console.warn(`Sin desglose de impuestos (${e.message})`);
+  }
+  const ingresos = prepararIngresos(main, taxag);
+  const r = resumenIngresos({ ...datos, ingresos });
+  if (!r || !(r.total > 100000) || !(r.pib > 20)) throw new Error(`ingresos sospechosos: ${JSON.stringify(r)?.slice(0, 160)}; códigos: ${ingresos.codigos.slice(0, 40).join(' ')}`);
+  datos.ingresos = ingresos;
+  console.log(`Ingresos: ${JSON.stringify({ año: r.año, total: Math.round(r.total), pib: r.pib, detalle: r.detalle, bloques: r.bloques.map((b) => [b.id, Math.round(b.valor), b.pib]) })}`);
+  await anotar('eurostat-ingresos', true, `Ingresos hasta ${r.año}: ${Math.round(r.pib)} % del PIB; ${r.bloques.map((b) => `${b.id} ${Math.round(b.cuota * 100)} %`).join(', ')}${r.detalle ? '' : ` (sin desglose; códigos: ${ingresos.codigos.slice(0, 40).join(' ')})`}`);
+} catch (e) {
+  if (previo?.ingresos) datos.ingresos = previo.ingresos;
+  await anotar('eurostat-ingresos', false, `Sin ingresos nuevos (${e.message}); se usan los anteriores si los hay`);
 }
 
 datos.actualizado = new Date().toISOString();

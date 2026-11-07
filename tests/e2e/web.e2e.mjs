@@ -10,7 +10,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import AxeBuilder from '@axe-core/playwright';
 import { arrancar } from './servidor.mjs';
-import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos, resumenDeuda } from '../../assets/js/cofog.js';
+import { partidas, ultimoAño, PARTIDAS, detallePartida, ultimoAñoTipos, resumenDeuda, resumenIngresos } from '../../assets/js/cofog.js';
 
 let servidor, navegador, base, datos;
 
@@ -282,7 +282,7 @@ test('deuda: en la portada y en «A dónde va», con su gráfico frente a la UE'
   const portada = await abrir('', ESCRITORIO);
   assert.equal(await portada.pagina.isVisible('#cifra-deuda'), true);
   assert.match(await portada.pagina.textContent('#cifra-deuda'), /del PIB/);
-  if (deuda.deficits?.[ultimoAño(datos)] > 0) assert.match(await portada.pagina.textContent('#nota-deuda'), /pidiendo prestado/);
+  if (deuda.deficits?.[ultimoAño(datos)] > 0) assert.match(await portada.pagina.textContent('#nota-deuda'), /prestad/);
   await portada.contexto.close();
   const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
   assert.equal(await pagina.isVisible('#bloque-deuda'), true);
@@ -325,6 +325,7 @@ test('fuentes de cada dato: cada página dice de dónde sale y hasta cuándo lle
     await contexto.close();
   }
   const { pagina, contexto } = await abrir('fuentes/', ESCRITORIO);
+  await pagina.locator('#tabla-al-dia').scrollIntoViewIfNeeded(); // se carga al acercarse
   await pagina.waitForFunction(() => document.querySelectorAll('#tabla-al-dia tr th').length >= 5);
   assert.match(await pagina.textContent('#tabla-al-dia'), /Eurostat/);
   await contexto.close();
@@ -337,6 +338,16 @@ test('portada: «Ver mi ticket» solo sale en el móvil', async () => {
   const movil = await abrir('', MOVIL);
   assert.equal(await movil.pagina.isVisible('.calcular'), true);
   await movil.contexto.close();
+});
+
+test('ingresos: de dónde sale el dinero, con sus bloques y lo que faltó', async (t) => {
+  const r = resumenIngresos(datos);
+  if (!r) return t.skip('el almacén aún no tiene los ingresos de Eurostat');
+  const { pagina, contexto } = await abrir('a-donde-va/', ESCRITORIO);
+  assert.equal(await pagina.isVisible('#bloque-ingresos'), true);
+  assert.equal(await pagina.locator('#ingresos-barras .desglose li').count(), r.bloques.length);
+  assert.match(await pagina.textContent('#ingresos-barras'), /Cotizaciones sociales/);
+  await contexto.close();
 });
 
 test('404: página propia con su código', async () => {

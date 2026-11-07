@@ -63,6 +63,12 @@ jobs:
         # Si falla, se queda la versión anterior del almacén
         run: node scripts/fetch-ejecucion.mjs
 
+      - name: Fondos de la UE (Comisión Europea)
+        # Lo que España recibe y aporta; si falla, se queda la versión anterior del almacén
+        continue-on-error: true
+        timeout-minutes: 5
+        run: node scripts/fetch-ue.mjs
+
       - name: Lupa (contratos, subvenciones y ayuda a otros países)
         # Cada fuente es independiente; si una falla, se queda su versión anterior
         timeout-minutes: 45
@@ -266,7 +272,8 @@ jobs:
             const fs = require('fs');
             let estado = {};
             try { estado = JSON.parse(fs.readFileSync('estado.json', 'utf8')); } catch {}
-            const fallos = Object.entries(estado).filter(([, e]) => !e.ok).map(([f, e]) => `- **${f}**: ${e.detalle}`);
+            // Un fallo con avisar: false (la fuente no responde hoy, pero los datos son de hace muy poco) no abre aviso
+            const fallos = Object.entries(estado).filter(([, e]) => !e.ok && e.avisar !== false).map(([f, e]) => `- **${f}**: ${e.detalle}`);
             if (process.env.RESULTADO_CONSTRUIR !== 'success') fallos.push('- **construcción o tests**: la web no se ha podido preparar o no ha pasado los tests');
             else if (process.env.RESULTADO_PUBLICAR !== 'success') fallos.push('- **publicación**: GitHub Pages no ha aceptado la nueva versión');
 
