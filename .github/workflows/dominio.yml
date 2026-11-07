@@ -1,0 +1,19 @@
+name: Comprobar dominio
+on:
+  push:
+    branches: [comprobar-dominio]
+jobs:
+  dominio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DNS y respuesta de hucha.bendi.dev
+        run: |
+          for t in CNAME A AAAA; do echo "== $t"; dig +short hucha.bendi.dev $t; done
+          echo "== bendi.dev NS"; dig +short bendi.dev NS
+          echo "== serbenda.github.io A"; dig +short serbenda.github.io A
+          for d in 1.1.1.1 8.8.8.8 9.9.9.9; do echo "== $d"; dig +short @$d hucha.bendi.dev; done
+          echo "== HTTP"; curl -sS -o /dev/null -w "http %{http_code} · ip %{remote_ip} · %{time_total}s\n" -I http://hucha.bendi.dev/ || true
+          echo "== HTTPS"; curl -sS -o /dev/null -w "https %{http_code} · ip %{remote_ip} · %{time_total}s · ssl %{ssl_verify_result}\n" https://hucha.bendi.dev/ || true
+          curl -sSI https://hucha.bendi.dev/ | head -20 || true
+          echo "== Certificado"; echo | openssl s_client -servername hucha.bendi.dev -connect hucha.bendi.dev:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates || true
+          echo "== Páginas"; for p in "" a-donde-va/ lupa/ fuentes/ data/vistas/portada.json assets/js/portada.js; do curl -sS -o /dev/null -w "%{http_code} /$p\n" "https://hucha.bendi.dev/$p" || true; done
