@@ -6,14 +6,8 @@ jobs:
   dominio:
     runs-on: ubuntu-latest
     steps:
-      - name: DNS y respuesta de hucha.bendi.dev
+      - name: DNS de bendi.dev y sus subdominios
         run: |
-          for t in CNAME A AAAA; do echo "== $t"; dig +short hucha.bendi.dev $t; done
-          echo "== bendi.dev NS"; dig +short bendi.dev NS
-          echo "== serbenda.github.io A"; dig +short serbenda.github.io A
-          for d in 1.1.1.1 8.8.8.8 9.9.9.9; do echo "== $d"; dig +short @$d hucha.bendi.dev; done
-          echo "== HTTP"; curl -sS -o /dev/null -w "http %{http_code} · ip %{remote_ip} · %{time_total}s\n" -I http://hucha.bendi.dev/ || true
-          echo "== HTTPS"; curl -sS -o /dev/null -w "https %{http_code} · ip %{remote_ip} · %{time_total}s · ssl %{ssl_verify_result}\n" https://hucha.bendi.dev/ || true
-          curl -sSI https://hucha.bendi.dev/ | head -20 || true
-          echo "== Certificado"; echo | openssl s_client -servername hucha.bendi.dev -connect hucha.bendi.dev:443 2>/dev/null | openssl x509 -noout -subject -issuer -dates || true
-          echo "== Páginas"; for p in "" a-donde-va/ lupa/ fuentes/ data/vistas/portada.json assets/js/portada.js; do curl -sS -o /dev/null -w "%{http_code} /$p\n" "https://hucha.bendi.dev/$p" || true; done
+          for h in bendi.dev www.bendi.dev hucha.bendi.dev bolsillo.bendi.dev marquesina.bendi.dev atalaya.bendi.dev uptime.bendi.dev; do echo "== $h: $(dig +short $h CNAME | tr '\n' ' ') | A: $(dig +short $h A | tr '\n' ' ')"; done
+          echo "== Respuesta completa de hucha.bendi.dev"; dig @1.1.1.1 hucha.bendi.dev A | grep -E "status|SOA|ANSWER"
+          echo "== GitHub Pages sin dominio"; curl -sS -o /dev/null -w "%{http_code} -> %{redirect_url}\n" https://serbenda.github.io/hucha/ || true
